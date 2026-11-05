@@ -227,7 +227,7 @@ Abgleich Spec ↔ Code am 04.11. (Beleg = Datei im Code; „fehlt“ = kein Befe
 
 | Schritt | Inhalt | Überprüfbares Ziel |
 |---|---|---|
-| 6a | Privates Repo `konturwerk` + Windows-CI (vitest, svelte-check, cargo test, cargo deny, Tauri-Installer als Artefakt); Mac-Trackpad: Zwei-Finger-Wischen verschiebt, Kneifen zoomt, Mausrad zoomt weiter | CI grün auf windows-latest; Installer-Artefakt; vitest Mausrad/Trackpad |
+| 6a ✓ 05.11. | Privates Repo `konturwerk` + Windows-CI (vitest, svelte-check, cargo test, cargo deny, Tauri-Installer als Artefakt); Mac-Trackpad: Zwei-Finger-Wischen verschiebt, Kneifen zoomt, Mausrad zoomt weiter | CI grün auf windows-latest; Installer-Artefakt; vitest Mausrad/Trackpad |
 | 6b | Windows-Befunde aus CI und erstem Start: Pfade, Systemschriften, Strg-Kürzel, WebView2, Touchpad-Erkennung. Bekannt aus 6a: Farbprofil-Tests in `color.rs` prüfen auf Windows nichts (macOS-Pfade, früher Ausstieg) – ob `RSWOP.icm` auf windows-latest existiert, ist offen | CI grün; Befundliste abgearbeitet; Farbprofil-Tests prüfen auf Windows echt |
 | 6c | .cdr-Import unter Windows: libcdr-Hilfsprozess `kw-cdr.exe` bauen oder ehrliche Meldung | CDR-Test mit eigener Datei oder Meldung belegt |
 | 6d | Handtest nach Checkliste (VM oder fremder PC), Druck 1:1 unter Windows, ggf. tauri-driver-Rauchtest in CI | Checkliste abgehakt; Druckmaß gemessen |

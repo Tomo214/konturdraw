@@ -85,6 +85,8 @@ const ARROWS: Record<string, [number, number]> = {
 const SCROLL_PX = 40;
 
 export function commandFor(e: KeyInput, isMac: boolean): Command | null {
+  // Windows meldet AltGr als Strg+Alt: AltGr+8 tippt „[“ und ist kein Strg+[.
+  if (!isMac && e.ctrlKey && e.altKey && e.key.length === 1 && !/[a-z0-9]/i.test(e.key)) return null;
   const mod = isMac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
   const arrow = ARROWS[e.key];
   if (!mod) {
@@ -146,6 +148,21 @@ export function commandFor(e: KeyInput, isMac: boolean): Command | null {
     case ' ': return { name: 'pickToggle' };
   }
   return null;
+}
+
+const BROWSER_KEYS = ['F3', 'F5', 'F7', 'BrowserRefresh', 'BrowserSearch', 'BrowserBack', 'BrowserForward'];
+
+/** WebView2 (Windows) hat eigene Browser-Tasten: Neu laden verwirft das Dokument, dazu Suchen, Drucken, Seite speichern, Caret-Browsing. Auch in Feldern schlucken. */
+export function browserKey(e: KeyInput, isMac: boolean): boolean {
+  if (isMac) return false;
+  return BROWSER_KEYS.includes(e.key) || (e.ctrlKey && !e.altKey && ['r', 'f', 'g', 'p', 's'].includes(e.key.toLowerCase()));
+}
+
+/** Browser-Kontextmenü (Neu laden, Drucken …) nur, wo es Kopieren/Einfügen bringt: Textfelder. */
+export function nativeMenu(t: { tagName?: string; type?: string; isContentEditable?: boolean } | null): boolean {
+  if (!t) return false;
+  if (t.tagName === 'TEXTAREA' || t.isContentEditable) return true;
+  return t.tagName === 'INPUT' && ['text', 'search', 'number', 'email', 'url', ''].includes(t.type ?? '');
 }
 
 /** Wie commandFor; Felder und Dialoge behalten ihre Tasten (auch das versteckte Textfeld des Text-Werkzeugs), Mod+Leertaste wechselt trotzdem. */

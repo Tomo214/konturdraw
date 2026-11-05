@@ -175,11 +175,27 @@ mod tests {
     use kw_core::color::{ColorMode, ColorSettings};
     use kw_core::scene::Color;
 
-    const GENERIC: &str = "/System/Library/ColorSync/Profiles/Generic CMYK Profile.icc";
+    // Auf macOS und Windows bringt das System ein CMYK- und ein sRGB-Profil mit; dort muss jeder Test echt prüfen.
+    const SYSTEM: bool = cfg!(any(target_os = "macos", target_os = "windows"));
+    #[cfg(target_os = "macos")]
+    const SRGB: &str = "/System/Library/ColorSync/Profiles/sRGB Profile.icc";
+    #[cfg(target_os = "windows")]
+    const SRGB: &str = r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm";
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    const SRGB: &str = "";
+
+    fn system_name() -> String {
+        let icc = std::fs::read(DEFAULT_PROFILE).expect("Systemprofil fehlt");
+        cmyk_profile_name(&icc).unwrap()
+    }
 
     #[test]
     fn ohne_pfad_gilt_das_systemprofil() {
         let cms = cms(&ColorSettings::default()).unwrap();
+        if !SYSTEM {
+            return assert_eq!(cms.profile_name(), None);
+        }
+        assert_eq!(cms.profile_name(), Some(system_name().as_str()));
         if cfg!(target_os = "macos") {
             assert_eq!(cms.profile_name(), Some("Allgemeines CMYK-Profil"));
         }
@@ -196,7 +212,7 @@ mod tests {
 
     #[test]
     fn anzeige_rechnet_cmyk_ueber_das_profil() {
-        if !cfg!(target_os = "macos") {
+        if !SYSTEM {
             return;
         }
         let cyan = Color::cmyk(1.0, 0.0, 0.0, 0.0);
@@ -209,7 +225,7 @@ mod tests {
             false,
         )
         .unwrap();
-        assert_eq!(out.profile.as_deref(), Some("Allgemeines CMYK-Profil"));
+        assert_eq!(out.profile, Some(system_name()));
         assert_ne!(out.colors[0], [0, 255, 255], "Profil statt Formel");
         assert_eq!(out.colors[1], [0, 255, 0], "RGB bleibt ohne Proof");
         let proof = display(
@@ -227,18 +243,14 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("kaputt.icc"), b"kein icc").unwrap();
         std::fs::write(dir.join("notiz.txt"), b"x").unwrap();
-        if let Ok(icc) = std::fs::read(GENERIC) {
-            std::fs::write(dir.join("Druck.ICC"), icc).unwrap();
-            std::fs::write(
-                dir.join("srgb.icm"),
-                std::fs::read("/System/Library/ColorSync/Profiles/sRGB Profile.icc").unwrap(),
-            )
-            .unwrap();
+        if SYSTEM {
+            std::fs::copy(DEFAULT_PROFILE, dir.join("Druck.ICC")).expect("CMYK-Systemprofil fehlt");
+            std::fs::copy(SRGB, dir.join("srgb.icm")).expect("sRGB-Systemprofil fehlt");
         }
         let list = scan(&[dir.clone(), dir.join("fehlt")]);
-        if cfg!(target_os = "macos") {
+        if SYSTEM {
             assert_eq!(list.len(), 1, "{list:?}");
-            assert_eq!(list[0].name, "Allgemeines CMYK-Profil");
+            assert_eq!(list[0].name, system_name());
             assert!(list[0].path.ends_with("Druck.ICC"));
         } else {
             assert!(list.is_empty());

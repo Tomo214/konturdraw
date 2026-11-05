@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { commandFor, keyCommand, type KeyInput } from '../../src/ui/shortcuts';
+import { browserKey, commandFor, keyCommand, nativeMenu, type KeyInput } from '../../src/ui/shortcuts';
 
 const key = (k: string, mods: Partial<KeyInput> = {}) => ({
   key: k,
@@ -200,4 +200,31 @@ test('keyCommand: Leertaste und Eingabe drücken den Knopf mit Tastaturfokus, an
   expect(keyCommand(ev(' '), false)).toBeNull();
   expect(keyCommand(ev('Enter'), false)).toBeNull();
   expect(keyCommand(ev('Delete'), false)).toEqual({ name: 'delete' });
+});
+
+test('Windows: Browser-Tasten von WebView2 werden geschluckt (Neu laden verwirft das Dokument)', () => {
+  for (const k of [key('F5'), key('F5', { ctrlKey: true }), key('F3'), key('F7'), key('BrowserRefresh')]) expect(browserKey(k, false)).toBe(true);
+  for (const c of ['r', 'R', 'f', 'g', 'p', 's']) expect(browserKey(key(c, { ctrlKey: true, shiftKey: c === 'R' }), false)).toBe(true);
+  for (const k of [key('c', { ctrlKey: true }), key('v', { ctrlKey: true }), key('r'), key('F8')]) expect(browserKey(k, false)).toBe(false);
+  expect(browserKey(key('r', { metaKey: true }), true)).toBe(false);
+  expect(browserKey(key('F5'), true)).toBe(false);
+});
+
+test('Windows: AltGr-Zeichen (Strg+Alt) lösen keine Befehle aus, Strg+Alt+Buchstabe schon', () => {
+  for (const c of ['[', ']', '{', '}', '@', '€', '\\'])
+    expect(commandFor(key(c, { ctrlKey: true, altKey: true }), false), c).toBeNull();
+  expect(commandFor(key('[', { ctrlKey: true }), false)).toEqual({ name: 'backward' });
+  expect(commandFor(key('u', { ctrlKey: true, altKey: true, code: 'KeyU' }), false)).toEqual({ name: 'shaping', op: 'weld' });
+  expect(commandFor(key('5', { metaKey: true, altKey: true }), true)).toBeNull();
+  expect(commandFor(key('[', { metaKey: true, altKey: true }), true)).toEqual({ name: 'backward' });
+});
+
+test('Kontextmenü des Browsers nur in Textfeldern', () => {
+  const el = (tagName: string, type = 'text') => ({ tagName, type, isContentEditable: false });
+  expect(nativeMenu(el('INPUT'))).toBe(true);
+  expect(nativeMenu(el('TEXTAREA'))).toBe(true);
+  expect(nativeMenu(el('INPUT', 'checkbox'))).toBe(false);
+  expect(nativeMenu(el('CANVAS'))).toBe(false);
+  expect(nativeMenu({ tagName: 'DIV', isContentEditable: true })).toBe(true);
+  expect(nativeMenu(null)).toBe(false);
 });

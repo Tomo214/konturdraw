@@ -36,7 +36,7 @@
   import { editCommand, pickToggle, viewCommand } from './commands';
   import { enabledFor } from './menu-enabled';
   import { PageState } from './page-state.svelte';
-  import { keyCommand, type Command, type Tool as ToolName } from './shortcuts';
+  import { browserKey, keyCommand, nativeMenu, type Command, type Tool as ToolName } from './shortcuts';
   import { describeSelection } from './status';
   import { StyleState } from './style-state.svelte';
   import { TextState } from './text-state.svelte';
@@ -241,6 +241,7 @@
   const onKey = (e: KeyboardEvent) => {
     const cmd = keyCommand(e, isMac);
     if (cmd) (e.preventDefault(), exec(cmd));
+    else if (browserKey(e, isMac)) e.preventDefault();
   };
 
   $effect(() => {
@@ -255,7 +256,7 @@
   });
 </script>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} oncontextmenu={(e) => nativeMenu(e.target as HTMLInputElement | null) || e.preventDefault()} />
 
 <main>
   <div style="grid-area: menu"><MenuBar {isMac} checked={view.checked} {enabled} oncommand={exec} /></div>
