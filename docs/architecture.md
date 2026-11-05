@@ -77,7 +77,7 @@ Keine GPL/AGPL in ausgelieferter Software. Prüfung automatisch per `cargo-deny`
 | Text: Schriften finden, formen, Konturen | fontdb, harfrust, skrifa (über usvg) | MIT (/Apache) | Wissen |
 | ICC-Farbmanagement | lcms2 (Little CMS) | MIT | Wissen |
 | Eigenes Dateiformat | zip, serde_json | MIT/Apache-2.0 | Wissen |
-| CDR lesen (Hilfsprozess) | libcdr 0.1.9, librevenge 0.0.6 (statisch; Quellen vom LibreOffice-Spiegel, SHA-256 aus dessen download.lst); boost-Header; lcms2 aus lcms2-sys; ICU + zlib vom System | MPL-2.0 (librevenge MPL/LGPL, gewählt MPL); boost BSL-1.0 | **gebaut** auf macOS (nur System-dylibs); Windows offen |
+| CDR lesen (Hilfsprozess) | libcdr 0.1.9, librevenge 0.0.6 (statisch; Quellen vom LibreOffice-Spiegel, SHA-256 aus dessen download.lst); boost-Header; macOS: lcms2 aus lcms2-sys, ICU + zlib vom System; Windows (MSYS2 UCRT64): lcms2 + zlib + MinGW-Laufzeit statisch, ICU = `icu.dll` von Windows | MPL-2.0 (librevenge MPL/LGPL, gewählt MPL); boost BSL-1.0; lcms2 MIT; zlib-Lizenz; libstdc++/libgcc mit GCC Runtime Library Exception (keine GPL-Pflicht für das Programm) | **gebaut** auf macOS (nur System-dylibs) und Windows (nur System-DLLs, CI-Job `cdr`); per `bundle.externalBin` neben der App |
 
 „Wissen“ = aus Erfahrung, wird in 3a durch `cargo-deny` hart geprüft.
 MPL-2.0 (libcdr): ausgelieferte Binärdatei → Quelltext der MPL-Dateien muss zugänglich sein. Kein Problem, auch nicht beim Verkauf.
