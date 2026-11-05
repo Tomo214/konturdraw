@@ -30,7 +30,7 @@ Prüft, was nur an einem echten Windows geht. Dauer ca. 30 Minuten. Bei einem Fe
 
 ## Schon automatisch belegt (CI, jeder Push)
 
-- Die fertige App startet unter Windows, die Oberfläche steht (Rauchtest per tauri-driver, Bildschirmfoto als Artefakt `rauchtest-bild`).
+- Die fertige App startet unter Windows, die Oberfläche steht (Rauchtest per Edge-WebDriver, Bildschirmfoto als Artefakt `rauchtest-bild`).
 - F5 und Strg+R laden nicht neu, sofern die Gegenprobe im Rauchtest „scharf“ meldet.
 - Die Druckansicht öffnet auch bei Pfaden mit `&` oder `^`, etwa bei einem Benutzernamen „Max&Moritz“.
 - Der .cdr-Import funktioniert mit einer Testdatei, auch bei einem Pfad mit „Ω“.

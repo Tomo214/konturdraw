@@ -1,19 +1,19 @@
-// Rauchtest der fertigen Windows-App über tauri-driver (WebDriver), Phase 6d: App startet, Oberfläche steht,
+// Rauchtest der fertigen Windows-App über Edge-WebDriver (wie tauri-driver, nur ohne Zwischenstück), Phase 6d: App startet, Oberfläche steht,
 // Bildschirmfoto als Beleg; F5 und Strg+R laden die Seite nicht neu (das Dokument wäre sonst weg).
 // Gegenprobe mit abgeschaltetem preventDefault zeigt, ob WebDriver-Tasten die WebView2-Browsertasten überhaupt erreichen.
-// Nur Windows. Aufruf: node tests/e2e/windows-smoke.mjs <konturwerk.exe> <msedgedriver.exe> <bild.png>
+// Nur Windows. Aufruf: node tests/e2e/windows-smoke.mjs <konturwerk.exe> <msedgedriver.exe> <bild.png> <treiber.log>
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const [app, edgeDriver, shot] = process.argv.slice(2);
+const [app, edgeDriver, shot, log] = process.argv.slice(2);
 const base = 'http://127.0.0.1:4444';
 const ELEMENT = 'element-6066-11e4-a52e-4f735466cecf';
 const F5 = '';
 const CONTROL = '';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const driver = spawn('tauri-driver', ['--native-driver', edgeDriver], { stdio: 'inherit' });
+const driver = spawn(edgeDriver, ['--port=4444', '--verbose', `--log-path=${resolve(log)}`], { stdio: 'inherit' });
 setTimeout(() => {
   console.error('Zeitlimit 180 s überschritten');
   driver.kill();
@@ -79,9 +79,10 @@ async function reloads(keys) {
 }
 
 try {
-  await until('tauri-driver', () => fetch(`${base}/status`).then((r) => r.ok));
+  await until('msedgedriver', () => fetch(`${base}/status`).then((r) => r.ok));
   ({ sessionId: id } = await call('POST', '/session', {
-    capabilities: { alwaysMatch: { 'tauri:options': { application: resolve(app) } } },
+    // so übersetzt tauri-driver seine tauri:options unter Windows
+    capabilities: { alwaysMatch: { browserName: 'webview2', 'ms:edgeChromium': true, 'ms:edgeOptions': { binary: resolve(app) } } },
   }));
   await until('Oberfläche (Zeichenfläche + Menüleiste)', ready);
   console.log('Fenstertitel:', await s('GET', '/title'));
