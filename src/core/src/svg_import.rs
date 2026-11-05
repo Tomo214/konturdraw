@@ -5,6 +5,8 @@ use crate::scene::{
     NodeType, PathPoint, Point, Scene, Stroke, Subpath, IDENTITY,
 };
 use crate::{raster, Images};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use usvg::tiny_skia_path::{self as tsp, PathSegment};
 
 const K: f64 = 25.4 / 96.0; // CSS-px → mm
@@ -40,9 +42,28 @@ fn pt(p: tsp::Point) -> Point {
 }
 
 pub fn import(data: &[u8]) -> Result<Imported, String> {
+    // Unlesbare eingebettete Bilder lässt usvg stumm fallen → zählen und melden.
+    let lost = Arc::new(AtomicUsize::new(0));
+    let seen = lost.clone();
+    let default = usvg::ImageHrefResolver::default_data_resolver();
     // Text wird zu Kurven
     let opt = usvg::Options {
         fontdb: crate::text::system_fonts(),
+        image_href_resolver: usvg::ImageHrefResolver {
+            // libcdr liefert Bitmaps aus .cdr-Dateien als BMP, usvg kennt kein BMP → hier zu PNG.
+            resolve_data: Box::new(move |mime, data, opt| {
+                let kind = if mime == "image/bmp" {
+                    bmp_png(&data).map(|p| usvg::ImageKind::PNG(Arc::new(p)))
+                } else {
+                    default(mime, data, opt)
+                };
+                if kind.is_none() {
+                    seen.fetch_add(1, Ordering::Relaxed);
+                }
+                kind
+            }),
+            ..Default::default()
+        },
         ..Default::default()
     };
     let tree = usvg::Tree::from_data(data, &opt).map_err(|e| format!("SVG nicht lesbar: {e}"))?;
@@ -53,6 +74,9 @@ pub fn import(data: &[u8]) -> Result<Imported, String> {
     // Eine Gruppe fürs ganze SVG; viewBox steckt in usvg schon in einer Kind-Gruppe.
     let top = mul(&[K, 0.0, 0.0, K, 0.0, 0.0], &mat(tree.root().transform()));
     let children = group(&mut cx, tree.root(), &top);
+    if lost.load(Ordering::Relaxed) > 0 {
+        cx.warn("Eingebettetes Bild in unbekanntem Format übersprungen.");
+    }
     let size = tree.size();
     let scene = Scene {
         width: size.width() as f64 * K,
@@ -158,6 +182,14 @@ fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat) -> Option<Item> {
         stroke,
         fill_rule,
     })
+}
+
+fn bmp_png(data: &[u8]) -> Option<Vec<u8>> {
+    let img = image::load_from_memory_with_format(data, image::ImageFormat::Bmp).ok()?;
+    let mut out = Vec::new();
+    img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .ok()?;
+    Some(out)
 }
 
 /// Eingebettetes PNG/JPG; Platz und Größe stecken in der Gruppenmatrix davor.

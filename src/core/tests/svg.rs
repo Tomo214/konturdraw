@@ -255,6 +255,67 @@ fn eingebettetes_png_wird_bild() {
     );
 }
 
+/// BMP wie libcdr Bitmaps aus .cdr-Dateien liefert: 32 bit, BI_RGB, Zeilen von unten, viertes Byte 0.
+fn bmp32(w: u32, h: u32, rgb: impl Fn(u32, u32) -> [u8; 3]) -> Vec<u8> {
+    let mut px = Vec::new();
+    for y in (0..h).rev() {
+        for x in 0..w {
+            let [r, g, b] = rgb(x, y);
+            px.extend([b, g, r, 0]);
+        }
+    }
+    let mut v = b"BM".to_vec();
+    for n in [54 + px.len() as u32, 0, 54, 40, w, h] {
+        v.extend(n.to_le_bytes());
+    }
+    v.extend(1u16.to_le_bytes());
+    v.extend(32u16.to_le_bytes());
+    for n in [0, px.len() as u32, 2835, 2835, 0, 0] {
+        v.extend(n.to_le_bytes());
+    }
+    v.extend(px);
+    v
+}
+
+#[test]
+fn eingebettetes_bmp_aus_cdr_wird_bild() {
+    let data = bmp32(2, 1, |x, _| if x == 0 { [255, 0, 0] } else { [0, 0, 255] });
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    let imp = import(&format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><image width="20" height="10" href="data:image/bmp;base64,{b64}"/></svg>"#
+    ));
+    let imgs: Vec<_> = leaves(&imp.scene.items)
+        .into_iter()
+        .filter_map(|(_, it)| match it {
+            Item::Image { image, .. } => Some(image.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(imgs.len(), 1, "{:?}", imp.warnings);
+    let px = image::load_from_memory(&imp.images[&imgs[0]])
+        .unwrap()
+        .to_rgba8();
+    assert_eq!(px.dimensions(), (2, 1));
+    assert_eq!(
+        px.get_pixel(0, 0).0,
+        [255, 0, 0, 255],
+        "deckend, nicht durchsichtig"
+    );
+    assert_eq!(px.get_pixel(1, 0).0, [0, 0, 255, 255]);
+}
+
+#[test]
+fn unlesbares_bild_wird_gemeldet() {
+    let imp = import(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><image width="10" height="10" href="data:image/tiff;base64,AAAA"/></svg>"#,
+    );
+    assert!(
+        imp.warnings.join(" ").contains("Bild"),
+        "{:?}",
+        imp.warnings
+    );
+}
+
 #[test]
 fn nicht_unterstuetztes_wird_gemeldet() {
     let imp = import(

@@ -52,7 +52,10 @@ fn pages(out: &[u8]) -> Result<Imported, String> {
 fn failure(code: Option<i32>) -> String {
     match code {
         Some(2) => "Keine lesbare CorelDRAW-Datei (Format oder Version unbekannt).".into(),
-        Some(3) => "CorelDRAW-Datei beschädigt oder nicht lesbar.".into(),
+        Some(3) => {
+            "CorelDRAW-Datei beschädigt oder zu neu – in CorelDRAW als ältere Version speichern."
+                .into()
+        }
         Some(c) if c >= 0 => format!("CDR-Import fehlgeschlagen (Code {c})."),
         _ => "CDR-Import abgebrochen (Absturz beim Lesen der Datei).".into(),
     }
@@ -115,6 +118,8 @@ mod tests {
     fn fehlercodes_verstaendlich() {
         assert!(failure(Some(2)).contains("Version"));
         assert!(failure(Some(3)).contains("beschädigt"));
+        // gültige Datei aus CorelDRAW 2024, die libcdr nicht lesen kann → Ausweg nennen
+        assert!(failure(Some(3)).contains("ältere Version"));
         assert!(failure(None).contains("Absturz"));
         // Windows meldet einen Absturz als NTSTATUS-Code (Zugriffsverletzung 0xC0000005), nicht als Signal.
         assert!(failure(Some(0xC000_0005_u32 as i32)).contains("Absturz"));
