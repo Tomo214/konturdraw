@@ -4,7 +4,7 @@
 // Steuerung direkt über das DevTools-Protokoll der WebView2 (fester Debug-Port per Umgebungsvariable): msedgedriver
 // sucht die Port-Datei im Standard-Datenordner und findet sie bei Tauri (eigener Datenordner) nicht.
 // Nur Windows. Aufruf: node tests/e2e/windows-smoke.mjs <konturwerk.exe> <bild.png>
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -14,6 +14,16 @@ const F5 = { key: 'F5', code: 'F5', windowsVirtualKeyCode: 116 };
 const R = { key: 'r', code: 'KeyR', windowsVirtualKeyCode: 82 };
 const CTRL = 2;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** PowerShell-Befund (nur Windows), Befehl Base64-kodiert → keine Anführungszeichen-Probleme. */
+const ps = (cmd) =>
+  process.platform !== 'win32'
+    ? ''
+    : spawnSync('powershell', ['-NoProfile', '-EncodedCommand', Buffer.from(cmd, 'utf16le').toString('base64')], {
+        encoding: 'utf8',
+      }).stdout?.trim();
+if (process.platform === 'win32')
+  console.log('WebView2-Prozesse vor dem Start:', ps('(Get-Process msedgewebview2 -ErrorAction SilentlyContinue).Count'));
 
 let done = false;
 const child = spawn(resolve(app), [], {
@@ -58,6 +68,11 @@ try {
 } catch (e) {
   const data = join(process.env.LOCALAPPDATA ?? '', 'de.ttbuilds.konturwerk', 'EBWebView');
   console.error(`${e.message}; WebView2-Datenordner ${existsSync(data) ? 'vorhanden' : 'fehlt'} (${data})`);
+  // Befund: Hat der Browserprozess das Port-Argument bekommen, und lauscht er überhaupt?
+  console.error(
+    ps(`Get-CimInstance Win32_Process -Filter "Name='konturwerk.exe' or Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -notmatch '--type=' } | ForEach-Object { "$($_.ProcessId) $($_.Name): $($_.CommandLine)" }
+Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -in (Get-Process msedgewebview2 -ErrorAction SilentlyContinue).Id } | ForEach-Object { "lauscht: $($_.LocalAddress):$($_.LocalPort) (PID $($_.OwningProcess))" }`),
+  );
   child.kill();
   throw e;
 }
