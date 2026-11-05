@@ -66,7 +66,8 @@ Statusleiste          26 px   StatusBar (Position mm · Objektinfo · Hinweis ·
 - **Drahtmodell** (Shift+F9): nur 1-px-Umrisse, Weiß per `difference` → schwarz auf der Seite, hell auf der Arbeitsfläche; Bilder als Umriss.
 - **Menü Ansicht**: Drahtmodell oben; nach Hilfslinien „Fangen aus“ (Alt+Q) und Untermenü „Fangen an“ (Objekte Alt+Z, Dokumentraster Alt+Y, Hilfslinien).
 - **Menüleiste** (`MenuBar`, Tastatur `menu-nav.ts`): Merkbuchstaben unterstrichen nur bei Tastaturbedienung (Alt antippen / Alt + Buchstabe); markierter Eintrag `--hover`; ausgegraut 45 % Deckkraft, per Tastatur markierbar, nicht ausführbar (Regeln `menu-enabled.ts`).
-- **Mausrad** (`wheel.ts`): ohne Taste Zoom um den Zeiger, Alt senkrecht, Umschalt waagerecht verschieben, Kipprad/Trackpad seitlich verschieben.
+- **Mausrad** (`wheel.ts`): ohne Taste Zoom um den Zeiger, Alt senkrecht, Umschalt waagerecht verschieben, Kipprad seitlich verschieben.
+- **Trackpad** (6a, Timon 05.11.): Zwei-Finger-Wischen verschiebt in beide Richtungen, Kneifen zoomt (Chromium: Strg+Rad, WebKit: `gesture*`). Erkennung je Zug am ersten Ereignis: Raste = WebKit-Vielfaches von 4,000244 oder `wheelDeltaY` in 120er-Schritten, alles Glatte = Trackpad. Glatt scrollende Mäuse (Magic Mouse, Logitech-Glättung) gelten als Trackpad.
 - **Griffe**: 6 px außerhalb der Auswahlecken (`HANDLE_GAP`), Innenfläche verschiebt. Nach dem Zeichnen mit Rechteck & Co. bleiben die Griffe sichtbar (dort nur Anzeige).
 - **Radierer live**: Ergebnis schon beim Ziehen (immer vom Stand beim Drücken aus gerechnet); noch nicht gerechneter Rest der Spur als Streifen in 35 % Akzent, Spitze als 1-px-Umriss am Zeiger; Loslassen = ein Rückgängig-Schritt. Fängt nie (freie Spur, `noSnap`), wie Hand und Zoom.
 - **Mauszeiger** (`toolCursor`): Zeichenwerkzeuge Fadenkreuz, Hand greifen, Zoom Lupe, Pipette eigener Zeiger aus dem Werkzeug-Symbol mit weißem Rand, Hotspot an der Spitze.
