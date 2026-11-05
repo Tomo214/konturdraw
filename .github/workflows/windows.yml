@@ -88,10 +88,8 @@ jobs:
           $l = 7z l (Get-Item target/release/bundle/nsis/*.exe).FullName
           if (-not ($l | Select-String 'kw-cdr\.exe')) { $l; exit 1 }
       # Phase 6d: fertige App wirklich starten und über das DevTools-Protokoll der WebView2 steuern
-      # Blockiert nicht, bis der Debug-Port unter Windows nachweislich aufgeht (Befund steht im Log)
       - name: Rauchtest der fertigen App
         if: ${{ !cancelled() }}
-        continue-on-error: true
         run: |
           $wv = Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue
           "WebView2-Laufzeit: $($wv.pv)"

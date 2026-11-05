@@ -1,8 +1,9 @@
 // Rauchtest der fertigen Windows-App, Phase 6d: App startet, Oberfläche steht, Bildschirmfoto als Beleg;
 // F5 und Strg+R laden die Seite nicht neu (das Dokument wäre sonst weg). Gegenprobe mit abgeschaltetem preventDefault
 // zeigt, ob eingespielte Tasten die WebView2-Browsertasten überhaupt erreichen.
-// Steuerung direkt über das DevTools-Protokoll der WebView2 (fester Debug-Port per Umgebungsvariable): msedgedriver
-// sucht die Port-Datei im Standard-Datenordner und findet sie bei Tauri (eigener Datenordner) nicht.
+// Zuerst Start-Check ohne Debug-Port: App läuft, ihre WebView2 ist gestartet. Danach Steuerung über das DevTools-Protokoll:
+// Die App öffnet den Port bei KONTURWERK_DEBUG_PORT selbst (main.rs). Weder msedgedriver noch
+// WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS brachten den Port in der CI an die WebView2.
 // Nur Windows. Aufruf: node tests/e2e/windows-smoke.mjs <konturwerk.exe> <bild.png>
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
@@ -27,7 +28,7 @@ if (process.platform === 'win32')
 
 let done = false;
 const child = spawn(resolve(app), [], {
-  env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}` },
+  env: { ...process.env, KONTURWERK_DEBUG_PORT: String(PORT) },
   stdio: ['ignore', 'inherit', 'inherit'],
 });
 child.on('exit', (code) => {
@@ -54,6 +55,16 @@ async function until(what, check, ms = 30_000) {
   }
 }
 
+if (process.platform === 'win32') {
+  const browser = `Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -match 'konturwerk' -and $_.CommandLine -notmatch '--type=' }`;
+  await until('Start-Check: WebView2 der App läuft', () => Number(ps(`@(${browser}).Count`)) > 0, 60_000).catch((e) => {
+    done = true;
+    child.kill();
+    throw e;
+  });
+  console.log('Start-Check: App und WebView2 laufen');
+}
+
 let target;
 try {
   await until(
@@ -73,6 +84,7 @@ try {
     ps(`Get-CimInstance Win32_Process -Filter "Name='konturwerk.exe' or Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -notmatch '--type=' } | ForEach-Object { "$($_.ProcessId) $($_.Name): $($_.CommandLine)" }
 Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -in (Get-Process msedgewebview2 -ErrorAction SilentlyContinue).Id } | ForEach-Object { "lauscht: $($_.LocalAddress):$($_.LocalPort) (PID $($_.OwningProcess))" }`),
   );
+  done = true;
   child.kill();
   throw e;
 }
