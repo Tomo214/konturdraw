@@ -1,0 +1,52 @@
+# Windows-CI (Phase 6a): Tests, Typprüfung, Rust-Tests und Installer auf windows-latest; Lizenzen auf Linux (günstiger).
+name: windows
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**.md']
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lizenzen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: npm ci
+      # Ab hier laufen alle Schritte, auch wenn einer davor scheitert: ein Lauf zeigt alle Windows-Befunde.
+      - name: vitest
+        if: ${{ !cancelled() }}
+        run: npx vitest run --reporter=dot
+      - name: svelte-check
+        if: ${{ !cancelled() }}
+        run: npm run -s check
+      - name: Oberfläche bauen (dist für Rust-Tests)
+        if: ${{ !cancelled() }}
+        run: npm run -s build
+      - name: cargo test
+        if: ${{ !cancelled() }}
+        run: cargo test --workspace
+      - name: Installer bauen
+        if: ${{ !cancelled() }}
+        run: npx tauri build
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: konturwerk-windows
+          path: |
+            target/release/bundle/msi/*.msi
+            target/release/bundle/nsis/*.exe
+          retention-days: 14

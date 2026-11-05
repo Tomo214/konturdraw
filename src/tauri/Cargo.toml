@@ -1,0 +1,18 @@
+[package]
+name = "konturwerk"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+base64 = "0.23.1"
+kw-core = { path = "../core" }
+serde = { version = "1.0.229", features = ["derive"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2.7.3"
+
+[dev-dependencies]
+serde_json = "1.0.154"

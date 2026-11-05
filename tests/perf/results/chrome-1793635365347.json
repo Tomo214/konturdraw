@@ -1,0 +1,57 @@
+{
+  "engine": "chrome",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+  "visibility": "visible",
+  "dpr": 2,
+  "view": [
+    1280,
+    800
+  ],
+  "objects": 10001,
+  "openMs": 93.8,
+  "open": {
+    "parse": 36.5,
+    "scene": 22.4,
+    "draw": 30.2,
+    "toFrame": 4.7
+  },
+  "gesture": {
+    "drawMs": {
+      "p50": 0,
+      "p95": 0.1,
+      "max": 0.2
+    },
+    "frameMs": {
+      "p50": 16.7,
+      "p95": 17.1,
+      "max": 17.7
+    },
+    "droppedPct": 0
+  },
+  "full": {
+    "drawMs": {
+      "p50": 9.9,
+      "p95": 11.6,
+      "max": 12.1
+    },
+    "frameMs": {
+      "p50": 16.7,
+      "p95": 16.9,
+      "max": 17.6
+    },
+    "droppedPct": 0
+  },
+  "clickMs": {
+    "p50": 0,
+    "p95": 0.1,
+    "max": 0.3
+  },
+  "probeHit": true,
+  "emptyHit": true,
+  "gate": {
+    "frame": true,
+    "click": true,
+    "open": true,
+    "hits": true
+  }
+}

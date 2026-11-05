@@ -1,0 +1,280 @@
+/* Konturwerk-Oberfläche: Graphit, ein Akzent nur für aktiv/Auswahl/Fokus. Die weiße Seite bleibt das hellste Element.
+   Kontrast geprüft: --text auf --bar 9,7:1 · --text-dim auf --bar 5,0:1 · --accent-ink auf --accent 6,1:1. */
+:root {
+  color-scheme: dark;
+  --pasteboard: #2b2b30;
+  --bar: #202024;
+  --panel: #25252a;
+  --control: #2f2f35;
+  --hover: #38383f;
+  --pressed: #42424a;
+  --line: #3a3a42;
+  --line-strong: #50505a;
+  --text: #c8c8cc;
+  --text-strong: #ededf0;
+  --text-dim: #8e8e96;
+  --accent: #ff6a3d; /* = ACCENT in overlay.ts */
+  --accent-hover: #ff7d55;
+  --accent-ink: #1a1a1d;
+  --accent-soft: rgb(255 106 61 / 0.16);
+  --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius: 4px;
+  --fast: 120ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--pasteboard);
+  color: var(--text);
+  font: 12px/1.4 var(--font);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+/* Bedienelemente: gleiche Höhe, Rückmeldung schon beim Drücken. */
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+  background: var(--control);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  min-height: 24px;
+}
+button {
+  padding: 0 8px;
+  cursor: default;
+  transition: background-color var(--fast) var(--ease-out);
+}
+button:hover:not(:disabled) {
+  background: var(--hover);
+}
+button:active:not(:disabled) {
+  background: var(--pressed);
+  transition-duration: 0ms;
+}
+button:disabled,
+select:disabled,
+input:disabled {
+  opacity: 0.45;
+}
+input[type='number'],
+input[type='text'] {
+  padding: 0 4px;
+  width: 60px;
+  text-align: right;
+  user-select: text;
+}
+select {
+  padding: 0 4px;
+}
+input[type='checkbox'] {
+  min-height: 0;
+  accent-color: var(--accent);
+}
+input[type='range'] {
+  accent-color: var(--accent);
+  background: none;
+  border: none;
+}
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Andockfenster-Formular: Beschriftung links, Feld rechts. label.row hält beides zusammen,
+   ein Klick auf die Beschriftung fokussiert das Feld. */
+.form {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 8px;
+}
+.form > label.row {
+  display: contents;
+}
+.form > .wide,
+.form > h3,
+.form > hr {
+  grid-column: 1 / -1;
+}
+.form h3 {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.form hr {
+  width: 100%;
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.form select {
+  width: 100%;
+  min-width: 0;
+}
+.unit,
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.unit input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+.hint {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+/* Schmale, dunkle Bildlaufleisten (WebView2 und WKWebView). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  border-radius: 5px;
+  background-clip: padding-box;
+}
+
+/* Kurzinfo mit Tastenkürzel: data-tip, Richtung über data-tip-side (right/left/below). */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 50;
+  padding: 3px 7px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-strong);
+  background: #111114;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease-out) 0ms;
+}
+[data-tip]:hover::after {
+  opacity: 1;
+  transition-delay: 450ms;
+}
+[data-tip-side='right']::after {
+  left: calc(100% + 8px);
+  top: 50%;
+  translate: 0 -50%;
+}
+[data-tip-side='left']::after {
+  right: calc(100% + 8px);
+  top: 50%;
+  translate: 0 -50%;
+}
+[data-tip-side='below']::after {
+  top: calc(100% + 6px);
+  left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/* Dialoge (Exportieren, Drucken, Dokumentoptionen): Kopf mit Titel und Schließen, Feldraster, Knöpfe rechts. */
+dialog {
+  width: 380px;
+  padding: 0;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+}
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.35);
+}
+dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 6px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+dialog h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+dialog .close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  padding: 0;
+  background: none;
+  border-color: transparent;
+}
+dialog .fields {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 16px 14px 4px;
+}
+dialog .fields > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 14px 14px;
+}
+dialog footer button {
+  min-width: 92px;
+  min-height: 28px;
+}
+dialog .primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+dialog .primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}

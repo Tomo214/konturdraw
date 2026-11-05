@@ -1,0 +1,21 @@
+# Lizenz-Gate: nur Lizenzen, die auch beim Verkauf unkritisch sind (architecture.md §4).
+[graph]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
+
+[licenses]
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+]
+confidence-threshold = 0.93
+
+[licenses.private]
+ignore = true

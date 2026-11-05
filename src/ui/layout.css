@@ -1,0 +1,20 @@
+/* Hauptfenster-Raster (App.svelte), Aufbau wie Vorbild. */
+main {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template:
+    'menu menu menu menu' auto
+    'standard standard standard standard' auto
+    'property property property property' auto
+    'tools stage dock palette' minmax(0, 1fr)
+    'tools pages dock palette' auto
+    'status status status status' auto
+    / auto minmax(0, 1fr) auto auto;
+}
+/* Seitenleisten füllen ihre Zelle; nur der Inhalt rollt. */
+.cell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}

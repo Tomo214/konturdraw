@@ -1,0 +1,121 @@
+<script lang="ts">
+  // Andockfenster rechts (wie Vorbild): Inhalt links, senkrechte Reiter am Rand. Alle Bereiche bleiben geladen,
+  // weil Kürzel (Nachzeichnen, Formen) und die Statuszeile auf sie zugreifen.
+  import type { Snippet } from 'svelte';
+  import Icon from './Icon.svelte';
+  import type { DockerId } from './shortcuts';
+
+  let {
+    open = $bindable(),
+    objects,
+    properties,
+    align,
+    text,
+    trace,
+    color,
+  }: { open: DockerId | null; objects: Snippet; properties: Snippet; align: Snippet; text: Snippet; trace: Snippet; color: Snippet } = $props();
+
+  const TABS: readonly [DockerId, string][] = [
+    ['objects', 'Objekte'],
+    ['properties', 'Eigenschaften'],
+    ['align', 'Ausrichten'],
+    ['text', 'Text'],
+    ['trace', 'Nachzeichnen'],
+    ['color', 'Farbverwaltung'],
+  ];
+  const body = $derived({ objects, properties, align, text, trace, color });
+  const title = $derived(open === 'align' ? 'Ausrichten und Verteilen' : TABS.find(([id]) => id === open)?.[1]);
+</script>
+
+<aside class="dock" aria-label="Andockfenster">
+  <div class="body" hidden={!open}>
+    <header>
+      <h2>{title}</h2>
+      <button class="close" aria-label="Andockfenster schließen" onpointerdown={(e) => e.preventDefault()} onclick={() => (open = null)}
+        ><Icon name="close" size={16} /></button
+      >
+    </header>
+    {#each TABS as [id] (id)}
+      <section class:flush={id === 'objects'} hidden={open !== id}>{@render body[id]()}</section>
+    {/each}
+  </div>
+  <div class="tabs" role="tablist" aria-orientation="vertical">
+    {#each TABS as [id, label] (id)}
+      <button
+        role="tab"
+        class:on={open === id}
+        aria-selected={open === id}
+        onpointerdown={(e) => e.preventDefault()}
+        onclick={() => (open = open === id ? null : id)}>{label}</button
+      >
+    {/each}
+  </div>
+</aside>
+
+<style>
+  .dock {
+    display: flex;
+    min-height: 0;
+    background: var(--bar);
+    border-left: 1px solid var(--line);
+  }
+  .body {
+    display: flex;
+    flex-direction: column;
+    width: 272px;
+    min-height: 0;
+    background: var(--panel);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    padding: 0 4px 0 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  h2 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+  .close {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    padding: 0;
+    background: none;
+    border-color: transparent;
+  }
+  section {
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: auto;
+  }
+  /* Objekt-Manager rollt selbst (nur sichtbare Zeilen). */
+  section.flush {
+    padding: 0;
+    overflow: hidden;
+  }
+  .tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 2px;
+  }
+  .tabs button {
+    writing-mode: vertical-rl;
+    min-height: 0;
+    padding: 10px 3px;
+    background: none;
+    border-color: transparent;
+  }
+  .tabs button.on {
+    color: var(--text-strong);
+    background: var(--control);
+    border-color: var(--line);
+    box-shadow: inset -2px 0 0 var(--accent);
+  }
+</style>

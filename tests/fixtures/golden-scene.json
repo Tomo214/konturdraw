@@ -1,0 +1,1157 @@
+{
+ "scene": {
+  "width": 200,
+  "height": 140,
+  "items": [
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 10,
+        "y": 10,
+        "type": "corner"
+       },
+       {
+        "x": 50,
+        "y": 10,
+        "type": "corner"
+       },
+       {
+        "x": 50,
+        "y": 40,
+        "type": "corner"
+       },
+       {
+        "x": 10,
+        "y": 40,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      1,
+      0,
+      0
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 70,
+        "y": 10,
+        "type": "smooth",
+        "handleIn": {
+         "x": 64.47715250169206,
+         "y": 10
+        }
+       },
+       {
+        "x": 90,
+        "y": 10,
+        "type": "smooth",
+        "handleOut": {
+         "x": 95.52284749830794,
+         "y": 10
+        }
+       },
+       {
+        "x": 100,
+        "y": 20,
+        "type": "smooth",
+        "handleIn": {
+         "x": 100,
+         "y": 14.477152501692066
+        }
+       },
+       {
+        "x": 100,
+        "y": 30,
+        "type": "smooth",
+        "handleOut": {
+         "x": 100,
+         "y": 35.52284749830793
+        }
+       },
+       {
+        "x": 90,
+        "y": 40,
+        "type": "smooth",
+        "handleIn": {
+         "x": 95.52284749830794,
+         "y": 40
+        }
+       },
+       {
+        "x": 70,
+        "y": 40,
+        "type": "smooth",
+        "handleOut": {
+         "x": 64.47715250169206,
+         "y": 40
+        }
+       },
+       {
+        "x": 60,
+        "y": 30,
+        "type": "smooth",
+        "handleIn": {
+         "x": 60,
+         "y": 35.52284749830793
+        }
+       },
+       {
+        "x": 60,
+        "y": 20,
+        "type": "smooth",
+        "handleOut": {
+         "x": 60,
+         "y": 14.477152501692066
+        }
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      0,
+      0,
+      1
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 140,
+        "y": 10,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 123.4314575050762,
+         "y": 10
+        },
+        "handleOut": {
+         "x": 156.5685424949238,
+         "y": 10
+        }
+       },
+       {
+        "x": 170,
+        "y": 25,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 170,
+         "y": 16.715728752538098
+        },
+        "handleOut": {
+         "x": 170,
+         "y": 33.2842712474619
+        }
+       },
+       {
+        "x": 140,
+        "y": 40,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 156.5685424949238,
+         "y": 40
+        },
+        "handleOut": {
+         "x": 123.4314575050762,
+         "y": 40
+        }
+       },
+       {
+        "x": 110,
+        "y": 25,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 110,
+         "y": 33.2842712474619
+        },
+        "handleOut": {
+         "x": 110,
+         "y": 16.715728752538098
+        }
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      0,
+      1,
+      0
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 30,
+        "y": 50,
+        "type": "corner"
+       },
+       {
+        "x": 34.70228201833979,
+        "y": 63.52786404500042,
+        "type": "corner"
+       },
+       {
+        "x": 49.02113032590307,
+        "y": 63.819660112501055,
+        "type": "corner"
+       },
+       {
+        "x": 37.60845213036123,
+        "y": 72.47213595499957,
+        "type": "corner"
+       },
+       {
+        "x": 41.75570504584947,
+        "y": 86.18033988749895,
+        "type": "corner"
+       },
+       {
+        "x": 30,
+        "y": 78,
+        "type": "corner"
+       },
+       {
+        "x": 18.24429495415054,
+        "y": 86.18033988749895,
+        "type": "corner"
+       },
+       {
+        "x": 22.39154786963877,
+        "y": 72.47213595499959,
+        "type": "corner"
+       },
+       {
+        "x": 10.978869674096927,
+        "y": 63.819660112501055,
+        "type": "corner"
+       },
+       {
+        "x": 25.297717981660213,
+        "y": 63.52786404500042,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      0.5,
+      0,
+      0.5
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 60,
+        "y": 50,
+        "type": "corner"
+       },
+       {
+        "x": 160,
+        "y": 50,
+        "type": "corner"
+       },
+       {
+        "x": 160,
+        "y": 70,
+        "type": "corner"
+       },
+       {
+        "x": 60,
+        "y": 70,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "kind": "linear",
+     "from": {
+      "x": 60,
+      "y": 60
+     },
+     "to": {
+      "x": 160,
+      "y": 60
+     },
+     "stops": [
+      {
+       "offset": 0,
+       "color": {
+        "model": "rgb",
+        "values": [
+         0,
+         0,
+         0
+        ]
+       }
+      },
+      {
+       "offset": 1,
+       "color": {
+        "model": "rgb",
+        "values": [
+         1,
+         1,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 180,
+        "y": 45,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 171.7157287525381,
+         "y": 45
+        },
+        "handleOut": {
+         "x": 188.2842712474619,
+         "y": 45
+        }
+       },
+       {
+        "x": 195,
+        "y": 60,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 195,
+         "y": 51.7157287525381
+        },
+        "handleOut": {
+         "x": 195,
+         "y": 68.2842712474619
+        }
+       },
+       {
+        "x": 180,
+        "y": 75,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 188.2842712474619,
+         "y": 75
+        },
+        "handleOut": {
+         "x": 171.7157287525381,
+         "y": 75
+        }
+       },
+       {
+        "x": 165,
+        "y": 60,
+        "type": "symmetric",
+        "handleIn": {
+         "x": 165,
+         "y": 68.2842712474619
+        },
+        "handleOut": {
+         "x": 165,
+         "y": 51.7157287525381
+        }
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "kind": "radial",
+     "from": {
+      "x": 180,
+      "y": 60
+     },
+     "to": {
+      "x": 195,
+      "y": 60
+     },
+     "stops": [
+      {
+       "offset": 0,
+       "color": {
+        "model": "rgb",
+        "values": [
+         1,
+         0,
+         0
+        ]
+       }
+      },
+      {
+       "offset": 1,
+       "color": {
+        "model": "rgb",
+        "values": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": false,
+      "nodes": [
+       {
+        "x": 20,
+        "y": 110,
+        "type": "corner"
+       },
+       {
+        "x": 60,
+        "y": 110,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": null,
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 4,
+     "cap": "butt",
+     "join": "miter"
+    }
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": false,
+      "nodes": [
+       {
+        "x": 20,
+        "y": 125,
+        "type": "corner"
+       },
+       {
+        "x": 60,
+        "y": 125,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": null,
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 4,
+     "cap": "round",
+     "join": "miter"
+    }
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     4,
+     0,
+     0,
+     1,
+     80,
+     100
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 0,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 10,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 10,
+        "y": 10,
+        "type": "corner"
+       },
+       {
+        "x": 0,
+        "y": 10,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": null,
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 2,
+     "cap": "butt",
+     "join": "miter"
+    }
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     2,
+     0,
+     0,
+     2,
+     140,
+     95
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 0,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 10,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 10,
+        "y": 10,
+        "type": "corner"
+       },
+       {
+        "x": 0,
+        "y": 10,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": null,
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 2,
+     "cap": "butt",
+     "join": "miter"
+    }
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 166,
+        "y": 85,
+        "type": "corner"
+       },
+       {
+        "x": 186,
+        "y": 85,
+        "type": "corner"
+       },
+       {
+        "x": 186,
+        "y": 105,
+        "type": "corner"
+       },
+       {
+        "x": 166,
+        "y": 105,
+        "type": "corner"
+       }
+      ]
+     },
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 176,
+        "y": 95,
+        "type": "corner"
+       },
+       {
+        "x": 196,
+        "y": 95,
+        "type": "corner"
+       },
+       {
+        "x": 196,
+        "y": 115,
+        "type": "corner"
+       },
+       {
+        "x": 176,
+        "y": 115,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      0,
+      0,
+      1
+     ]
+    },
+    "stroke": null,
+    "fillRule": "evenodd"
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 70,
+        "y": 128,
+        "type": "corner"
+       },
+       {
+        "x": 170,
+        "y": 128,
+        "type": "corner"
+       },
+       {
+        "x": 170,
+        "y": 136,
+        "type": "corner"
+       },
+       {
+        "x": 70,
+        "y": 136,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "kind": "linear",
+     "from": {
+      "x": 70,
+      "y": 132
+     },
+     "to": {
+      "x": 170,
+      "y": 132
+     },
+     "stops": [
+      {
+       "offset": 0,
+       "color": {
+        "model": "rgb",
+        "values": [
+         1,
+         0,
+         0
+        ]
+       }
+      },
+      {
+       "offset": 0.25,
+       "color": {
+        "model": "rgb",
+        "values": [
+         0,
+         1,
+         0
+        ]
+       }
+      },
+      {
+       "offset": 1,
+       "color": {
+        "model": "rgb",
+        "values": [
+         0,
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    "stroke": null
+   }
+  ]
+ },
+ "probes": [
+  [
+   "Rechteck Vollton",
+   30,
+   25,
+   [
+    255,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Rechteck außen",
+   9,
+   25,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Eckenradius: Ecke frei",
+   61,
+   11,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Eckenradius: innen",
+   65,
+   15,
+   [
+    0,
+    0,
+    255
+   ],
+   1
+  ],
+  [
+   "Ellipse innen",
+   168,
+   25,
+   [
+    0,
+    255,
+    0
+   ],
+   1
+  ],
+  [
+   "Ellipse: Box-Ecke frei",
+   112,
+   12,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Stern Mitte",
+   30,
+   70,
+   [
+    128,
+    0,
+    128
+   ],
+   1
+  ],
+  [
+   "Sternspitze",
+   30,
+   54,
+   [
+    128,
+    0,
+    128
+   ],
+   1
+  ],
+  [
+   "Stern zwischen Spitzen frei",
+   37.05,
+   60.29,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Linear 25 %",
+   85,
+   60,
+   [
+    64,
+    64,
+    64
+   ],
+   5
+  ],
+  [
+   "Linear 75 %",
+   135,
+   60,
+   [
+    191,
+    191,
+    191
+   ],
+   5
+  ],
+  [
+   "Radial Mitte",
+   180,
+   60,
+   [
+    255,
+    0,
+    0
+   ],
+   3
+  ],
+  [
+   "Radial halber Radius",
+   187.5,
+   60,
+   [
+    128,
+    0,
+    127
+   ],
+   5
+  ],
+  [
+   "Drei Knoten: Grün bei 25 %",
+   95,
+   132,
+   [
+    0,
+    255,
+    0
+   ],
+   4
+  ],
+  [
+   "Drei Knoten: Rot→Grün halb",
+   82.5,
+   132,
+   [
+    128,
+    128,
+    0
+   ],
+   5
+  ],
+  [
+   "Drei Knoten: Grün→Blau halb",
+   132.5,
+   132,
+   [
+    0,
+    128,
+    128
+   ],
+   5
+  ],
+  [
+   "Linie stumpf: hinter Ende frei",
+   61,
+   110,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Linie rund: hinter Ende Kappe",
+   61,
+   125,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Linie: Kante innen",
+   30,
+   111.5,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Linie: Kante außen",
+   30,
+   112.5,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Gestaucht: linke Kontur",
+   80.5,
+   105,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Gestaucht: links nicht verbreitert",
+   81.5,
+   105,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Gestaucht: obere Kontur",
+   100,
+   100.5,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Gestaucht: oben nicht verbreitert",
+   100,
+   101.5,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Mitskalierend: Kontur 2 mm",
+   140.75,
+   105,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Mitskalierend: außerhalb",
+   141.5,
+   105,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Gerade/ungerade: Teil A",
+   170,
+   90,
+   [
+    0,
+    0,
+    255
+   ],
+   1
+  ],
+  [
+   "Gerade/ungerade: Teil B",
+   192,
+   111,
+   [
+    0,
+    0,
+    255
+   ],
+   1
+  ],
+  [
+   "Gerade/ungerade: Überlappung frei",
+   181,
+   100,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ]
+ ]
+}
