@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { TRACE_DEFAULTS } from '../../src/io/trace';
 import type { Subpath } from '../../src/model/types';
-import { pathData, previewKey, traceStats } from '../../src/ui/trace-preview';
+import { pathData, previewKey, resultColors, traceStats } from '../../src/ui/trace-preview';
 
 const line: Subpath = { closed: false, nodes: [{ x: 0, y: 0, type: 'corner' }, { x: 5, y: 0, type: 'corner' }] };
 const tri: Subpath = { closed: true, nodes: [{ x: 0, y: 0, type: 'corner' }, { x: 5, y: 0, type: 'corner' }, { x: 5, y: 5.12345, type: 'corner' }] };
@@ -35,4 +35,10 @@ test('Vorschau-Schlüssel: Bild + Regler, die das Ergebnis ändern; Linienstärk
   expect(previewKey('h2', TRACE_DEFAULTS)).not.toBe(k);
   for (const change of [{ threshold: 90 }, { corners: 0.8 }, { colors: 3 }, { mode: 'color' as const }, { merge: false }, { background: 'all' as const }, { cutout: true }])
     expect(previewKey('h1', { ...TRACE_DEFAULTS, ...change })).not.toBe(k);
+});
+
+test('Farben des Ergebnisses (7d): je Farbe einmal, unten zuerst; s/w ohne Farben', () => {
+  const pc = (rgb: [number, number, number] | null) => ({ rgb, subpaths: [tri] });
+  expect(resultColors([pc([1, 1, 1]), pc([1, 0, 0]), pc([1, 1, 1]), pc([0, 0, 1])])).toEqual([[1, 1, 1], [1, 0, 0], [0, 0, 1]]);
+  expect(resultColors([pc(null)])).toEqual([]);
 });

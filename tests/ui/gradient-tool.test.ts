@@ -107,3 +107,64 @@ describe('Verlaufswerkzeug: Knoten auf der Linie', () => {
     expect(tool.paint!(RED)).toBe(false);
   });
 });
+
+describe('Verlaufswerkzeug: Knotenfelder in der Eigenschaftsleiste (7b)', () => {
+  it('ohne gewählten Knoten nichts; Klick auf Knoten zeigt Lage, Farbe, Stelle', () => {
+    const { tool } = editor();
+    expect(tool.knot!.get()).toBeNull();
+    click(tool, at(25, 50));
+    expect(tool.knot!.get()).toEqual({ index: 1, count: 3, offset: 0.25, color: GREEN });
+  });
+
+  it('Lage und Farbe setzen: je ein Rückgängig-Schritt, Lage begrenzt zwischen die Nachbarn', () => {
+    const { ed, tool } = editor();
+    click(tool, at(25, 50));
+    tool.knot!.set({ offset: 0.5 });
+    expect(grad(ed).stops.map((s) => s.offset)).toEqual([0, 0.5, 1]);
+    tool.knot!.set({ color: YELLOW });
+    expect(grad(ed).stops[1].color).toEqual(YELLOW);
+    tool.knot!.set({ offset: 2 });
+    expect(grad(ed).stops[1].offset).toBeCloseTo(0.999);
+    ed.history.undo();
+    ed.history.undo();
+    expect(grad(ed).stops[1]).toEqual({ offset: 0.5, color: GREEN });
+  });
+
+  it('Ende: Lage bleibt fest und kostet keinen Schritt, Farbe geht', () => {
+    const { ed, tool } = editor();
+    click(tool, at(40, 50));
+    tool.knot!.set({ offset: 0.5 });
+    expect(grad(ed).stops[2].offset).toBe(1);
+    expect(ed.history.canUndo).toBe(false);
+    tool.knot!.set({ color: YELLOW });
+    expect(grad(ed).stops[2].color).toEqual(YELLOW);
+  });
+});
+
+describe('Verlaufswerkzeug: Palettenfarbe auf die Linie ziehen (7c)', () => {
+  it('auf die Linie: neuer Knoten in dieser Farbe, gewählt; ein Rückgängig-Schritt', () => {
+    const { ed, tool } = editor();
+    expect(tool.drop!(at(32, 50), YELLOW)).toBe(true);
+    const g = grad(ed);
+    expect(g.stops.map((s) => s.offset)).toEqual([0, 0.25, 0.6, 1]);
+    expect(g.stops[2].color).toEqual(YELLOW);
+    expect(tool.knot!.get()).toMatchObject({ index: 2, color: YELLOW });
+    ed.history.undo();
+    expect(grad(ed).stops).toHaveLength(3);
+  });
+
+  it('auf einen Knoten oder ein Ende: färbt ihn um', () => {
+    const { ed, tool } = editor();
+    expect(tool.drop!(at(25, 50), YELLOW)).toBe(true);
+    expect(tool.drop!(at(18, 50), BLUE)).toBe(true); // 2 px vom Anfang, 7 px vom Knoten
+    expect(grad(ed).stops.map((s) => s.color)).toEqual([BLUE, YELLOW, BLUE]);
+  });
+
+  it('daneben oder ohne Verlauf: nicht verbraucht, nichts geändert', () => {
+    const { ed, tool } = editor();
+    expect(tool.drop!(at(32, 70), YELLOW)).toBe(false);
+    ed.selected = new Set();
+    expect(tool.drop!(at(32, 50), YELLOW)).toBe(false);
+    expect(ed.history.canUndo).toBe(false);
+  });
+});

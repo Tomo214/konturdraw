@@ -73,7 +73,7 @@ mod tests {
         };
         let one = run(&B64.encode(&png), &p, 10.0, 10.0).unwrap();
         assert!(one.len() == 1 && one[0].rgb.is_none() && one[0].subpaths.len() == 1);
-        let color = run(&B64.encode(&png), &Params { mode: Mode::Color, ..p }, 10.0, 10.0).unwrap();
+        let color = run(&B64.encode(&png), &Params { mode: Mode::Color, ..p.clone() }, 10.0, 10.0).unwrap();
         assert!(color.len() == 1 && color[0].rgb == Some([0.0, 0.0, 0.0]), "Hintergrund weg, Schwarz bleibt");
         assert!(run("%%%", &p, 10.0, 10.0).unwrap_err().contains("Bild"));
     }

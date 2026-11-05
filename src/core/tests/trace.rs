@@ -141,7 +141,7 @@ fn umriss_rauschfilter_schwellwert_transparenz() {
         &img,
         &Params {
             threshold: 200,
-            ..p
+            ..p.clone()
         },
         200.0,
         100.0,

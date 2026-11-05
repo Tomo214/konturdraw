@@ -3,7 +3,7 @@
   // Ringsum wie Vorbild: Lineale oben und links, Ecke = Nullpunkt; aus einem Lineal ziehen = neue Hilfslinie.
   import { onMount } from 'svelte';
   import { gridOf, guidesOf, originOf } from '../model/guides';
-  import type { Doc, Point } from '../model/types';
+  import type { Color, Doc, Point } from '../model/types';
   import type { Renderer } from '../render/renderer';
   import { fitPage, screenToPage, zoomAt, type Viewport } from '../render/viewport';
   import { RULER, drawCrosshair, drawGrid, drawGuides, drawRuler, drawSnap, type RulerLook } from './decor';
@@ -147,6 +147,18 @@
     if (e.button !== 0) return;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     rulerDrag = { from, at: null };
+  }
+
+  /** Palettenfarbe losgelassen (7c), Fensterkoordinaten: true = über der Zeichenfläche und vom Werkzeug verbraucht. */
+  export function drop(c: Color, cx: number, cy: number): boolean {
+    const r = canvas.getBoundingClientRect();
+    const [sx, sy] = [cx - r.left, cy - r.top];
+    if (!inside({ x: sx, y: sy })) return false;
+    const [x, y] = screenToPage(vp, sx, sy);
+    let used = false;
+    guard(() => (used = !!tool().drop?.({ sx, sy, x, y, shift: false, alt: false }, c)));
+    redraw();
+    return used;
   }
 
   function rulerMove(e: PointerEvent) {

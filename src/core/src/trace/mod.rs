@@ -32,7 +32,7 @@ pub enum Background {
     All,
 }
 
-#[derive(Deserialize, Clone, Copy, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct Params {
     pub mode: Mode,
@@ -51,6 +51,8 @@ pub struct Params {
     pub background: Background,
     /// Farbig: Flächen schneiden sich aus (sonst liegt jede Farbe vollflächig unter den folgenden).
     pub cutout: bool,
+    /// Farbig, Palette bearbeitet (7d): Ergebnisfarbe (0–1, wie in `Piece`) → neue Farbe; gleiche neue Farben = eine.
+    pub recolor: Vec<([f64; 3], [f64; 3])>,
 }
 
 impl Default for Params {
@@ -65,6 +67,7 @@ impl Default for Params {
             merge: true,
             background: Background::Edge,
             cutout: false,
+            recolor: vec![],
         }
     }
 }

@@ -45,6 +45,14 @@ export interface Editor {
   readonly stroke: Stroke | null;
 }
 
+/** Gewählter Verlaufsknoten (7b): Stelle index von count, Lage 0–1 auf der Linie. */
+export interface Knot {
+  index: number;
+  count: number;
+  offset: number;
+  color: Color;
+}
+
 export interface Tool {
   down(p: Pointer): void;
   /** true = neu zeichnen (auch ohne gedrückte Taste, z. B. Gummiband des Stifts). */
@@ -55,6 +63,10 @@ export interface Tool {
   key?(cmd: Command): boolean;
   /** Palettenfarbe (Linksklick): true = vom Werkzeug verbraucht, z. B. für den gewählten Verlaufsknoten. */
   paint?(c: Color): boolean;
+  /** Palettenfarbe auf die Zeichenfläche gezogen (7c): true = verbraucht. */
+  drop?(p: Pointer, c: Color): boolean;
+  /** Gewählter Verlaufsknoten für die Eigenschaftsleiste: get = null ohne Wahl; set = ein Rückgängig-Schritt. */
+  readonly knot?: { get(): Knot | null; set(patch: { offset?: number; color?: Color }): void };
   /** Nach dem Drücken: Objekte/Hilfslinien, an denen beim Ziehen nicht gefangen wird (die bewegten). */
   snapSkip?(): ReadonlySet<string>;
   /** true = Zeiger wird nie gefangen (freie Spur, z. B. Radierer). */

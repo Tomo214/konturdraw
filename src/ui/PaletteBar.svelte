@@ -1,5 +1,7 @@
 <script lang="ts">
   // Palettenleiste (3f) am rechten Rand: Linksklick = Füllung, Rechtsklick = Kontur, erstes Feld = keine.
+  // Farbe ziehen (7c): ab 4 px Weg wird aus dem Klick ein Ziehen; losgelassen über der Zeichenfläche entscheidet das Werkzeug.
+  // Zeiger statt HTML-Ziehen: das fängt die Windows-WebView für Datei-Drops ab.
   // Standardpalette gehört zum Programm; eigene Paletten liegen im Dokument (ein Rückgängig-Schritt je Änderung).
   import * as bridge from '../io/bridge';
   import { display } from '../io/colors';
@@ -17,10 +19,12 @@
     fill: FillSpec;
     onfill(f: FillSpec): void;
     onstroke(patch: Partial<Stroke> | null): void;
+    /** Farbe an Fensterpunkt x, y losgelassen; true = verbraucht. */
+    ondrop(c: Color, x: number, y: number): boolean;
     ondone(): void;
     onnotice(msg: string): void;
   }
-  let { history, palettes, fill, onfill, onstroke, ondone, onnotice }: Props = $props();
+  let { history, palettes, fill, onfill, onstroke, ondrop, ondone, onnotice }: Props = $props();
   let active = $state(STANDARD.id);
   let menu = $state(false);
   let editing = $state(false);
@@ -68,6 +72,26 @@
   // Palettenklick ersetzt auch einen Verlauf durch Vollton.
   const left = (c: Color | null) => onfill(c ? { ...fill, kind: 'solid', a: c } : { ...fill, kind: 'none' });
   const right = (e: MouseEvent, c: Color | null) => (e.preventDefault(), onstroke(c && { color: c }));
+
+  let press: { c: Color; x: number; y: number } | null = null;
+  let ghost = $state<{ c: Color; x: number; y: number } | null>(null);
+  let dragged = false; // der Klick nach dem Ziehen füllt nicht
+  function grab(e: PointerEvent, c: Color) {
+    if (e.button !== 0) return;
+    press = { c, x: e.clientX, y: e.clientY };
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+  }
+  function drag(e: PointerEvent) {
+    if (press && (ghost || Math.hypot(e.clientX - press.x, e.clientY - press.y) >= 4)) ghost = { c: press.c, x: e.clientX, y: e.clientY };
+  }
+  function release(e: PointerEvent) {
+    const g = ghost;
+    press = ghost = null;
+    if (!g) return;
+    dragged = true;
+    if (!ondrop(g.c, e.clientX, e.clientY)) onnotice('Farbe mit dem Verlaufswerkzeug auf die Verlaufslinie ziehen');
+  }
+  const click = (c: Color) => (dragged ? (dragged = false) : left(c));
 </script>
 
 <div class="bar">
@@ -93,11 +117,18 @@
       class:spot={!!e.color.spot}
       title={e.color.spot ? `${e.name} (Sonderfarbe)` : e.name}
       style:background={display.css(e.color)}
-      onclick={() => left(e.color)}
+      onclick={() => click(e.color)}
       oncontextmenu={(ev) => right(ev, e.color)}
+      onpointerdown={(ev) => grab(ev, e.color)}
+      onpointermove={drag}
+      onpointerup={release}
+      onpointercancel={() => (press = ghost = null)}
     ></button>
   {/each}
   </div>
+  {#if ghost}
+    <div class="ghost" style:background={display.css(ghost.c)} style:left="{ghost.x + 8}px" style:top="{ghost.y + 8}px"></div>
+  {/if}
   {#if editing && own}
     <PaletteEditor palette={shown} onchange={change} onclose={() => (editing = false)} />
   {/if}
@@ -133,6 +164,16 @@
   .swatch:hover {
     outline: 1px solid var(--text-strong);
     outline-offset: 0;
+  }
+  .ghost {
+    position: fixed;
+    z-index: 50;
+    width: 20px;
+    height: 16px;
+    pointer-events: none;
+    border: 1px solid rgb(0 0 0 / 0.35);
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
   }
   .swatch.none {
     background: linear-gradient(to top right, #fff 45%, var(--accent) 45% 55%, #fff 55%);

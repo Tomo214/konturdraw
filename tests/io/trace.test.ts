@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { addTrace, tracedNode, TRACE_DEFAULTS } from '../../src/io/trace';
+import { addTrace, recolor, tracedNode, TRACE_DEFAULTS, type Rgb } from '../../src/io/trace';
 import { addNodes, createDocument } from '../../src/model/document';
 import { IDENTITY, translate } from '../../src/model/geometry';
 import { insertPage } from '../../src/model/pages';
@@ -66,4 +66,27 @@ test('Nachzeichnung auf Seite 2 landet dort oben', () => {
   const next = addTrace(doc, node, 1);
   expect(next.pages[0]).toBe(doc.pages[0]);
   expect(next.pages[1].layers.map((l) => l.name)).toEqual(['Ebene 1', 'Nachzeichnung']);
+});
+
+test('Originalbild löschen (7a): Bild weg, auch aus seiner Gruppe; Ebene bleibt', () => {
+  let doc = createDocument();
+  const original = doc.pages[0].layers[0];
+  const bild = { type: 'image', id: 'bild', transform: at, image: 'h', width: 5, height: 5 } as const;
+  doc = addNodes(doc, original.id, [{ type: 'group', id: 'g', transform: IDENTITY, children: [bild] }]);
+  const node = tracedNode(bw(line), at, TRACE_DEFAULTS);
+  const next = addTrace(doc, node, 0, 'bild');
+  const layers = next.pages[0].layers;
+  expect(layers.map((l) => l.name)).toEqual(['Ebene 1', 'Nachzeichnung']);
+  expect(layers[0].children).toEqual([]);
+  expect(layers[1].children).toEqual([node]);
+});
+
+test('Palette bearbeiten (7d): gezeigte Farben bekommen eine neue, auch über frühere Änderungen hinweg', () => {
+  const [R, G, B, X]: Rgb[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1], [0.5, 0.5, 0.5]];
+  let e = recolor([], [R], X); // Rot → Grau
+  expect(e).toEqual([[R, X]]);
+  e = recolor(e, [X, B], G); // Grau (war Rot, ein echtes Grau im Bild ginge mit) und Blau zu Grün zusammengeführt
+  expect(e).toEqual([[R, G], [X, G], [B, G]]);
+  e = recolor(e, [G], R); // zurück auf Rot: Rot braucht keinen Eintrag mehr
+  expect(e).toEqual([[X, R], [B, R], [G, R]]);
 });

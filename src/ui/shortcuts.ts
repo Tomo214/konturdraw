@@ -165,12 +165,13 @@ export function nativeMenu(t: { tagName?: string; type?: string; isContentEditab
   return t.tagName === 'INPUT' && ['text', 'search', 'number', 'email', 'url', ''].includes(t.type ?? '');
 }
 
-/** Wie commandFor; Felder und Dialoge behalten ihre Tasten (auch das versteckte Textfeld des Text-Werkzeugs), Mod+Leertaste wechselt trotzdem. */
-export function keyCommand(e: KeyInput & { repeat: boolean; target: unknown }, isMac: boolean): Command | null {
+/** Wie commandFor; Felder und Dialoge behalten ihre Tasten (auch das versteckte Textfeld des Text-Werkzeugs), Mod+Leertaste wechselt trotzdem.
+ *  popover = Farbwähler offen: zählt wie ein Dialog, Esc schließt nur ihn (Fokus kann außerhalb stehen). */
+export function keyCommand(e: KeyInput & { repeat: boolean; target: unknown }, isMac: boolean, popover = false): Command | null {
   const cmd = commandFor(e, isMac);
   if (!cmd || (e.repeat && cmd.name === 'pickToggle')) return null;
   const t = e.target as { tagName?: string; closest?: (s: string) => unknown } | null;
-  const field = ['INPUT', 'SELECT', 'TEXTAREA'].includes(t?.tagName ?? '') || !!t?.closest?.('dialog');
+  const field = popover || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t?.tagName ?? '') || !!t?.closest?.('dialog');
   const swap = cmd.name === 'pickToggle' && (e.ctrlKey || e.metaKey);
   // ein Knopf mit Tastaturfokus wird mit Leertaste/Eingabe gedrückt; alle anderen Kürzel wirken weiter
   const press = t?.tagName === 'BUTTON' && (cmd.name === 'confirm' || cmd.name === 'pickToggle');

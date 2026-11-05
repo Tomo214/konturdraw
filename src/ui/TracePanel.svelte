@@ -3,10 +3,11 @@
   // Übernehmen nimmt das Vorschau-Ergebnis ohne zweite Rechnung, wenn Bild und Regler gleich geblieben sind.
   import type { TracePiece } from '../io/bridge';
   import { images } from '../io/images';
-  import { tracedNode, tracePieces, TRACE_DEFAULTS, type TraceParams } from '../io/trace';
+  import { recolor, tracedNode, tracePieces, TRACE_DEFAULTS, type TraceParams } from '../io/trace';
   import type { Mat } from '../model/geometry';
   import type { ImageNode, Node } from '../model/types';
-  import { pathData, previewKey, traceStats } from './trace-preview';
+  import TraceColors from './TraceColors.svelte';
+  import { pathData, previewKey, resultColors, traceStats } from './trace-preview';
 
   let {
     image,
@@ -18,7 +19,8 @@
     image: { node: ImageNode; world: Mat } | undefined;
     /** Panel sichtbar → Vorschau rechnen */
     active: boolean;
-    ondone: (node: Node) => void;
+    /** drop = id des Originalbilds, wenn es mit dem Übernehmen weg soll */
+    ondone: (node: Node, drop?: string) => void;
     onnotice: (msg: string) => void;
   } = $props();
 
@@ -38,6 +40,7 @@
 
   let p = $state<TraceParams>({ ...TRACE_DEFAULTS });
   let view = $state<View>('split');
+  let drop = $state(false);
   let busy = $state(false);
   let working = $state(false);
   let failed = $state('');
@@ -50,6 +53,12 @@
     colors: Math.min(256, Math.max(2, Math.round(p.colors || 2))),
   });
   const current = $derived(active ? image : undefined);
+  // Palettenänderungen (7d) gehören zum Bild: ein anderes Bild fängt frisch an.
+  const imageId = $derived(image?.node.image);
+  $effect(() => {
+    void imageId;
+    p.recolor = [];
+  });
   const key = $derived(current ? previewKey(current.node.image, job) : '');
   const stale = $derived(!!preview && preview.key !== key);
   const src = $derived(preview ? `data:image/png;base64,${images.pick([preview.img.image])[preview.img.image]}` : '');
@@ -105,7 +114,7 @@
       const params = job;
       const cached = preview?.key === previewKey(img.node.image, params) ? preview.pieces : null;
       const t = performance.now();
-      ondone(tracedNode(cached ?? (await tracePieces(img.node, params)), img.world, params));
+      ondone(tracedNode(cached ?? (await tracePieces(img.node, params)), img.world, params), drop ? img.node.id : undefined);
       onnotice(cached ? 'Nachzeichnung übernommen' : `Nachgezeichnet in ${secs(performance.now() - t)} s`);
     } catch (err) {
       onnotice((err as Error).message);
@@ -199,6 +208,12 @@
   {/if}
   {#if p.mode === 'color'}
     <div class="wide options">
+      <TraceColors
+        colors={preview?.mode === 'color' ? resultColors(preview.pieces) : []}
+        edited={p.recolor.length > 0}
+        onset={(shown, to) => (p.recolor = recolor(p.recolor, shown, to))}
+        onreset={() => (p.recolor = [])}
+      />
       <label class="check" title="Die Fläche in der Randfarbe weglassen">
         <input type="checkbox" checked={p.background !== 'keep'} onchange={(e) => (p.background = checked(e) ? 'edge' : 'keep')} /> Hintergrund entfernen
       </label>
@@ -213,8 +228,11 @@
       </label>
     </div>
   {/if}
+  <label class="check wide" title="Das Bild verschwindet mit dem Übernehmen; Rückgängig holt es zurück">
+    <input type="checkbox" bind:checked={drop} /> Originalbild löschen
+  </label>
   <button class="wide" disabled={busy} onpointerdown={keepFocus} onclick={run}>{busy ? 'Zeichnet …' : 'Übernehmen'}</button>
-  <p class="hint wide">Wirkt auf das gewählte Bild. Das Ergebnis liegt gruppiert auf eigener Ebene, das Bild bleibt.</p>
+  <p class="hint wide">Wirkt auf das gewählte Bild. Das Ergebnis liegt gruppiert auf eigener Ebene{drop ? ', das Bild wird gelöscht' : ', das Bild bleibt'}.</p>
 </div>
 
 <style>

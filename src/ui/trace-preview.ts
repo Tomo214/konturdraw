@@ -1,6 +1,6 @@
 // Nachzeichnen-Vorschau: SVG-Pfade, Ergebniszeile und Zwischenspeicher-Schlüssel – rein, ohne DOM.
 import type { TracePiece } from '../io/bridge';
-import type { TraceParams } from '../io/trace';
+import { colorKey, type Rgb, type TraceParams } from '../io/trace';
 import { segmentsOf } from '../model/bezier';
 import type { Subpath } from '../model/types';
 
@@ -31,4 +31,11 @@ export function traceStats(pieces: readonly TracePiece[]): { curves: number; nod
 export function previewKey(image: string, p: TraceParams): string {
   const { lineWidth: _, ...core } = p;
   return JSON.stringify([image, core]);
+}
+
+/** Farben des Ergebnisses (7d) je einmal, in Stapelfolge (Hintergrund zuerst); s/w und Mittellinie ohne Farben. */
+export function resultColors(pieces: readonly TracePiece[]): Rgb[] {
+  const seen = new Map<string, Rgb>();
+  for (const pc of pieces) if (pc.rgb && !seen.has(colorKey(pc.rgb))) seen.set(colorKey(pc.rgb), pc.rgb);
+  return [...seen.values()];
 }

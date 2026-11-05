@@ -181,7 +181,7 @@ test('Bild auf/ab ohne Zusatztaste blättert Seiten; mit Umschalt bleibt Stapelf
   expect(commandFor(key('PageUp', { shiftKey: true }), false)).toEqual({ name: 'front' });
 });
 
-test('keyCommand: Felder und Dialoge behalten ihre Tasten, Mod+Leertaste wechselt trotzdem; Wiederholung schaltet nicht hin und her', () => {
+test('keyCommand: Felder, Dialoge und Popover (Farbwähler) behalten ihre Tasten, Mod+Leertaste wechselt trotzdem; Wiederholung schaltet nicht hin und her', () => {
   const at = (tagName: string, dialog = false) => ({ tagName, closest: (s: string) => (dialog && s === 'dialog' ? {} : null) });
   const ev = (k: string, target: object, mods: Partial<KeyInput & { repeat: boolean }> = {}) => ({ ...key(k, mods), repeat: false, ...mods, target });
   expect(keyCommand(ev('Delete', at('CANVAS')), false)).toEqual({ name: 'delete' });
@@ -189,6 +189,9 @@ test('keyCommand: Felder und Dialoge behalten ihre Tasten, Mod+Leertaste wechsel
   expect(keyCommand(ev('Delete', at('TEXTAREA')), false)).toBeNull();
   expect(keyCommand(ev('Delete', at('SELECT')), false)).toBeNull();
   expect(keyCommand(ev('Delete', at('BUTTON', true)), false)).toBeNull();
+  // offener Farbwähler wie ein Dialog: Esc schließt nur ihn, egal wo der Fokus steht (WebKit: Tab überspringt Knöpfe)
+  expect(keyCommand(ev('Escape', at('BODY')), false, true)).toBeNull();
+  expect(keyCommand(ev('Delete', at('BODY')), false, true)).toBeNull();
   expect(keyCommand(ev(' ', at('TEXTAREA'), { ctrlKey: true }), false)).toEqual({ name: 'pickToggle' });
   expect(keyCommand(ev(' ', at('CANVAS'), { repeat: true }), false)).toBeNull();
   expect(keyCommand(ev('Delete', null as unknown as object), false)).toEqual({ name: 'delete' });

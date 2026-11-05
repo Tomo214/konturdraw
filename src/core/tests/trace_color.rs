@@ -326,3 +326,27 @@ fn farbig_2000px_unter_3s() {
         assert!(secs < 3.0, "{secs:.2} s");
     }
 }
+
+#[test]
+fn palette_bearbeiten_umfaerben_und_zusammenfuehren() {
+    // 7d: Farben aus dem Ergebnis (0–1) bekommen eine neue Farbe; gleiche Zielfarben = eine Farbe, ein Objekt.
+    let img = png(300, 300, |pm| {
+        rect(pm, 40.0, 40.0, 100.0, 100.0, RED);
+        circle(pm, 210.0, 210.0, 50.0, BLUE);
+    });
+    let p = colored(3, Background::Keep);
+    let base = trace_colors(&img, &p, 300.0, 300.0).unwrap();
+    let rgb = |c: Rgb| base.iter().find(|pc| same(pc.rgb, c)).and_then(|pc| pc.rgb).unwrap();
+    const GREEN: Rgb = [0, 255, 0];
+    let green = [0.0, 1.0, 0.0];
+    let edited = Params { recolor: vec![(rgb(RED), green)], ..p.clone() };
+    let out = trace_colors(&img, &edited, 300.0, 300.0).unwrap();
+    assert_eq!(out.len(), 3);
+    assert!(out.iter().any(|pc| same(pc.rgb, GREEN)) && !out.iter().any(|pc| same(pc.rgb, RED)));
+    let merged = Params { recolor: vec![(rgb(RED), green), (rgb(BLUE), green)], ..p };
+    let out = trace_colors(&img, &merged, 300.0, 300.0).unwrap();
+    assert_eq!(out.len(), 2, "Weiß und Grün");
+    assert_eq!(out[1].subpaths.len(), 2, "Rechteck und Kreis in einem Objekt");
+    let r = render(&out, 300.0, 300.0);
+    assert_eq!([at(&r, 90, 90), at(&r, 210, 210), at(&r, 20, 20)], [Some(GREEN), Some(GREEN), Some(WHITE)]);
+}

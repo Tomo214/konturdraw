@@ -3,9 +3,10 @@
   // mit Auswahl = Maße; andere Werkzeuge zeigen ihre Optionen. children = Werkzeug-Aktionen und Formen-Befehle.
   import type { Snippet } from 'svelte';
   import type { Measure } from '../model/arrange';
-  import type { Guide, Point } from '../model/types';
+  import type { Color, Guide, Point } from '../model/types';
   import type { Unit } from '../model/units';
   import CutFields from './CutFields.svelte';
+  import GradientFields from './GradientFields.svelte';
   import GuideFields from './GuideFields.svelte';
   import Icon from './Icon.svelte';
   import ObjectFields from './ObjectFields.svelte';
@@ -17,6 +18,7 @@
   import type { Command, Tool } from './shortcuts';
   import { toolInfo } from './toolbox';
   import type { CutParams } from './tools/cut-tools';
+  import type { Knot } from './tools/tool';
   import type { ShapeParams } from './tools/shape-tool';
 
   let {
@@ -31,6 +33,8 @@
     shape,
     smoothing = $bindable(),
     cut = $bindable(),
+    knot,
+    onknot,
     onradius,
     onpolygon,
     oncommand,
@@ -50,6 +54,9 @@
     shape: ShapeParams;
     smoothing: number;
     cut: CutParams;
+    /** Gewählter Verlaufsknoten (Verlaufswerkzeug). */
+    knot: Knot | null;
+    onknot: (patch: { offset?: number; color?: Color }) => void;
     onradius: (r: number) => void;
     onpolygon: (sides: number, inner: number | null) => void;
     oncommand: (c: Command) => void;
@@ -78,6 +85,8 @@
     <CutFields {tool} {units} bind:cut />
   {:else if tool === 'text'}
     <TextBar {text} />
+  {:else if tool === 'gradient'}
+    <GradientFields {knot} {onknot} />
   {:else if tool === 'freehand'}
     <label class="field">Glättung <input type="range" min="1" max="20" bind:value={smoothing} /> {smoothing} px</label>
   {:else}

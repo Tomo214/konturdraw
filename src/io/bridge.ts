@@ -85,7 +85,11 @@ export interface TraceCore {
   background: 'keep' | 'edge' | 'all';
   /** untere Flächen unter den oberen ausschneiden */
   cutout: boolean;
+  /** Palette bearbeitet (7d): Ergebnisfarbe → neue Farbe, 0–1; gleiche neue Farben werden eine */
+  recolor: [Rgb, Rgb][];
 }
+
+type Rgb = [number, number, number];
 
 /** Ein Ergebnis-Objekt; rgb 0–1 nur beim farbigen Umriss. */
 export interface TracePiece {

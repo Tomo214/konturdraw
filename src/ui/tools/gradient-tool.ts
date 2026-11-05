@@ -26,7 +26,8 @@ type Line = { it: StyledItem; g: Gradient; from: Point; to: Point };
 /**
  * Verlauf über die Auswahl ziehen; Anfasser des ersten gewählten Verlaufs einzeln verschieben (Spec §5).
  * Farbknoten wie im Vorbild: Doppelklick auf die Linie = neuer Knoten, auf einen Knoten = weg; ziehen = Lage;
- * Klick wählt Knoten oder Ende, dann färbt die Palette ihn und Entf löscht ihn.
+ * Klick wählt Knoten oder Ende, dann färbt die Palette ihn und Entf löscht ihn; Lage und Farbe auch in der
+ * Eigenschaftsleiste (knot). Palettenfarbe auf die Linie gezogen = neuer Knoten, auf einen Knoten = umfärben (drop).
  */
 export function gradientTool(ed: Editor): Tool {
   let drag: { start: Pointer; doc: Doc; items: StyledItem[]; end: 'from' | 'to' | null; moved: boolean } | null = null;
@@ -139,6 +140,31 @@ export function gradientTool(ed: Editor): Tool {
       if (!l || i === null) return false;
       put(l, setStopColor(l.g, i, c));
       return true;
+    },
+    drop(p, c) {
+      const l = line();
+      if (!l) return false;
+      const k = hitKnot(l, p);
+      const r = k >= 0 ? { gradient: l.g, index: k } : onLine(l, p) ? addStop(l.g, along(l.g, at(invert(l.it.world), p))) : null;
+      if (!r) return false;
+      put(l, setStopColor(r.gradient, r.index, c));
+      sel = { id: l.it.id, i: r.index };
+      return true;
+    },
+    knot: {
+      get() {
+        const l = line();
+        const i = current(l);
+        return l && i !== null ? { index: i, count: l.g.stops.length, offset: l.g.stops[i].offset, color: l.g.stops[i].color } : null;
+      },
+      set({ offset, color }) {
+        const l = line();
+        const i = current(l);
+        if (!l || i === null) return;
+        let g = offset === undefined ? l.g : moveStop(l.g, i, offset);
+        if (color) g = setStopColor(g, i, color);
+        if (g !== l.g) put(l, g);
+      },
     },
     overlay(ctx, dpr) {
       const l = line();

@@ -1,5 +1,5 @@
-// Nachzeichnen (Spec §8): Bild → kw-core → Objekte auf eigener Ebene; das Bild bleibt liegen.
-import { addLayer, addNodes, newId } from '../model/document';
+// Nachzeichnen (Spec §8): Bild → kw-core → Objekte auf eigener Ebene; das Bild bleibt liegen, außer auf Wunsch (7a).
+import { addLayer, addNodes, deleteNodes, newId } from '../model/document';
 import { IDENTITY, type Mat } from '../model/geometry';
 import { BLACK, DEFAULT_STROKE } from '../model/style';
 import type { Doc, ImageNode, Node } from '../model/types';
@@ -21,8 +21,25 @@ export const TRACE_DEFAULTS: TraceParams = {
   merge: true,
   background: 'edge',
   cutout: false,
+  recolor: [],
   lineWidth: 0.5,
 };
+
+export type Rgb = [number, number, number];
+/** Farbe als Schlüssel in 8-bit-Stufen: Fließkomma-Reste aus dem Kern stören nicht. */
+export const colorKey = (c: Rgb) => c.map((v) => Math.round(v * 255)).join();
+
+/**
+ * Palette bearbeiten (7d): Die gezeigten Ergebnisfarben werden zu `to` (eine = umfärben, mehrere = zusammenführen).
+ * Einträge bleiben Ursprungsfarbe → neue Farbe, damit der Kern sie in seiner Palette findet; wer schon umgefärbt war,
+ * zieht mit. Einträge ohne Wirkung (Farbe → dieselbe) fallen weg.
+ */
+export function recolor(edits: readonly [Rgb, Rgb][], shown: readonly Rgb[], to: Rgb): [Rgb, Rgb][] {
+  const hit = new Set(shown.map(colorKey));
+  const next: [Rgb, Rgb][] = edits.map(([from, was]) => [from, hit.has(colorKey(was)) ? to : was]);
+  for (const c of shown) if (!edits.some(([from]) => colorKey(from) === colorKey(c))) next.push([c, to]);
+  return next.filter(([from, now]) => colorKey(from) !== colorKey(now));
+}
 
 /**
  * In Seitenlage des Bilds. Umriss = ein gefüllter Pfad (sonst gehen Löcher verloren), Mittellinie = Gruppe einzelner Linien,
@@ -46,9 +63,9 @@ export function tracedNode(pieces: readonly bridge.TracePiece[], world: Mat, p: 
   return { type: 'group', id: newId(), transform: world, children };
 }
 
-/** Neue oberste Ebene „Nachzeichnung“ auf Seite pi mit dem Ergebnis. */
-export function addTrace(doc: Doc, node: Node, pi = 0): Doc {
-  const next = addLayer(doc, pi, 'Nachzeichnung');
+/** Neue oberste Ebene „Nachzeichnung“ auf Seite pi mit dem Ergebnis; drop = Originalbild dabei löschen. */
+export function addTrace(doc: Doc, node: Node, pi = 0, drop?: string): Doc {
+  const next = addLayer(drop ? deleteNodes(doc, [drop]) : doc, pi, 'Nachzeichnung');
   const layers = next.pages[pi].layers;
   return addNodes(next, layers[layers.length - 1].id, [node]);
 }

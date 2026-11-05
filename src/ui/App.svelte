@@ -44,7 +44,7 @@
   import { createTools } from './tools';
   import { ViewState } from './view-state.svelte';
   import type { CutParams } from './tools/cut-tools';
-  import type { Editor } from './tools/tool';
+  import type { Editor, Knot } from './tools/tool';
   // ?n=10000 lädt ein Zufallsdokument (Lasttest); ohne Parameter leere A4-Seite.
   import { randomDoc } from '../../tests/perf/random-doc';
 
@@ -70,6 +70,7 @@
   let doc = $state.raw<Doc>(history.current);
   let measured = $state.raw<ReadonlySet<string>>(selected);
   let ms = $state.raw<Measure | null>(null);
+  let knot = $state.raw<Knot | null>(null); // gewählter Verlaufsknoten; neu nur bei Änderung (Feld mitten im Tippen)
   /** gewähltes Bild fürs Nachzeichnen; wechselt mit Dokument oder Auswahl */
   let picked = $state.raw<ReturnType<typeof selectedImage>>();
   let guide = $state<string | null>(null); // gewählte Hilfslinie; zählt nur ohne Objekt-Auswahl
@@ -126,6 +127,8 @@
     alpha = img ? (img.node.opacity ?? 1) : null;
     zoom = Math.round((surface.viewport().zoom / MM_TO_PX) * 100);
     count = selected.size;
+    const k = tools[toolName].knot?.get() ?? null;
+    if (JSON.stringify(k) !== JSON.stringify(knot)) knot = k;
     info = describeSelection(history.current, [...selected]);
     if (doc !== history.current || measured !== selected) [doc, measured, ms, picked] = [history.current, selected, measure(history.current, [...selected]), img];
   }
@@ -239,7 +242,7 @@
   }
 
   const onKey = (e: KeyboardEvent) => {
-    const cmd = keyCommand(e, isMac);
+    const cmd = keyCommand(e, isMac, !!document.querySelector(':popover-open'));
     if (cmd) (e.preventDefault(), exec(cmd));
     else if (browserKey(e, isMac)) e.preventDefault();
   };
@@ -263,7 +266,7 @@
   <div style="grid-area: standard"><StandardBar {isMac} {zoom} oncommand={exec} {onzoom} /></div>
   <div style="grid-area: property; min-width: 0">
     <PropertyBar tool={toolName} {ms} text={typo} guide={ms ? null : (guidesOf(doc, pages.index(doc)).find((g) => g.id === guide) ?? null)} origin={originOf(doc)} page={doc.pages[0]} units={doc.units ?? DEFAULT_UNIT} nudge={doc.nudge ?? DEFAULT_NUDGE} shape={style.shape}
-      bind:smoothing bind:cut onradius={style.handlers.onradius} onpolygon={style.handlers.onpolygon} oncommand={exec}>
+      bind:smoothing bind:cut {knot} onknot={(k) => guarded(() => (tools[toolName].knot?.set(k), redraw()))} onradius={style.handlers.onradius} onpolygon={style.handlers.onpolygon} oncommand={exec}>
       {#each tools[toolName].actions ?? [] as a (a.label)}
         <button onpointerdown={(e) => e.preventDefault()} onclick={() => guarded(a.run)}>{a.label}</button>
       {/each}
@@ -286,11 +289,11 @@
       {#snippet properties()}<StylePanel fill={style.fill} stroke={style.stroke} shape={style.shape} {...style.handlers} {alpha} {onalpha} />{/snippet}
       {#snippet align()}<AlignPanel {count} oncommand={exec} />{/snippet}
       {#snippet text()}<TextPanel text={typo} active={toolName === 'text'} />{/snippet}
-      {#snippet trace()}<TracePanel bind:this={tracePanel} image={picked} active={view.docker === 'trace'} ondone={(node) => adopt(addTrace(history.current, node, pi()), [node.id])} {onnotice} />{/snippet}
+      {#snippet trace()}<TracePanel bind:this={tracePanel} image={picked} active={view.docker === 'trace'} ondone={(node, drop) => adopt(addTrace(history.current, node, pi(), drop), [node.id])} {onnotice} />{/snippet}
       {#snippet color()}<ColorSettingsBar {history} bind:proof={view.proof} ondone={redraw} {onnotice} />{/snippet}
     </DockPanel>
   </div>
-  <div class="cell" style="grid-area: palette"><PaletteBar {history} {palettes} fill={style.fill} {...style.handlers} onfill={paletteFill} ondone={redraw} {onnotice} /></div>
+  <div class="cell" style="grid-area: palette"><PaletteBar {history} {palettes} fill={style.fill} {...style.handlers} onfill={paletteFill} ondrop={(c, x, y) => surface.drop(c, x, y)} ondone={redraw} {onnotice} /></div>
   <div style="grid-area: status"><StatusBar {cursor} units={doc.units ?? DEFAULT_UNIT} {info} {notice} fill={style.fill} stroke={style.stroke} /></div>
   <DocOptions bind:this={options} doc={() => history.current} bind:grid={view.show.grid} oncommand={exec} />
   <FileDialogs bind:this={files} doc={() => history.current} {page} selected={() => selected} {onopen} {onimport} {onnotice} />

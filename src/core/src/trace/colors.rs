@@ -94,6 +94,19 @@ fn quantize(px: &[[u8; 3]], k: usize) -> (Vec<Rgb>, Vec<u16>) {
     (palette, lut)
 }
 
+/// Palette bearbeitet (7d): Einträge bekommen ihre neue Farbe; gleiche Farben danach teilen ein Label (kleinstes),
+/// also eine Lage und bei `merge` ein Objekt. Nicht gefundene Einträge wirken nicht.
+fn recolor(palette: &mut [Rgb], labels: &mut [u16], edits: &[([f64; 3], [f64; 3])]) {
+    let same = |a: Rgb, b: Rgb| (0..3).all(|c| (a[c] - b[c]).abs() < 0.5);
+    for c in palette.iter_mut() {
+        if let Some((_, to)) = edits.iter().find(|(from, _)| same(from.map(|v| v * 255.0), *c)) {
+            *c = to.map(|v| v * 255.0);
+        }
+    }
+    let first: Vec<u16> = (0..palette.len()).map(|i| (0..i).find(|&j| same(palette[i], palette[j])).unwrap_or(i) as u16).collect();
+    labels.iter_mut().for_each(|l| *l = first[*l as usize]);
+}
+
 /// Flächen unter `min` Pixeln (4er-Nachbarschaft) nehmen die häufigste angrenzende Farbe an.
 fn despeckle(labels: &mut [u16], w: usize, h: usize, min: usize) {
     let mut seen = vec![false; w * h];
@@ -140,8 +153,9 @@ fn despeckle(labels: &mut [u16], w: usize, h: usize, min: usize) {
 pub(super) fn pieces(img: &RgbaImage, p: &Params) -> Vec<Piece> {
     let (w, h) = (img.width() as usize, img.height() as usize);
     let px = flatten(img);
-    let (palette, lut) = quantize(&px, p.colors.clamp(2, 256));
+    let (mut palette, lut) = quantize(&px, p.colors.clamp(2, 256));
     let mut labels: Vec<u16> = px.iter().map(|&c| lut[bin(c)]).collect();
+    recolor(&mut palette, &mut labels, &p.recolor);
     despeckle(&mut labels, w, h, p.speckle);
 
     let mut count = vec![0usize; palette.len()];
