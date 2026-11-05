@@ -30,20 +30,36 @@ fn write_pdf(
     Ok(path)
 }
 
+/// cmd.exe trennt an „&“ und liest „^“ als Escape, außer in Anführungszeichen. Rust fasst ein Argument nur bei
+/// Leerzeichen ein → Pfad selbst einfassen (Windows-Pfade enthalten nie ").
+#[cfg(target_os = "windows")]
+fn cmd_with_path(before: &[&str], path: &Path) -> Command {
+    use std::os::windows::process::CommandExt;
+    let mut quoted = std::ffi::OsString::from("\"");
+    quoted.push(path);
+    quoted.push("\"");
+    let mut c = Command::new("cmd");
+    c.arg("/C").args(before).raw_arg(quoted).creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    c
+}
+
 /// Öffnet die Datei im Standardprogramm (macOS Vorschau, Windows PDF-Anzeige).
 fn show(path: &Path) -> Result<(), String> {
     #[cfg(target_os = "macos")]
-    let mut cmd = Command::new("open");
-    #[cfg(target_os = "windows")]
     let mut cmd = {
-        use std::os::windows::process::CommandExt;
-        let mut c = Command::new("cmd");
-        c.args(["/C", "start", ""]).creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        let mut c = Command::new("open");
+        c.arg(path);
         c
     };
+    #[cfg(target_os = "windows")]
+    let mut cmd = cmd_with_path(&["start", ""], path);
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    let mut cmd = Command::new("xdg-open");
-    match cmd.arg(path).status() {
+    let mut cmd = {
+        let mut c = Command::new("xdg-open");
+        c.arg(path);
+        c
+    };
+    match cmd.status() {
         Ok(s) if s.success() => Ok(()),
         _ => Err("Druckansicht ließ sich nicht öffnen.".into()),
     }
@@ -83,5 +99,23 @@ mod tests {
                 && std::fs::read(&a).unwrap().starts_with(b"%PDF-")
         );
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Benutzername wie „Max&Moritz“ (ohne Leerzeichen) landet so im Temp-Pfad der Druckdatei.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn druckansicht_pfad_mit_cmd_sonderzeichen() {
+        let dir = std::env::temp_dir().join(format!("kw-a&b^c-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("probe.txt");
+        std::fs::write(&file, "kw-probe").unwrap();
+        let printed = |mut c: Command| String::from_utf8_lossy(&c.output().unwrap().stdout).trim().to_string();
+        // Gegenprobe: als normales Argument (nur bei Leerzeichen in Anführungszeichen) zerlegt cmd den Pfad
+        let mut naive = Command::new("cmd");
+        naive.args(["/C", "type"]).arg(&file);
+        let (naive, fixed) = (printed(naive), printed(cmd_with_path(&["type"], &file)));
+        std::fs::remove_dir_all(&dir).ok();
+        assert_ne!(naive, "kw-probe", "Prüfpfad löst den Fehler nicht aus");
+        assert_eq!(fixed, "kw-probe");
     }
 }
