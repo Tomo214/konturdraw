@@ -64,7 +64,7 @@ else
   for f in ucnv_close ucnv_getNextUChar ucnv_open ucsdet_close ucsdet_detect ucsdet_enableInputFilter \
     ucsdet_getConfidence ucsdet_getName ucsdet_open ucsdet_setText; do echo "$f" >>"$B/icu.def"; done
   dlltool -d "$B/icu.def" -l "$B/libicu-win.a"
-  g++ -std=c++17 -O2 -municode -static -o "$B/bin/kw-cdr.exe" kw_cdr.cpp $INC $LIBS -llcms2 -lz "$B/libicu-win.a"
+  g++ -std=c++17 -O2 -s -municode -static -o "$B/bin/kw-cdr.exe" kw_cdr.cpp $INC $LIBS -llcms2 -lz "$B/libicu-win.a"
 fi
 cp "$B/bin/kw-cdr$EXE" "$B/bin/kw-cdr-$TRIPLE$EXE"
 echo "fertig: $B/bin/kw-cdr$EXE"

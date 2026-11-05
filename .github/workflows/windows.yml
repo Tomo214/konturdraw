@@ -38,7 +38,7 @@ jobs:
           echo "$DLLS"
           if echo "$DLLS" | grep -qiE "lib|icuuc|icuin|icudt"; then echo "fremde DLL" >&2; exit 1; fi
           ./kw-cdr.exe ../../../../tests/fixtures/cdr/fdo65220-2.cdr > probe.svg
-          head -c 300 probe.svg; echo
+          ls -l kw-cdr.exe; head -c 300 probe.svg; echo
           grep -q "<svg" probe.svg
           rm probe.svg
       - uses: actions/upload-artifact@v7
