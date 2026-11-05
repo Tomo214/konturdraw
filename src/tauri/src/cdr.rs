@@ -48,13 +48,13 @@ fn pages(out: &[u8]) -> Result<Imported, String> {
     Ok(imp)
 }
 
-/// Exit-Codes von kw_cdr.cpp; None = per Signal beendet.
+/// Exit-Codes von kw_cdr.cpp; None = per Signal beendet (Unix), negativ = NTSTATUS-Fehler (Windows-Absturz).
 fn failure(code: Option<i32>) -> String {
     match code {
         Some(2) => "Keine lesbare CorelDRAW-Datei (Format oder Version unbekannt).".into(),
         Some(3) => "CorelDRAW-Datei beschädigt oder nicht lesbar.".into(),
-        Some(c) => format!("CDR-Import fehlgeschlagen (Code {c})."),
-        None => "CDR-Import abgebrochen (Absturz beim Lesen der Datei).".into(),
+        Some(c) if c >= 0 => format!("CDR-Import fehlgeschlagen (Code {c})."),
+        _ => "CDR-Import abgebrochen (Absturz beim Lesen der Datei).".into(),
     }
 }
 
@@ -116,17 +116,20 @@ mod tests {
         assert!(failure(Some(2)).contains("Version"));
         assert!(failure(Some(3)).contains("beschädigt"));
         assert!(failure(None).contains("Absturz"));
+        // Windows meldet einen Absturz als NTSTATUS-Code (Zugriffsverletzung 0xC0000005), nicht als Signal.
+        assert!(failure(Some(0xC000_0005_u32 as i32)).contains("Absturz"));
     }
 
-    #[cfg(unix)]
     #[test]
     fn zeitlimit_beendet_den_prozess() {
+        // Läuft länger als das Limit: sleep 5 bzw. vier Pings (≈ 3 s).
+        let (exe, arg) = if cfg!(windows) {
+            (r"C:\Windows\System32\PING.EXE", "127.0.0.1")
+        } else {
+            ("/bin/sleep", "5")
+        };
         let t = std::time::Instant::now();
-        let err = run(
-            Path::new("/bin/sleep"),
-            Path::new("5"),
-            Duration::from_millis(200),
-        )
+        let err = run(Path::new(exe), Path::new(arg), Duration::from_millis(200))
         .err()
         .expect("Fehler erwartet");
         assert!(err.contains("Zeitlimit"), "{err}");
@@ -145,6 +148,13 @@ mod tests {
             .filter(|(_, it)| matches!(it, kw_core::scene::Item::Path { .. }))
             .count();
         assert_eq!(paths, 5, "fünf Rechtecke");
+        // Pfad mit Zeichen außerhalb der Windows-ANSI-Codepage (Ω) – char*-Pfade kämen dort als „?“ an
+        let odd = std::env::temp_dir().join(format!("kw-ümlaut-Ω-{}", std::process::id()));
+        std::fs::create_dir_all(&odd).unwrap();
+        std::fs::copy(fixtures.join("fdo65220-2.cdr"), odd.join("Löwe Ω.cdr")).unwrap();
+        let res = import(&odd.join("Löwe Ω.cdr"));
+        std::fs::remove_dir_all(&odd).ok();
+        assert_eq!(res.unwrap().scene.items, imp.scene.items);
         // Datenmüll mit RIFF-Kopf wie alte CDR-Dateien → klare Meldung statt Absturz
         let junk = std::env::temp_dir().join(format!("kw-junk-{}.cdr", std::process::id()));
         std::fs::write(&junk, b"RIFF\x10\0\0\0CDR9vrsn\xff\xff\xff\xff").unwrap();

@@ -14,11 +14,48 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: EmbarkStudios/cargo-deny-action@v2
+  # CDR-Hilfsprozess (Phase 6c): libcdr statisch in MSYS2 bauen; die App bündelt ihn über bundle.externalBin.
+  cdr:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: make curl bzip2 xz
+          pacboy: gcc:p boost:p lcms2:p zlib:p icu:p pkgconf:p
+      - name: kw-cdr.exe bauen
+        run: sh src/cdr-import/build.sh
+      - name: kw-cdr.exe prüfen (nur System-DLLs, liest die Testdatei)
+        run: |
+          cd src/cdr-import/.build/bin
+          DLLS=$(objdump -p kw-cdr.exe | grep "DLL Name")
+          echo "$DLLS"
+          if echo "$DLLS" | grep -qiE "lib|icuuc|icuin|icudt"; then echo "fremde DLL" >&2; exit 1; fi
+          ./kw-cdr.exe ../../../../tests/fixtures/cdr/fdo65220-2.cdr > probe.svg
+          head -c 300 probe.svg; echo
+          grep -q "<svg" probe.svg
+          rm probe.svg
+      - uses: actions/upload-artifact@v7
+        with:
+          name: kw-cdr-windows
+          path: src/cdr-import/.build/bin/
+          retention-days: 14
   windows:
+    needs: cdr
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: kw-cdr-windows
+          path: src/cdr-import/.build/bin
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -39,9 +76,17 @@ jobs:
       - name: cargo test
         if: ${{ !cancelled() }}
         run: cargo test --workspace
+      - name: CDR-Import mit Testdatei (auch Pfad mit Ω)
+        if: ${{ !cancelled() }}
+        run: cargo test -p konturwerk cdr -- --ignored
       - name: Installer bauen
         if: ${{ !cancelled() }}
         run: npx tauri build
+      - name: Installer enthält kw-cdr.exe
+        if: ${{ !cancelled() }}
+        run: |
+          $l = 7z l (Get-Item target/release/bundle/nsis/*.exe).FullName
+          if (-not ($l | Select-String 'kw-cdr\.exe')) { $l; exit 1 }
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
