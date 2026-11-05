@@ -241,8 +241,9 @@ Abgleich Spec ↔ Code am 04.11. (Beleg = Datei im Code; „fehlt“ = kein Befe
 | 7c ✓ 05.11. | Palettenfarbe auf die Verlaufslinie ziehen: auf einen Knoten = umfärben, auf die Linie = neuer Knoten mit der Farbe, daneben = Hinweis. Ziehen per Pointer-Events statt HTML5-Drag (Tauri fängt HTML5-Drag unter Windows ab); Farbfleck folgt dem Zeiger | `gradient-tool.test.ts`, Klicktest |
 | 7d ✓ 05.11. | Nachzeichnen-Panel: Ergebnisfarben als Liste – mehrere wählen + Zusammenführen, eine Farbe ändern, Zurücksetzen. kw-core färbt auf Label-Ebene vor dem Entflecken um (`recolor` in `trace/colors.rs`), damit Stapeln, Zusammenführen und Ausschneiden stimmen | `trace_color.rs`, `trace.test.ts`, Klicktest |
 | Befund | Esc im offenen Farbwähler schloss ihn **und** hob die Auswahl auf (seit Phase 4). Offener Farbwähler zählt jetzt wie ein Dialog (`keyCommand(…, popover)`); WebKit springt mit Tab nicht auf Knöpfe, daher Prüfung „Popover offen“ statt Fokusziel | `shortcuts.test.ts`, Klicktest WebKit |
+| Befund echte App | Nach Übernehmen mit „Originalbild löschen“ zeigte das Panel „Erst ein Bild wählen.“, aber noch die alten Ergebnisfarben samt Farbfeld; nach Rückgängig war eine Farbe weiter gewählt. Farbliste nur bei gewähltem Bild, Wahl hängt wie `p.recolor` am Bild (`{#key imageId}`) | Klicktest Chromium + WebKit |
 
-Klicktest Phase 7: Chromium + WebKit, 1366 und 1920 px, Tauri-Brücke nachgebildet, 128 Prüfungen grün.
+Klicktest Phase 7: Chromium + WebKit, 1366 und 1920 px, Tauri-Brücke nachgebildet, 136 Prüfungen grün. Echte Mac-App 05.11.: Nachzeichnen (Ergebnisfarben wählen, zusammenführen, umfärben, zurücksetzen), Esc im Farbwähler, Originalbild löschen + Rückgängig, Verlaufsknoten-Felder, Palettenfarbe auf Linie (Lage 49,80 % = Ablagepunkt) + Rückgängig von Hand geprüft.
 
 ## 11. Risiken
 

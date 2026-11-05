@@ -208,12 +208,15 @@
   {/if}
   {#if p.mode === 'color'}
     <div class="wide options">
-      <TraceColors
-        colors={preview?.mode === 'color' ? resultColors(preview.pieces) : []}
-        edited={p.recolor.length > 0}
-        onset={(shown, to) => (p.recolor = recolor(p.recolor, shown, to))}
-        onreset={() => (p.recolor = [])}
-      />
+      <!-- Wahl gehört zum Bild wie p.recolor: anderes oder kein Bild → frische Liste -->
+      {#key imageId}
+        <TraceColors
+          colors={current && preview?.mode === 'color' ? resultColors(preview.pieces) : []}
+          edited={p.recolor.length > 0}
+          onset={(shown, to) => (p.recolor = recolor(p.recolor, shown, to))}
+          onreset={() => (p.recolor = [])}
+        />
+      {/key}
       <label class="check" title="Die Fläche in der Randfarbe weglassen">
         <input type="checkbox" checked={p.background !== 'keep'} onchange={(e) => (p.background = checked(e) ? 'edge' : 'keep')} /> Hintergrund entfernen
       </label>
