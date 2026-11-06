@@ -4,11 +4,12 @@ use crate::scene::{
     apply, leaves, mul, Cap, Color, Fill, FillRule, Gradient, GradientKind, GradientStop, Item,
     Join, Mat, NodeType, PathPoint, Point, Scene, Stroke, Subpath, IDENTITY,
 };
-use crate::{raster, Images};
+use crate::Images;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use usvg::tiny_skia_path::{self as tsp, PathSegment};
 
+mod embedded;
 mod pattern;
 
 const K: f64 = 25.4 / 96.0; // CSS-px → mm
@@ -55,7 +56,7 @@ pub fn import(data: &[u8]) -> Result<Imported, String> {
             // libcdr liefert Bitmaps aus .cdr-Dateien als BMP, usvg kennt kein BMP → hier zu PNG.
             resolve_data: Box::new(move |mime, data, opt| {
                 let kind = if mime == "image/bmp" {
-                    bmp_png(&data).map(|p| usvg::ImageKind::PNG(Arc::new(p)))
+                    embedded::bmp_png(&data).map(|p| usvg::ImageKind::PNG(Arc::new(p)))
                 } else {
                     default(mime, data, opt)
                 };
@@ -116,7 +117,7 @@ fn group(cx: &mut Ctx, g: &usvg::Group, world: &Mat, alpha: f64) -> Vec<Item> {
                 }
             }
             usvg::Node::Path(p) => out.extend(path(cx, p, world, alpha)),
-            usvg::Node::Image(i) => out.extend(image(cx, i, alpha)),
+            usvg::Node::Image(i) => out.extend(embedded::image(cx, i, world, alpha)),
             usvg::Node::Text(t) => out.extend(sub_group(cx, t.flattened(), world, alpha)),
         }
     }
@@ -264,43 +265,6 @@ fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat, alpha: f64) -> Vec<Item> {
             vec![item(f, s, o)]
         }
     }
-}
-
-fn bmp_png(data: &[u8]) -> Option<Vec<u8>> {
-    let img = image::load_from_memory_with_format(data, image::ImageFormat::Bmp).ok()?;
-    let mut out = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
-        .ok()?;
-    Some(out)
-}
-
-/// Eingebettetes PNG/JPG; Platz und Größe stecken in der Gruppenmatrix davor.
-fn image(cx: &mut Ctx, i: &usvg::Image, alpha: f64) -> Option<Item> {
-    if !i.is_visible() {
-        return None;
-    }
-    let r = match i.kind() {
-        usvg::ImageKind::PNG(d) | usvg::ImageKind::JPEG(d) => match raster::import(d) {
-            Ok(r) => r,
-            Err(e) => {
-                cx.warn(&format!("Bild übersprungen: {e}"));
-                return None;
-            }
-        },
-        _ => {
-            cx.warn("Nur PNG/JPG-Bilder übernommen (GIF/WebP/SVG übersprungen).");
-            return None;
-        }
-    };
-    let size = i.size();
-    cx.images.insert(r.hash.clone(), r.png);
-    Some(Item::Image {
-        matrix: IDENTITY,
-        width: size.width() as f64,
-        height: size.height() as f64,
-        image: r.hash,
-        opacity: alpha,
-    })
 }
 
 fn color(c: usvg::Color) -> Color {

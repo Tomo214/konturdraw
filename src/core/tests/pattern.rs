@@ -230,3 +230,69 @@ fn bild_in_der_kachel_in_allen_formaten() {
         check(&pm, "PDF");
     }
 }
+
+/// CDR-Muster kommen über libcdr/librevenge als `<pattern>` mit einem `<image>` an: Zweifarb-
+/// und Bitmapmuster als BMP, Vollfarbmuster als eingebettetes SVG. Kachel 10 × 10, links rot, rechts blau.
+#[test]
+fn cdr_muster_als_bild_in_der_kachel() {
+    use base64::Engine;
+    use std::io::Cursor;
+    let b64 = |d: &[u8]| base64::engine::general_purpose::STANDARD.encode(d);
+    let img = image::RgbImage::from_fn(2, 1, |x, _| {
+        image::Rgb(if x == 0 { [255, 0, 0] } else { [0, 0, 255] })
+    });
+    let mut bmp = Vec::new();
+    img.write_to(&mut Cursor::new(&mut bmp), image::ImageFormat::Bmp)
+        .unwrap();
+    let vect = r##"<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2in" height="1in" viewBox="0 0 2 1">
+<path d="M 0 0 L 1 0 L 1 1 L 0 1 Z" style="fill: #ff0000"/><path d="M 1 0 L 2 0 L 2 1 L 1 1 Z" style="fill: #0000ff"/></svg>"##;
+    for (mime, data, vector) in [
+        ("image/bmp", b64(&bmp), false),
+        ("image/svg+xml", b64(vect.as_bytes()), true),
+    ] {
+        let svg = format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20mm" height="10mm" viewBox="0 0 20 10">
+<defs><pattern id="img0" patternUnits="userSpaceOnUse" width="10" height="10">
+<image x="0" y="0" width="10" height="10" xlink:href="data:{mime};base64,{data}" /></pattern></defs>
+<path d="M 0 0 L 20 0 L 20 10 L 0 10 Z" style="fill: url(#img0)"/></svg>"##
+        );
+        let r = svg_import::import(svg.as_bytes()).unwrap();
+        assert!(r.warnings.is_empty(), "{mime}: {:?}", r.warnings);
+        let l = leaves(&r.scene.items);
+        let [(
+            _,
+            Item::Path {
+                fill: Some(Fill::Pattern(p)),
+                ..
+            },
+        )] = l.as_slice()
+        else {
+            panic!("{mime}: {:#?}", r.scene)
+        };
+        let tile = leaves(&p.items);
+        let paths = tile
+            .iter()
+            .filter(|(_, i)| matches!(i, Item::Path { .. }))
+            .count();
+        assert_eq!(
+            paths,
+            if vector { 2 } else { 0 },
+            "{mime}: Vollfarbmuster bleibt Vektor"
+        );
+        let png = png_export::export(&r.scene, &r.images, 254.0, &Cms::default()).unwrap();
+        let pm = Pixmap::decode_png(&png).unwrap();
+        for (x, want) in [
+            (2.5, [255, 0, 0]),
+            (7.5, [0, 0, 255]),
+            (12.5, [255, 0, 0]),
+            (17.5, [0, 0, 255]),
+        ] {
+            let got = color_at(&pm, 10.0, x, 5.0);
+            assert!(
+                (0..3).all(|i| got[i].abs_diff(want[i]) <= 3),
+                "{mime} bei x = {x}: {got:?} statt {want:?}"
+            );
+        }
+    }
+}
