@@ -32,6 +32,12 @@ test('chain: vom obersten Objekt bis zum Blatt (Strg-Klick wählt darin tiefer)'
   expect(items.map((i) => i.chain)).toEqual([['a'], ['g', 'h', 'b']]);
 });
 
+test('Transparenz: Produkt entlang der Kette, deckend = 1', () => {
+  const inner = { ...group('h', [{ ...square('b'), opacity: 0.5 }]), opacity: 0.5 };
+  const items = buildScene(page([[square('a'), { ...group('g', [inner]), opacity: 0.8 }]]));
+  expect(items.map((i) => i.opacity)).toEqual([1, 0.2]);
+});
+
 test('Gruppen-Transformation landet in Weltmatrix und Box', () => {
   const [item] = buildScene(page([[group('g', [square('a', 5, 0, 10)], 100, 20)]]));
   expect([item.minX, item.minY, item.maxX, item.maxY]).toEqual([105, 20, 115, 30]);

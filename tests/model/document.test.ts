@@ -102,6 +102,14 @@ test('ungroupNodes behält die Lage der Kinder auf der Seite', () => {
   expect(apply(findNode(doc, 'a')!.transform, 0, 0)).toEqual([105, 0]);
 });
 
+test('ungroupNodes: Transparenz der Gruppe geht in die Kinder über (Aussehen bleibt)', () => {
+  const g = { ...group('g', [square('a'), { ...square('b'), opacity: 0.5 }]), opacity: 0.5 };
+  const { doc } = ungroupNodes(docWith(g), ['g']);
+  expect(findNode(doc, 'a')!.opacity).toBe(0.5);
+  expect(findNode(doc, 'b')!.opacity).toBe(0.25);
+  expect('opacity' in findNode(ungroupNodes(docWith(group('h', [square('c')])), ['h']).doc, 'c')!).toBe(false);
+});
+
 test('duplicateNodes legt versetzte Kopie mit neuen IDs direkt über das Original', () => {
   const { doc, ids } = duplicateNodes(docWith(group('g', [square('a')]), square('b')), ['g'], 3, 3);
   const ids0 = layerIds(doc);

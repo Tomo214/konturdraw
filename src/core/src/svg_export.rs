@@ -76,8 +76,15 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                 fill,
                 stroke,
                 fill_rule,
+                opacity,
                 ..
             } => {
+                // Füllung und Kontur je einzeln abgedeckt (wie Leinwand/PNG/PDF).
+                let alpha = if *opacity < 1.0 {
+                    format!(r#" fill-opacity="{0}" stroke-opacity="{0}""#, num(*opacity))
+                } else {
+                    String::new()
+                };
                 let rule = if fill_rule.is_some() {
                     r#" fill-rule="evenodd""#
                 } else {
@@ -151,7 +158,7 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                 };
                 let _ = writeln!(
                     body,
-                    r#"<path d="{}" fill="{fill}"{rule}{stroke}/>"#,
+                    r#"<path d="{}" fill="{fill}"{rule}{stroke}{alpha}/>"#,
                     path_data(&m, subpaths)
                 );
             }

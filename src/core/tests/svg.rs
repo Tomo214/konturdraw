@@ -242,7 +242,76 @@ fn nicht_unterstuetztes_wird_gemeldet() {
         <g clip-path="url(#c)" opacity="0.5"><path d="M0 0 L10 0" stroke="black" stroke-dasharray="2 1"/></g></svg>"#,
     );
     let w = imp.warnings.join(" | ");
-    assert!(w.contains("Beschneidung") && w.contains("Deckkraft"), "{w}");
+    assert!(w.contains("Beschneidung"), "{w}");
+}
+
+/// (Füllung?, Kontur?, Deckkraft) je Pfad in Zeichenreihenfolge.
+fn alphas(scene: &Scene) -> Vec<(bool, bool, f64)> {
+    leaves(&scene.items)
+        .into_iter()
+        .filter_map(|(_, it)| match it {
+            // usvg rechnet in f32 → auf 4 Stellen runden
+            Item::Path {
+                fill,
+                stroke,
+                opacity,
+                ..
+            } => Some((
+                fill.is_some(),
+                stroke.is_some(),
+                (opacity * 1e4).round() / 1e4,
+            )),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn deckkraft_wird_uebernommen() {
+    let imp = import(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+        <linearGradient id="v"><stop offset="0" stop-color="red" stop-opacity="0.5"/><stop offset="1" stop-color="blue" stop-opacity="0.5"/></linearGradient>
+        <path d="M0 0 H10 V10 H0 Z" fill="red" fill-opacity="0.5"/>
+        <g opacity="0.5"><path d="M20 0 H30 V10 H20 Z" fill="blue" fill-opacity="0.5"/></g>
+        <path d="M40 0 H50 V10 H40 Z" fill="red" stroke="black" fill-opacity="0.5" stroke-opacity="0.25"/>
+        <path d="M60 0 H70 V10 H60 Z" fill="red" stroke="black" fill-opacity="0.4" stroke-opacity="0.4"/>
+        <path d="M80 0 H90 V10 H80 Z" fill="url(#v)"/>
+        <path d="M0 20 H10 V30 H0 Z" fill="red" fill-opacity="0" stroke="black"/></svg>"#,
+    );
+    assert_eq!(
+        alphas(&imp.scene),
+        vec![
+            (true, false, 0.5),
+            (true, false, 0.25),
+            (true, false, 0.5),
+            (false, true, 0.25),
+            (true, true, 0.4),
+            (true, false, 0.5),
+            // 0 % = kein Teil (libcdr schreibt „keine Füllung“ so)
+            (false, true, 1.0),
+        ]
+    );
+    assert!(imp.warnings.is_empty(), "{:?}", imp.warnings);
+}
+
+#[test]
+fn deckkraft_die_nicht_aufgeht_wird_gemeldet() {
+    let imp = import(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+        <linearGradient id="v"><stop offset="0" stop-color="red"/><stop offset="1" stop-color="blue" stop-opacity="0.5"/></linearGradient>
+        <path d="M0 0 H10 V10 H0 Z" fill="url(#v)"/>
+        <g opacity="0.5"><path d="M20 0 H30 V10 H20 Z" fill="blue"/><path d="M25 5 H35 V15 H25 Z" fill="red"/></g></svg>"#,
+    );
+    // Gruppe: Deckkraft wirkt auf jedes Objekt (Konturwerk-Modell), Überlappung wird gemeldet.
+    assert_eq!(
+        alphas(&imp.scene),
+        vec![(true, false, 1.0), (true, false, 0.5), (true, false, 0.5)]
+    );
+    let w = imp.warnings.join(" | ");
+    assert!(
+        w.contains("Verlauf") && w.contains("Gruppen-Deckkraft"),
+        "{w}"
+    );
 }
 
 #[test]

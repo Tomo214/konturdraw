@@ -1,8 +1,8 @@
 //! SVG-Import über usvg (Spec §11): Gruppen bleiben Gruppen, Formen → Bézier-Pfade, Text → Kurven,
 //! eingebettete PNG/JPG → Bilder. Nicht Abbildbares wird vereinfacht oder übersprungen und gemeldet.
 use crate::scene::{
-    apply, mul, Cap, Color, Fill, FillRule, Gradient, GradientKind, GradientStop, Item, Join, Mat,
-    NodeType, PathPoint, Point, Scene, Stroke, Subpath, IDENTITY,
+    apply, leaves, mul, Cap, Color, Fill, FillRule, Gradient, GradientKind, GradientStop, Item,
+    Join, Mat, NodeType, PathPoint, Point, Scene, Stroke, Subpath, IDENTITY,
 };
 use crate::{raster, Images};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -73,7 +73,7 @@ pub fn import(data: &[u8]) -> Result<Imported, String> {
     };
     // Eine Gruppe fürs ganze SVG; viewBox steckt in usvg schon in einer Kind-Gruppe.
     let top = mul(&[K, 0.0, 0.0, K, 0.0, 0.0], &mat(tree.root().transform()));
-    let children = group(&mut cx, tree.root(), &top);
+    let children = group(&mut cx, tree.root(), &top, 1.0);
     if lost.load(Ordering::Relaxed) > 0 {
         cx.warn("Eingebettetes Bild in unbekanntem Format übersprungen.");
     }
@@ -93,7 +93,8 @@ pub fn import(data: &[u8]) -> Result<Imported, String> {
     })
 }
 
-fn group(cx: &mut Ctx, g: &usvg::Group, world: &Mat) -> Vec<Item> {
+/// `alpha` = Produkt der Gruppen-Deckkräfte darüber; wirkt auf jedes Objekt einzeln (Konturwerk-Modell).
+fn group(cx: &mut Ctx, g: &usvg::Group, world: &Mat, alpha: f64) -> Vec<Item> {
     let mut out = Vec::new();
     for node in g.children() {
         match node {
@@ -107,43 +108,53 @@ fn group(cx: &mut Ctx, g: &usvg::Group, world: &Mat) -> Vec<Item> {
                 if !c.filters().is_empty() {
                     cx.warn("Filter ignoriert.");
                 }
-                if c.opacity().get() < 1.0 {
-                    cx.warn("Deckkraft unter 100 % ignoriert.");
+                let o = c.opacity().get() as f64;
+                if let Some(sub) = sub_group(cx, c, world, alpha * o) {
+                    if o < 1.0 && overlaps(&sub) {
+                        cx.warn("Gruppen-Deckkraft auf die einzelnen Objekte verteilt – Überlappungen wirken dichter.");
+                    }
+                    out.push(sub);
                 }
-                out.extend(sub_group(cx, c, world));
             }
-            usvg::Node::Path(p) => out.extend(path(cx, p, world)),
-            usvg::Node::Image(i) => out.extend(image(cx, i)),
-            usvg::Node::Text(t) => out.extend(sub_group(cx, t.flattened(), world)),
+            usvg::Node::Path(p) => out.extend(path(cx, p, world, alpha)),
+            usvg::Node::Image(i) => out.extend(image(cx, i, alpha)),
+            usvg::Node::Text(t) => out.extend(sub_group(cx, t.flattened(), world, alpha)),
         }
     }
     out
 }
 
-fn sub_group(cx: &mut Ctx, g: &usvg::Group, world: &Mat) -> Option<Item> {
+/// Mehr als ein Objekt (oder Füllung + Kontur): Deckkraft je Objekt ≠ Deckkraft der ganzen Gruppe.
+fn overlaps(g: &Item) -> bool {
+    match leaves(std::slice::from_ref(g)).as_slice() {
+        [(_, Item::Path { fill, stroke, .. })] => fill.is_some() && stroke.is_some(),
+        l => l.len() > 1,
+    }
+}
+
+fn sub_group(cx: &mut Ctx, g: &usvg::Group, world: &Mat, alpha: f64) -> Option<Item> {
     let m = mat(g.transform());
-    let children = group(cx, g, &mul(world, &m));
+    let children = group(cx, g, &mul(world, &m), alpha);
     (!children.is_empty()).then_some(Item::Group {
         matrix: m,
         children,
     })
 }
 
-fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat) -> Option<Item> {
+/// Füllung und Kontur mit verschiedener Deckkraft → zwei Pfade (Füllung, darüber Kontur).
+fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat, alpha: f64) -> Vec<Item> {
     if !p.is_visible() {
-        return None;
+        return Vec::new();
     }
     let subpaths = subpaths(p.data());
-    let fill = p.fill().and_then(|f| {
-        if f.opacity().get() < 1.0 {
-            cx.warn("Deckkraft unter 100 % ignoriert.");
-        }
-        paint(cx, f.paint())
+    let fill_alpha = p.fill().map_or(1.0, |f| {
+        f.opacity().get() as f64 * stop_alpha(cx, f.paint())
     });
+    let stroke_alpha = p.stroke().map_or(1.0, |s| {
+        s.opacity().get() as f64 * stop_alpha(cx, s.paint())
+    });
+    let fill = p.fill().and_then(|f| paint(cx, f.paint()));
     let stroke = p.stroke().and_then(|s| {
-        if s.opacity().get() < 1.0 {
-            cx.warn("Deckkraft unter 100 % ignoriert.");
-        }
         let color = match paint(cx, s.paint())? {
             Fill::Color(c) => c,
             Fill::Gradient(g) => {
@@ -178,13 +189,31 @@ fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat) -> Option<Item> {
         .fill()
         .filter(|f| matches!(f.rule(), usvg::FillRule::EvenOdd))
         .map(|_| FillRule::EvenOdd);
-    (!subpaths.is_empty()).then_some(Item::Path {
+    if subpaths.is_empty() {
+        return Vec::new();
+    }
+    let item = |fill, stroke, opacity| Item::Path {
         matrix: IDENTITY,
-        subpaths,
+        subpaths: subpaths.clone(),
         fill,
         stroke,
         fill_rule,
-    })
+        opacity,
+    };
+    let (fa, sa) = (alpha * fill_alpha, alpha * stroke_alpha);
+    // 0 % Deckkraft = Teil fehlt (libcdr schreibt „keine Füllung“ als fill-opacity 0).
+    let fill = fill.filter(|_| fa > 1e-6);
+    let stroke = stroke.filter(|_| sa > 1e-6);
+    match (fill, stroke) {
+        (None, None) => Vec::new(),
+        (Some(f), Some(s)) if (fa - sa).abs() > 1e-6 => {
+            vec![item(Some(f), None, fa), item(None, Some(s), sa)]
+        }
+        (f, s) => {
+            let o = if f.is_some() { fa } else { sa };
+            vec![item(f, s, o)]
+        }
+    }
 }
 
 fn bmp_png(data: &[u8]) -> Option<Vec<u8>> {
@@ -196,7 +225,7 @@ fn bmp_png(data: &[u8]) -> Option<Vec<u8>> {
 }
 
 /// Eingebettetes PNG/JPG; Platz und Größe stecken in der Gruppenmatrix davor.
-fn image(cx: &mut Ctx, i: &usvg::Image) -> Option<Item> {
+fn image(cx: &mut Ctx, i: &usvg::Image, alpha: f64) -> Option<Item> {
     if !i.is_visible() {
         return None;
     }
@@ -220,7 +249,7 @@ fn image(cx: &mut Ctx, i: &usvg::Image) -> Option<Item> {
         width: size.width() as f64,
         height: size.height() as f64,
         image: r.hash,
-        opacity: 1.0,
+        opacity: alpha,
     })
 }
 
@@ -232,10 +261,26 @@ fn color(c: usvg::Color) -> Color {
     )
 }
 
-fn stops(cx: &mut Ctx, s: &[usvg::Stop]) -> Vec<GradientStop> {
-    if s.iter().any(|s| s.opacity().get() < 1.0) {
-        cx.warn("Deckkraft unter 100 % ignoriert.");
+/// Gleiche Deckkraft aller Verlaufsstopps wirkt wie Objekt-Deckkraft; wechselnde gibt es im Modell nicht.
+fn stop_alpha(cx: &mut Ctx, p: &usvg::Paint) -> f64 {
+    let s = match p {
+        usvg::Paint::LinearGradient(g) => g.stops(),
+        usvg::Paint::RadialGradient(g) => g.stops(),
+        _ => return 1.0,
+    };
+    let first = s.first().map_or(1.0, |s| s.opacity().get() as f64);
+    let uniform = s
+        .iter()
+        .all(|s| (s.opacity().get() as f64 - first).abs() < 1e-6);
+    if uniform {
+        first
+    } else {
+        cx.warn("Verlauf mit wechselnder Deckkraft: Deckkraft ignoriert.");
+        1.0
     }
+}
+
+fn stops(_cx: &mut Ctx, s: &[usvg::Stop]) -> Vec<GradientStop> {
     s.iter()
         .map(|s| GradientStop {
             offset: s.offset().get() as f64,

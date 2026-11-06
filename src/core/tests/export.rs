@@ -330,3 +330,57 @@ fn cmyk_pdf_mit_sonderfarbe_rendert() {
         [r, g, b]
     );
 }
+
+#[test]
+fn strichmuster_bleibt_nach_transparentem_pfad_richtig() {
+    use kw_core::scene::{Cap, Color, Join, NodeType, PathPoint, Stroke, Subpath};
+    let line = |y: f64, dash: Vec<f64>, opacity: f64| {
+        let node = |x: f64| PathPoint {
+            x,
+            y,
+            kind: NodeType::Corner,
+            handle_in: None,
+            handle_out: None,
+        };
+        Item::Path {
+            matrix: IDENTITY,
+            subpaths: vec![Subpath {
+                nodes: vec![node(0.0), node(30.0)],
+                closed: false,
+            }],
+            fill: None,
+            stroke: Some(Stroke {
+                color: Color::rgb(0.0, 0.0, 0.0),
+                width: 2.0,
+                dash,
+                cap: Cap::Butt,
+                join: Join::Miter,
+            }),
+            fill_rule: None,
+            opacity,
+        }
+    };
+    // gestrichelt deckend → durchgezogen halbtransparent → durchgezogen deckend: die letzte Linie hat keine Lücke.
+    let scene = Scene {
+        width: 30.0,
+        height: 10.0,
+        items: vec![
+            line(2.0, vec![2.0, 2.0], 1.0),
+            line(5.0, vec![], 0.5),
+            line(8.0, vec![], 1.0),
+        ],
+    };
+    let pdf = pdf_export::export(&scene, &Images::new(), &Cms::default()).unwrap();
+    if let Some(pm) = render_pdf(&pdf, 300, "strich") {
+        assert_eq!(
+            color_at(&pm, 10.0, 3.0, 2.0),
+            [255, 255, 255],
+            "Lücke der gestrichelten Linie"
+        );
+        let solid = color_at(&pm, 10.0, 3.0, 8.0);
+        assert!(
+            solid.iter().all(|v| *v <= 3),
+            "letzte Linie durchgezogen: {solid:?}"
+        );
+    }
+}

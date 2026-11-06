@@ -79,6 +79,26 @@ it('Drahtmodell: keine Füllung und kein Bildinhalt, nur haarfeine Umrisse – p
   expect(set.globalCompositeOperation).toBe('source-over');
 });
 
+it('Transparenz: Füllung, Kontur und Bild mit der Deckkraft der Kette, danach wieder deckend', () => {
+  vi.stubGlobal('document', { createElement: () => ({ getContext: () => null }) });
+  vi.stubGlobal('Path2D', class { moveTo() {} lineTo() {} bezierCurveTo() {} closePath() {} addPath() {} });
+  const calls: string[] = [];
+  const set: Record<string, unknown> = { globalAlpha: 1 };
+  const ctx = new Proxy({} as CanvasRenderingContext2D, {
+    get: (_, k) => (k === 'fill' || k === 'stroke' || k === 'drawImage' ? () => calls.push(`${k}@${set.globalAlpha}`) : () => {}),
+    set: (_, k, v) => ((set[k as string] = v), true),
+  });
+  const doc = createDocument(50, 50);
+  const black = { model: 'rgb' as const, values: [0, 0, 0] as const };
+  const framed = { ...square('a'), style: { fill: black, stroke: { color: black, width: 1, cap: 'butt' as const, join: 'miter' as const } } };
+  const img = { type: 'image' as const, id: 'i', transform: IDENTITY, image: 'abc', width: 20, height: 10, opacity: 0.5 };
+  const nodes = [{ ...group('g', [framed, img]), opacity: 0.5 }, square('z')];
+  const r = new Renderer({ bitmap: () => ({}) as CanvasImageSource });
+  r.setPage(addNodes(doc, doc.pages[0].layers[0].id, nodes).pages[0]);
+  r.draw(ctx, { x: 0, y: 0, zoom: 4 }, 100, 100, 1);
+  expect(calls).toEqual(['fill@0.5', 'stroke@0.5', 'drawImage@0.25', 'fill@1']);
+});
+
 it('Kind einer Gruppe gewählt: Box nur um das Kind; nested erkennt die Kind-Auswahl (runde Griffe)', () => {
   vi.stubGlobal('document', { createElement: () => ({ getContext: () => null }) });
   const doc = createDocument(200, 200);

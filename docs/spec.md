@@ -254,6 +254,8 @@ Effekte (Überblendung, Extrusion, Hülle, Verzerrung, Schatten, Transparenz-Eff
 
 Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 
+06.11. (Timon): Transparenz (gleichmäßig), Muster-Füllung und PowerClip („in Form einfügen“) kommen als Phase 8 mit eigener Abnahme (architecture.md, Phase 8).
+
 ## 15. Annahmen und offene Entscheidungen (bitte bestätigen oder korrigieren)
 
 | # | Punkt | Annahme bis Antwort |

@@ -6,7 +6,7 @@
   import { activeLayer, addNodes, createDocument } from '../model/document';
   import { guidesOf, originOf, toUser } from '../model/guides';
   import { History } from '../model/history';
-  import { setImageOpacity, toCurves, updateLeaves, type FillSpec } from '../model/style';
+  import { selectionOpacity, setOpacity, toCurves, updateLeaves, type FillSpec } from '../model/style';
   import type { Doc, LeafNode, Node, Palette } from '../model/types';
   import { DEFAULT_NUDGE, DEFAULT_UNIT } from '../model/units';
   import { Renderer } from '../render/renderer';
@@ -124,7 +124,7 @@
     typo.show(leaf ?? null);
     if (leaf) style.show(leaf);
     const img = selectedImage();
-    alpha = img ? (img.node.opacity ?? 1) : null;
+    alpha = selectionOpacity(history.current, selected);
     zoom = Math.round((surface.viewport().zoom / MM_TO_PX) * 100);
     count = selected.size;
     const k = tools[toolName].knot?.get() ?? null;
@@ -217,7 +217,7 @@
   };
   let alpha = $state<number | null>(null);
   function onalpha(opacity: number, done: boolean) {
-    guarded(() => history.preview(setImageOpacity(history.current, selected, opacity)));
+    guarded(() => history.preview(setOpacity(history.current, selected, opacity)));
     if (done) history.commit();
     redraw();
   }

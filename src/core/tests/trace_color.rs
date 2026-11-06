@@ -63,6 +63,7 @@ fn render(pieces: &[Piece], w: f64, h: f64) -> image::RgbaImage {
                 fill: Some(Fill::Color(Color::rgb(r, g, b))),
                 stroke: None,
                 fill_rule: None,
+                opacity: 1.0,
             }
         })
         .collect();

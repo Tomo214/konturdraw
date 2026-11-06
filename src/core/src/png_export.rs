@@ -111,6 +111,7 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                 fill,
                 stroke,
                 fill_rule,
+                opacity,
                 ..
             } => {
                 let Some(p) = path(&m, subpaths) else {
@@ -122,7 +123,9 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                     } else {
                         sk::FillRule::Winding
                     };
-                    pm.fill_path(&p, &paint(f, &m, cms), rule, page, None);
+                    let mut fp = paint(f, &m, cms);
+                    fp.shader.apply_opacity(*opacity as f32);
+                    pm.fill_path(&p, &fp, rule, page, None);
                 }
                 if let Some(s) = stroke {
                     let st = sk::Stroke {
@@ -142,13 +145,9 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                             sk::StrokeDash::new(d.iter().map(|x| *x as f32).collect(), 0.0)
                         }),
                     };
-                    pm.stroke_path(
-                        &p,
-                        &paint(&Fill::Color(s.color.clone()), &m, cms),
-                        &st,
-                        page,
-                        None,
-                    );
+                    let mut sp = paint(&Fill::Color(s.color.clone()), &m, cms);
+                    sp.shader.apply_opacity(*opacity as f32);
+                    pm.stroke_path(&p, &sp, &st, page, None);
                 }
             }
             Item::Image {

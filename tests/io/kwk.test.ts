@@ -121,6 +121,14 @@ describe('.kwk-Dokument', () => {
     expect(bad((d) => (d.pages[0].layers[0].children.at(-1).opacity = 'x'))).toThrow(/Deckkraft/);
   });
 
+  it('Transparenz an Pfaden und Gruppen: Rundreise, Unsinn → Fehler', () => {
+    const base = sample();
+    const doc = addNodes(base, base.pages[0].layers[0].id, [{ ...square('o'), opacity: 0.4 }, { ...group('og', [square('oi')]), opacity: 0.6 }]);
+    expect(parseDocument(serialize(doc), new Set(['aa', 'bb']))).toEqual(doc);
+    expect(bad((d) => (d.pages[0].layers[0].children.at(-1).opacity = -0.1))).toThrow(/Deckkraft/);
+    expect(bad((d) => (d.pages[0].layers[0].children.at(-2).opacity = NaN))).toThrow(/Deckkraft/);
+  });
+
   it('Strichmuster: Rundreise, Unsinn → Fehler', () => {
     const doc = sample();
     expect(parseDocument(serialize(doc), new Set(['aa', 'bb']))).toEqual(doc);

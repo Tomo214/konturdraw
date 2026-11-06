@@ -1,6 +1,6 @@
 import { naiveSrgb } from './color';
 import { subpathBounds } from './bezier';
-import { updateNodes } from './document';
+import { findNode, updateNodes } from './document';
 import { geometry, shapeSubpaths } from './shapes';
 import type { Color, Doc, Fill, Gradient, LeafNode, Node, Point, Stroke } from './types';
 
@@ -115,16 +115,22 @@ export function updateLeaves(doc: Doc, ids: Iterable<string>, fn: (l: LeafNode) 
   return updateNodes(doc, ids, (n) => mapLeaves(n, fn));
 }
 
-/** Transparenz für Bilder der Auswahl (auch in Gruppen); 1 = deckend, Feld entfällt. */
-export function setImageOpacity(doc: Doc, ids: Iterable<string>, opacity: number): Doc {
+/** Transparenz der gewählten Objekte (Gruppe als Ganzes, wirkt auf jedes Kind); 1 = deckend, Feld entfällt. */
+export function setOpacity(doc: Doc, ids: Iterable<string>, opacity: number): Doc {
   const o = Math.min(1, Math.max(0, opacity));
-  const visit = (n: Node): Node => {
-    if (n.type === 'group') return { ...n, children: n.children.map(visit) };
-    if (n.type !== 'image') return n;
+  return updateNodes(doc, ids, (n) => {
     const { opacity: _, ...rest } = n;
-    return o < 1 ? { ...rest, opacity: o } : rest;
-  };
-  return updateNodes(doc, ids, visit);
+    return (o < 1 ? { ...rest, opacity: o } : rest) as Node;
+  });
+}
+
+/** Deckkraft des ersten gewählten Objekts; null = nichts gewählt. */
+export function selectionOpacity(doc: Doc, ids: Iterable<string>): number | null {
+  for (const id of ids) {
+    const n = findNode(doc, id);
+    if (n) return n.opacity ?? 1;
+  }
+  return null;
 }
 
 const rel = (v: number, a: number, b: number) => (b - a > 1e-12 ? (v - a) / (b - a) : 0.5);

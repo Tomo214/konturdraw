@@ -16,6 +16,8 @@ export interface SceneItem extends Box {
   /** Zeichenbare Geometrie (Formen als Bézier-Teilpfade). */
   subpaths: readonly Subpath[];
   world: Mat;
+  /** Deckkraft: Produkt über die Kette (Gruppen wirken auf jedes Kind); 1 = deckend. */
+  opacity: number;
 }
 
 /** Blatt mit Stil (kein Bild) – nur diese haben Füllung und Kontur. */
@@ -55,11 +57,12 @@ function localBox(node: LeafNode | ImageNode, subpaths: readonly Subpath[]): Box
 /** Mittlerer Maßstab einer Matrix (Wurzel der Flächenänderung). */
 export const worldScale = (m: Mat) => Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2]));
 
-function visit(node: Node, parent: Mat, up: readonly string[], layer: Layer, items: SceneItem[]): void {
+function visit(node: Node, parent: Mat, up: readonly string[], layer: Layer, items: SceneItem[], alpha: number): void {
   const world = multiply(parent, node.transform);
   const chain = [...up, node.id];
+  const opacity = alpha * (node.opacity ?? 1);
   if (node.type === 'group') {
-    for (const c of node.children) visit(c, world, chain, layer, items);
+    for (const c of node.children) visit(c, world, chain, layer, items, opacity);
     return;
   }
   const subpaths = geometry(node);
@@ -76,6 +79,7 @@ function visit(node: Node, parent: Mat, up: readonly string[], layer: Layer, ite
     node,
     subpaths,
     world,
+    opacity,
     minX: b.minX - half,
     minY: b.minY - half,
     maxX: b.maxX + half,
@@ -88,7 +92,7 @@ export function buildScene(page: Page): SceneItem[] {
   const items: SceneItem[] = [];
   for (const layer of page.layers) {
     if (!layer.visible) continue;
-    for (const top of layer.children) visit(top, IDENTITY, [], layer, items);
+    for (const top of layer.children) visit(top, IDENTITY, [], layer, items, 1);
   }
   return items;
 }

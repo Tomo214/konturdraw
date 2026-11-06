@@ -58,6 +58,10 @@ export function goldenPage(): Page {
       style: { fill: null, stroke: stroke(2, { dash: [2, 1] }) },
       subpaths: [{ closed: false, nodes: [{ x: 20, y: 135, type: 'corner' }, { x: 60, y: 135, type: 'corner' }] }],
     },
+    // Transparenz (8a): Füllung und Kontur je 50 % → Kontur außen grau, innen dunkler über der Füllung.
+    { ...shape({ kind: 'rect', ...box(176, 10, 18, 14), radius: 0 }, { fill: RED, stroke: stroke(2) }), opacity: 0.5 },
+    // Gruppe 50 % × Kind 50 % = 25 %.
+    { type: 'group', id: `g${n++}`, transform: IDENTITY, opacity: 0.5, children: [{ ...shape({ kind: 'rect', ...box(176, 28, 18, 10), radius: 0 }, fill(BLUE)), opacity: 0.5 }] },
   ];
 
   const doc = createDocument(200, 140);
@@ -101,4 +105,8 @@ export const PROBES: [string, number, number, RGB, number][] = [
   ['Gestrichelt: Strich', 22, 135, K, 1],
   ['Gestrichelt: Lücke', 25, 135, W, 1],
   ['Gestrichelt: nächster Strich', 28, 135, K, 1],
+  ['Transparenz: Füllung 50 %', 185, 17, [255, 128, 128], 3],
+  ['Transparenz: Kontur außen 50 %', 175.5, 17, [128, 128, 128], 3],
+  ['Transparenz: Kontur innen über Füllung', 176.5, 17, [128, 64, 64], 4],
+  ['Transparenz: Gruppe × Objekt = 25 %', 185, 33, [191, 191, 255], 3],
 ];

@@ -19,6 +19,7 @@ fn path(nodes: Vec<PathPoint>, closed: bool, fill: bool) -> Item {
         fill: fill.then(|| Fill::Color(Color::rgb(0.0, 0.0, 0.0))),
         stroke: None,
         fill_rule: None,
+        opacity: 1.0,
     }
 }
 
@@ -201,6 +202,7 @@ fn hpgl_ursprung_mitte_und_offene_pfade() {
             dash: vec![],
         }),
         fill_rule: None,
+        opacity: 1.0,
     };
     assert_eq!(
         hpgl(&page(vec![square(), line]), &plot).unwrap(),

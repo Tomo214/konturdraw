@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { fromIr, placeImport, toIr, type IrItem, type IrScene } from '../../src/io/ir';
 import { addLayer, addNodes, createDocument, updateLayer } from '../../src/model/document';
 import { multiply, scale, translate } from '../../src/model/geometry';
+
+const IDENTITY_T = translate(0, 0);
 import type { Doc, Node, Stroke } from '../../src/model/types';
 import { square } from '../model/fixtures';
 import { goldenPage, PROBES } from '../render/golden-scene';
@@ -28,7 +30,7 @@ describe('toIr', () => {
   it('Seitengröße und Formen als Bézier-Teilpfade', () => {
     const ir = toIr(goldenPage());
     expect([ir.width, ir.height]).toEqual([200, 140]);
-    expect(ir.items).toHaveLength(13);
+    expect(ir.items).toHaveLength(15);
     expect(path(ir.items[10])?.fillRule).toBe('evenodd');
     expect(path(ir.items[0])?.subpaths[0].nodes).toHaveLength(4);
     expect(path(ir.items[2])?.subpaths[0].nodes.every((n) => n.handleIn && n.handleOut)).toBe(true);
@@ -83,6 +85,17 @@ describe('toIr', () => {
     expect(item).toEqual({ kind: 'image', matrix: [1, 0, 0, 1, 5, 2], width: 20, height: 10, image: 'abc', opacity: 0.5 });
     expect(fromIr([item])[0]).toMatchObject({ type: 'image', opacity: 0.5 });
     expect('opacity' in fromIr([{ ...item, opacity: undefined } as IrItem])[0]).toBe(false);
+  });
+
+  it('Transparenz: Pfade und Bilder tragen das Produkt der Kette, Rückweg setzt sie am Pfad', () => {
+    const img: Node = { type: 'image', id: 'i', transform: IDENTITY_T, image: 'abc', width: 20, height: 10, opacity: 0.5 };
+    const g: Node = { type: 'group', id: 'g', transform: IDENTITY_T, opacity: 0.5, children: [{ ...square('a'), opacity: 0.5 }, img] };
+    const [p, i] = toIr(docWith([g]).pages[0]).items;
+    expect(p).toMatchObject({ kind: 'path', opacity: 0.25 });
+    expect(i).toMatchObject({ kind: 'image', opacity: 0.25 });
+    expect('opacity' in toIr(docWith([square('b')]).pages[0]).items[0]).toBe(false);
+    expect(fromIr([p])[0]).toMatchObject({ type: 'path', opacity: 0.25 });
+    expect('opacity' in fromIr([{ ...p, opacity: undefined } as IrItem])[0]).toBe(false);
   });
 
   it('nur Auswahl: Fläche = Box inkl. halber Kontur, auf 0/0 verschoben', () => {

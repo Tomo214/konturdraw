@@ -52,6 +52,7 @@ mod tests {
             fill: Some(Fill::Color(Color::rgb(0.0, 0.0, 0.0))),
             stroke: None,
             fill_rule: None,
+            opacity: 1.0,
         };
         let png = png_export::export(
             &Scene {

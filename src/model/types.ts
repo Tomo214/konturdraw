@@ -70,6 +70,8 @@ interface NodeBase {
   id: string;
   name?: string;
   transform: Mat;
+  /** Deckkraft 0–1 (Oberfläche: Transparenz in %); fehlt = deckend. Gruppe: wirkt auf jedes Kind (multipliziert). */
+  opacity?: number;
 }
 
 export interface PathNode extends NodeBase {
@@ -103,8 +105,6 @@ export interface ImageNode extends NodeBase {
   image: string;
   width: number;
   height: number;
-  /** Deckkraft 0–1 (Oberfläche: Transparenz in %); fehlt = deckend */
-  opacity?: number;
 }
 
 export interface GroupNode extends NodeBase {

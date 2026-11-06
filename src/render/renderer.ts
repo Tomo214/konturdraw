@@ -193,10 +193,10 @@ export class Renderer {
       }
       setMat(ctx, dpr, multiply(screen, it.world));
       if (it.node.type === 'image') {
-        const { image, width, height, opacity = 1 } = it.node;
+        const { image, width, height } = it.node;
         const src = this.images?.bitmap(image);
         // Standard-Glättung des Canvas ist bilinear wie im PNG-Export.
-        ctx.globalAlpha = opacity;
+        ctx.globalAlpha = it.opacity;
         if (src) ctx.drawImage(src, 0, 0, width, height);
         else (ctx.fillStyle = LOADING), ctx.fillRect(0, 0, width, height);
         ctx.globalAlpha = 1;
@@ -204,6 +204,8 @@ export class Renderer {
       }
       const { fill, stroke } = it.node.style;
       const p = pathOf(it.subpaths);
+      // Füllung und Kontur je mit der Deckkraft (wie fill-/stroke-opacity im SVG-Export)
+      if (it.opacity < 1) ctx.globalAlpha = it.opacity;
       if (fill) {
         ctx.fillStyle = paint(ctx, fill);
         ctx.fill(p, rule(it.node));
@@ -228,6 +230,7 @@ export class Renderer {
           ctx.stroke(worldPath(it));
         }
       }
+      if (it.opacity < 1) ctx.globalAlpha = 1;
     }
     ctx.globalCompositeOperation = 'source-over';
     if (dashed) ctx.setLineDash([]);

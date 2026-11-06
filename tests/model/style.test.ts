@@ -18,7 +18,8 @@ import {
   toCurves,
   updateLeaves,
   copyStyle,
-  setImageOpacity,
+  selectionOpacity,
+  setOpacity,
   type FillSpec,
 } from '../../src/model/style';
 import type { Color, Gradient, ImageNode, LeafNode, ShapeNode } from '../../src/model/types';
@@ -164,17 +165,26 @@ test('Pipette: Verlauf liegt im Ziel an derselben Stelle seiner Box', () => {
   expect(fill).toEqual({ ...g, from: { x: 0, y: 5 }, to: { x: 5, y: 5 } });
 });
 
-test('Bild-Transparenz: wirkt auf Bilder in Auswahl und Gruppen, 1 = Feld weg, Formen unberührt', () => {
+test('Transparenz: wirkt auf jedes gewählte Objekt (Gruppe als Ganzes), 1 = Feld weg, begrenzt auf 0..1', () => {
   const pic = (id: string): ImageNode => ({ type: 'image', id, transform: IDENTITY, image: 'h', width: 4, height: 3 });
-  const doc = docWith(pic('a'), group('g', [pic('k'), square('s')]), pic('z'));
-  const half = setImageOpacity(doc, ['a', 'g'], 0.5);
-  expect((findNode(half, 'a') as ImageNode).opacity).toBe(0.5);
-  expect((findNode(half, 'k') as ImageNode).opacity).toBe(0.5);
-  expect(findNode(half, 's')).toEqual(findNode(doc, 's'));
-  expect(findNode(half, 'z')).toBe(findNode(doc, 'z'));
-  const back = setImageOpacity(half, ['a'], 1);
-  expect('opacity' in (findNode(back, 'a') as ImageNode)).toBe(false);
-  expect((findNode(setImageOpacity(doc, ['a'], -2), 'a') as ImageNode).opacity).toBe(0);
+  const doc = docWith(pic('a'), group('g', [pic('k'), square('s')]), square('z'));
+  const half = setOpacity(doc, ['a', 'g', 'z'], 0.5);
+  expect(findNode(half, 'a')!.opacity).toBe(0.5);
+  expect(findNode(half, 'g')!.opacity).toBe(0.5);
+  expect(findNode(half, 'z')!.opacity).toBe(0.5);
+  expect(findNode(half, 'k')).toBe(findNode(doc, 'k'));
+  expect(findNode(half, 's')).toBe(findNode(doc, 's'));
+  expect('opacity' in findNode(setOpacity(half, ['a'], 1), 'a')!).toBe(false);
+  expect(findNode(setOpacity(doc, ['a'], -2), 'a')!.opacity).toBe(0);
+  expect(findNode(setOpacity(doc, ['a'], 7), 'a')!.opacity).toBeUndefined();
+});
+
+test('Transparenz der Auswahl: erstes gewähltes Objekt, deckend = 1, nichts gewählt = null', () => {
+  const doc = setOpacity(docWith(square('a'), square('b')), ['b'], 0.25);
+  expect(selectionOpacity(doc, ['b', 'a'])).toBe(0.25);
+  expect(selectionOpacity(doc, ['a'])).toBe(1);
+  expect(selectionOpacity(doc, [])).toBeNull();
+  expect(selectionOpacity(doc, ['fehlt'])).toBeNull();
 });
 
 test('Linienarten: Vorgabe zum Muster finden, durchgehend = ohne Muster, Fremdes = eigenes (-1)', () => {

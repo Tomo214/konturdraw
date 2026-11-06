@@ -278,7 +278,9 @@ export function ungroupNodes(doc: Doc, ids: Iterable<string>): { doc: Doc; ids: 
       if (!set.has(n.id) || n.type !== 'group') return [n];
       return n.children.map((c) => {
         released.push(c.id);
-        return { ...c, transform: multiply(n.transform, c.transform) };
+        // Transparenz der Gruppe wandert in die Kinder, damit das Aussehen bleibt
+        const o = (n.opacity ?? 1) * (c.opacity ?? 1);
+        return { ...c, transform: multiply(n.transform, c.transform), ...(o < 1 ? { opacity: o } : {}) };
       });
     });
   });

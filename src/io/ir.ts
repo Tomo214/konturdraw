@@ -16,7 +16,7 @@ export interface IrStroke {
 
 /** Austausch mit kw-core (architecture.md §3): Export-Eingabe und Import-Ergebnis. mm, y nach unten. */
 export type IrItem =
-  | { kind: 'path'; matrix: Mat; subpaths: readonly Subpath[]; fill: Fill | null; stroke: IrStroke | null; fillRule?: 'evenodd' }
+  | { kind: 'path'; matrix: Mat; subpaths: readonly Subpath[]; fill: Fill | null; stroke: IrStroke | null; fillRule?: 'evenodd'; opacity?: number }
   | { kind: 'image'; matrix: Mat; width: number; height: number; image: string; opacity?: number }
   | { kind: 'group'; matrix: Mat; children: IrItem[] };
 
@@ -30,17 +30,15 @@ export interface IrScene {
 export function toIr(page: Page, ids?: ReadonlySet<string>): IrScene {
   const printable = new Set(page.layers.filter((l) => l.printable).map((l) => l.id));
   const scene = buildScene(page).filter((it) => printable.has(it.layerId) && (!ids || it.chain.some((id) => ids.has(id))));
-  const items: IrItem[] = scene.map(({ node, world, subpaths }) => {
-    if (node.type === 'image') {
-      const alpha = node.opacity !== undefined && node.opacity < 1 ? { opacity: node.opacity } : {};
-      return { kind: 'image', matrix: world, width: node.width, height: node.height, image: node.image, ...alpha };
-    }
+  const items: IrItem[] = scene.map(({ node, world, subpaths, opacity }) => {
+    const alpha = opacity < 1 ? { opacity } : {};
+    if (node.type === 'image') return { kind: 'image', matrix: world, width: node.width, height: node.height, image: node.image, ...alpha };
     const s = node.style.stroke;
     const width = s ? (s.scaleWithObject ? s.width * worldScale(world) : s.width) : 0;
     const dash = s?.dash ? { dash: s.dash.map((d) => d * width) } : {};
     const stroke = s && { color: s.color, width, cap: s.cap, join: s.join, ...dash };
     const rule = node.type === 'path' && node.fillRule ? { fillRule: node.fillRule } : {};
-    return { kind: 'path', matrix: world, subpaths, fill: node.style.fill, stroke, ...rule };
+    return { kind: 'path', matrix: world, subpaths, fill: node.style.fill, stroke, ...rule, ...alpha };
   });
   if (!ids) return { width: page.width, height: page.height, items };
 
@@ -65,12 +63,9 @@ export function toIr(page: Page, ids?: ReadonlySet<string>): IrScene {
 /** Import-Ergebnis → Knoten mit neuen IDs. Konturen bleiben in Seiten-mm (scaleWithObject fehlt = fest). */
 export function fromIr(items: readonly IrItem[]): Node[] {
   return items.map((it): Node => {
-    const base = { id: newId(), transform: it.matrix };
-    if (it.kind === 'group') return { ...base, type: 'group', children: fromIr(it.children) };
-    if (it.kind === 'image') {
-      const alpha = it.opacity !== undefined && it.opacity < 1 ? { opacity: it.opacity } : {};
-      return { ...base, type: 'image', image: it.image, width: it.width, height: it.height, ...alpha };
-    }
+    if (it.kind === 'group') return { id: newId(), transform: it.matrix, type: 'group', children: fromIr(it.children) };
+    const base = { id: newId(), transform: it.matrix, ...(it.opacity !== undefined && it.opacity < 1 ? { opacity: it.opacity } : {}) };
+    if (it.kind === 'image') return { ...base, type: 'image', image: it.image, width: it.width, height: it.height };
     const s = it.stroke;
     // Strichmuster im Modell als Vielfache der Breite (wächst mit ihr)
     const dash = s?.dash && s.width > 0 ? { dash: s.dash.map((d) => d / s.width) } : {};

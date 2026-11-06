@@ -876,6 +876,114 @@
       2
      ]
     }
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 176,
+        "y": 10,
+        "type": "corner"
+       },
+       {
+        "x": 194,
+        "y": 10,
+        "type": "corner"
+       },
+       {
+        "x": 194,
+        "y": 24,
+        "type": "corner"
+       },
+       {
+        "x": 176,
+        "y": 24,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      1,
+      0,
+      0
+     ]
+    },
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 2,
+     "cap": "butt",
+     "join": "miter"
+    },
+    "opacity": 0.5
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 176,
+        "y": 28,
+        "type": "corner"
+       },
+       {
+        "x": 194,
+        "y": 28,
+        "type": "corner"
+       },
+       {
+        "x": 194,
+        "y": 38,
+        "type": "corner"
+       },
+       {
+        "x": 176,
+        "y": 38,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      0,
+      0,
+      1
+     ]
+    },
+    "stroke": null,
+    "opacity": 0.25
    }
   ]
  },
@@ -1231,6 +1339,50 @@
     0
    ],
    1
+  ],
+  [
+   "Transparenz: Füllung 50 %",
+   185,
+   17,
+   [
+    255,
+    128,
+    128
+   ],
+   3
+  ],
+  [
+   "Transparenz: Kontur außen 50 %",
+   175.5,
+   17,
+   [
+    128,
+    128,
+    128
+   ],
+   3
+  ],
+  [
+   "Transparenz: Kontur innen über Füllung",
+   176.5,
+   17,
+   [
+    128,
+    64,
+    64
+   ],
+   4
+  ],
+  [
+   "Transparenz: Gruppe × Objekt = 25 %",
+   185,
+   33,
+   [
+    191,
+    191,
+    255
+   ],
+   3
   ]
  ]
 }

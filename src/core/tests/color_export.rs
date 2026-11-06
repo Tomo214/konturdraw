@@ -46,6 +46,7 @@ fn square(x: f64, fill: Option<Fill>, stroke: Option<Color>) -> Item {
         fill,
         stroke,
         fill_rule: None,
+        opacity: 1.0,
     }
 }
 

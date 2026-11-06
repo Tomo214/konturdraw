@@ -13,7 +13,7 @@
     onstroke(patch: Partial<Stroke> | null): void;
     onradius(r: number): void;
     onpolygon(sides: number, inner: number | null): void;
-    /** Deckkraft des gewählten Bilds, null = kein Bild gewählt */
+    /** Deckkraft der Auswahl (erstes Objekt), null = nichts gewählt */
     alpha: number | null;
     /** done = false: Ziehen am Regler (Vorschau), true = ein Rückgängig-Schritt */
     onalpha(opacity: number, done: boolean): void;

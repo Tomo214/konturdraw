@@ -233,6 +233,9 @@ pub enum Item {
         /// fehlt = nonzero
         #[serde(default, rename = "fillRule", skip_serializing_if = "Option::is_none")]
         fill_rule: Option<FillRule>,
+        /// Deckkraft 0–1, gilt für Füllung und Kontur je einzeln; fehlt = 1.
+        #[serde(default = "opaque", skip_serializing_if = "is_opaque")]
+        opacity: f64,
     },
     /// Bild füllt die Box (0, 0)–(width, height); `image` = Hash in der Bildablage.
     Image {

@@ -140,6 +140,7 @@ function node(v: unknown, images: ReadonlySet<string>): void {
   const n = obj(v, 'Objekt');
   str(n.id, 'Objekt-ID');
   if (!Array.isArray(n.transform) || n.transform.length !== 6 || !n.transform.every(finite)) fail('Matrix ungültig.');
+  if (n.opacity !== undefined && !(finite(n.opacity) && n.opacity >= 0 && n.opacity <= 1)) fail('Deckkraft muss zwischen 0 und 1 liegen.');
   switch (n.type) {
     case 'group':
       for (const c of list(n.children, 'Gruppenobjekte')) node(c, images);
@@ -147,7 +148,6 @@ function node(v: unknown, images: ReadonlySet<string>): void {
     case 'image':
       str(n.image, 'Bild');
       if (!(n.width > 0 && n.height > 0 && finite(n.width) && finite(n.height))) fail('Bildgröße ungültig.');
-      if (n.opacity !== undefined && !(finite(n.opacity) && n.opacity >= 0 && n.opacity <= 1)) fail('Bild-Deckkraft muss zwischen 0 und 1 liegen.');
       if (!images.has(n.image)) fail(`Bild ${n.image} fehlt.`);
       return;
     case 'shape':
