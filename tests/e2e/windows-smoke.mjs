@@ -2,9 +2,9 @@
 // F5 und Strg+R laden die Seite nicht neu (das Dokument wäre sonst weg). Gegenprobe mit abgeschaltetem preventDefault
 // zeigt, ob eingespielte Tasten die WebView2-Browsertasten überhaupt erreichen.
 // Zuerst Start-Check ohne Debug-Port: App läuft, ihre WebView2 ist gestartet. Danach Steuerung über das DevTools-Protokoll:
-// Die App öffnet den Port bei KONTURWERK_DEBUG_PORT selbst (main.rs). Weder msedgedriver noch
+// Die App öffnet den Port bei KONTURDRAW_DEBUG_PORT selbst (main.rs). Weder msedgedriver noch
 // WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS brachten den Port in der CI an die WebView2.
-// Nur Windows. Aufruf: node tests/e2e/windows-smoke.mjs <konturwerk.exe> <bild.png>
+// Nur Windows. Aufruf: node tests/e2e/windows-smoke.mjs <konturdraw.exe> <bild.png>
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -28,7 +28,7 @@ if (process.platform === 'win32')
 
 let done = false;
 const child = spawn(resolve(app), [], {
-  env: { ...process.env, KONTURWERK_DEBUG_PORT: String(PORT) },
+  env: { ...process.env, KONTURDRAW_DEBUG_PORT: String(PORT) },
   stdio: ['ignore', 'inherit', 'inherit'],
 });
 child.on('exit', (code) => {
@@ -56,7 +56,7 @@ async function until(what, check, ms = 30_000) {
 }
 
 if (process.platform === 'win32') {
-  const browser = `Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -match 'konturwerk' -and $_.CommandLine -notmatch '--type=' }`;
+  const browser = `Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -match 'konturdraw' -and $_.CommandLine -notmatch '--type=' }`;
   await until('Start-Check: WebView2 der App läuft', () => Number(ps(`@(${browser}).Count`)) > 0, 60_000).catch((e) => {
     done = true;
     child.kill();
@@ -77,11 +77,11 @@ try {
     60_000,
   );
 } catch (e) {
-  const data = join(process.env.LOCALAPPDATA ?? '', 'de.ttbuilds.konturwerk', 'EBWebView');
+  const data = join(process.env.LOCALAPPDATA ?? '', 'de.ttbuilds.konturdraw', 'EBWebView');
   console.error(`${e.message}; WebView2-Datenordner ${existsSync(data) ? 'vorhanden' : 'fehlt'} (${data})`);
   // Befund: Hat der Browserprozess das Port-Argument bekommen, und lauscht er überhaupt?
   console.error(
-    ps(`Get-CimInstance Win32_Process -Filter "Name='konturwerk.exe' or Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -notmatch '--type=' } | ForEach-Object { "$($_.ProcessId) $($_.Name): $($_.CommandLine)" }
+    ps(`Get-CimInstance Win32_Process -Filter "Name='konturdraw.exe' or Name='msedgewebview2.exe'" | Where-Object { $_.CommandLine -notmatch '--type=' } | ForEach-Object { "$($_.ProcessId) $($_.Name): $($_.CommandLine)" }
 Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -in (Get-Process msedgewebview2 -ErrorAction SilentlyContinue).Id } | ForEach-Object { "lauscht: $($_.LocalAddress):$($_.LocalPort) (PID $($_.OwningProcess))" }`),
   );
   done = true;

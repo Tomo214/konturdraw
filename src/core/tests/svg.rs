@@ -377,7 +377,7 @@ fn deckkraft_die_nicht_aufgeht_wird_gemeldet() {
         <path d="M0 0 H10 V10 H0 Z" fill="url(#v)"/>
         <g opacity="0.5"><path d="M20 0 H30 V10 H20 Z" fill="blue"/><path d="M25 5 H35 V15 H25 Z" fill="red"/></g></svg>"#,
     );
-    // Gruppe: Deckkraft wirkt auf jedes Objekt (Konturwerk-Modell), Überlappung wird gemeldet.
+    // Gruppe: Deckkraft wirkt auf jedes Objekt (KonturDraw-Modell), Überlappung wird gemeldet.
     assert_eq!(
         alphas(&imp.scene),
         vec![(true, false, 1.0), (true, false, 0.5), (true, false, 0.5)]

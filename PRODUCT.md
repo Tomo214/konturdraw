@@ -36,7 +36,7 @@ Bedienung wie CorelDRAW (Aufbau, Leisten-Anordnung, Bedienlogik, Befehle, Kürze
 
 ## Brand Commitments
 
-- Arbeitstitel „Konturwerk“ (Markencheck vor Veröffentlichung offen).
+- Name „KonturDraw“ (06.11., vorher Arbeitstitel „Konturwerk“). Schreibweise immer so, nie „KONTURDRAW“. Web- und GitHub-Suche ohne gleichnamiges Produkt; formelle Markenrecherche (DPMA/EUIPO) offen.
 - Optik muss eigen sein: ähnliche Arbeitsabläufe ja, identische Optik nein.
 
 ## Evidence on Hand

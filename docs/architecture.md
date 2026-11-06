@@ -1,4 +1,4 @@
-# Konturwerk – Architektur (Phase 2)
+# KonturDraw – Architektur (Phase 2)
 
 Stand: 2026-11-02 · Status: **Entwurf, wartet auf Abnahme** · Basis: `spec.md` (abgenommen)
 
@@ -152,7 +152,7 @@ CI: GitHub Actions, **nur Windows-Runner**. Mac-Läufe lokal, weil macOS-Minuten
 ## 9. Ordnerstruktur
 
 ```
-konturwerk/
+konturdraw/
   package.json  Cargo.toml (Workspace)  vite.config.ts  tsconfig.json  deny.toml
   src/ui/        Svelte: App, Panels, Werkzeuge
   src/model/     TS: Dokument, Befehle, Undo, Auswahl

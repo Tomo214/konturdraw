@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Konturwerk",
+  "productName": "KonturDraw",
   "version": "0.1.0",
-  "identifier": "de.ttbuilds.konturwerk",
+  "identifier": "de.ttbuilds.konturdraw",
   "build": {
     "devUrl": "http://localhost:5173",
     "frontendDist": "../../dist",
@@ -10,7 +10,7 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
-    "windows": [{ "label": "main", "title": "Konturwerk", "width": 1280, "height": 800 }],
+    "windows": [{ "label": "main", "title": "KonturDraw", "width": 1280, "height": 800 }],
     "security": { "csp": null }
   },
   "bundle": {

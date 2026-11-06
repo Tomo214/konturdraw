@@ -203,7 +203,7 @@ export function parseDocument(json: string, images: ReadonlySet<string>): Doc {
   }
   const d = obj(raw, 'Dokument');
   num(d.schemaVersion, 'schemaVersion');
-  if (d.schemaVersion > SCHEMA) throw new Error(`Datei stammt aus einer neueren Konturwerk-Version (Schema ${d.schemaVersion}).`);
+  if (d.schemaVersion > SCHEMA) throw new Error(`Datei stammt aus einer neueren KonturDraw-Version (Schema ${d.schemaVersion}).`);
   if (d.schemaVersion !== SCHEMA) fail(`Schema ${d.schemaVersion} unbekannt.`);
   const pages = list(d.pages, 'Seiten');
   if (!pages.length) fail('Seiten fehlen.');

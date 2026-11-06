@@ -45,7 +45,7 @@ describe('.kwk-Dokument', () => {
 
   it('lehnt Unlesbares mit deutscher Meldung ab', () => {
     expect(() => parseDocument('{kaputt', new Set())).toThrow(/kein gültiges JSON/);
-    expect(bad((d) => (d.schemaVersion = 2))).toThrow(/neueren Konturwerk-Version/);
+    expect(bad((d) => (d.schemaVersion = 2))).toThrow(/neueren KonturDraw-Version/);
     expect(bad((d) => delete d.pages)).toThrow(/Seiten/);
     expect(bad((d) => (d.pages = []))).toThrow(/Seiten/);
   });

@@ -1,4 +1,4 @@
-# Konturwerk – Design
+# KonturDraw – Design
 
 Werkzeug-Oberfläche (Operate-Modus). Aufbau, Abläufe und Kürzel folgen dem Vorbild-Arbeitsablauf; Optik, Icons, Farben, Texte und Name sind eigen.
 Ziel-Plattformen: Windows (WebView2) zuerst, macOS (WKWebView) gleichwertig.

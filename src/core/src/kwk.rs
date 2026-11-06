@@ -27,7 +27,7 @@ pub fn pack(document: &str, images: &Images) -> Result<Vec<u8>, String> {
 
 pub fn unpack(data: &[u8]) -> Result<(String, Images), String> {
     let mut z = zip::ZipArchive::new(Cursor::new(data))
-        .map_err(|_| "Keine Konturwerk-Datei (kein ZIP).".to_string())?;
+        .map_err(|_| "Keine KonturDraw-Datei (kein ZIP).".to_string())?;
     let mut document = String::new();
     z.by_name("document.json")
         .map_err(|_| "Datei unvollständig: document.json fehlt.".to_string())?
@@ -39,7 +39,7 @@ pub fn unpack(data: &[u8]) -> Result<(String, Images), String> {
         None => return Err("document.json ohne schemaVersion.".into()),
         Some(v) if v > SCHEMA_MAX => {
             return Err(format!(
-                "Datei stammt aus einer neueren Konturwerk-Version (Schema {v})."
+                "Datei stammt aus einer neueren KonturDraw-Version (Schema {v})."
             ))
         }
         _ => {}

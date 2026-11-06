@@ -19,7 +19,7 @@ fn write_pdf(
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_millis());
     let path = dir.join(format!(
-        "Konturwerk-Druck-{stamp}-{}.pdf",
+        "KonturDraw-Druck-{stamp}-{}.pdf",
         N.fetch_add(1, Ordering::Relaxed)
     ));
     std::fs::write(

@@ -1,4 +1,4 @@
-/* Konturwerk-Oberfläche: Graphit, ein Akzent nur für aktiv/Auswahl/Fokus. Die weiße Seite bleibt das hellste Element.
+/* KonturDraw-Oberfläche: Graphit, ein Akzent nur für aktiv/Auswahl/Fokus. Die weiße Seite bleibt das hellste Element.
    Kontrast geprüft: --text auf --bar 9,7:1 · --text-dim auf --bar 5,0:1 · --accent-ink auf --accent 6,1:1. */
 :root {
   color-scheme: dark;

@@ -96,7 +96,7 @@ pub fn import(data: &[u8]) -> Result<Imported, String> {
     })
 }
 
-/// `alpha` = Produkt der Gruppen-Deckkräfte darüber; wirkt auf jedes Objekt einzeln (Konturwerk-Modell).
+/// `alpha` = Produkt der Gruppen-Deckkräfte darüber; wirkt auf jedes Objekt einzeln (KonturDraw-Modell).
 fn group(cx: &mut Ctx, g: &usvg::Group, world: &Mat, alpha: f64) -> Vec<Item> {
     let mut out = Vec::new();
     for node in g.children() {

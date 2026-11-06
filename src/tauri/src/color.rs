@@ -138,7 +138,7 @@ pub async fn open_palette(app: AppHandle) -> Result<Option<String>, String> {
     let Some(p) = app
         .dialog()
         .file()
-        .add_filter("Konturwerk-Palette", &["kwp"])
+        .add_filter("KonturDraw-Palette", &["kwp"])
         .blocking_pick_file()
     else {
         return Ok(None);
@@ -158,7 +158,7 @@ pub async fn save_palette(
     let Some(p) = app
         .dialog()
         .file()
-        .add_filter("Konturwerk-Palette", &["kwp"])
+        .add_filter("KonturDraw-Palette", &["kwp"])
         .set_file_name(format!("{name}.kwp"))
         .blocking_save_file()
     else {

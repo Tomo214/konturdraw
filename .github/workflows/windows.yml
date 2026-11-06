@@ -78,7 +78,7 @@ jobs:
         run: cargo test --workspace
       - name: CDR-Import mit Testdatei (auch Pfad mit Ω)
         if: ${{ !cancelled() }}
-        run: cargo test -p konturwerk cdr -- --ignored
+        run: cargo test -p konturdraw cdr -- --ignored
       - name: Installer bauen
         if: ${{ !cancelled() }}
         run: npx tauri build
@@ -93,18 +93,18 @@ jobs:
         run: |
           $wv = Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue
           "WebView2-Laufzeit: $($wv.pv)"
-          node tests/e2e/windows-smoke.mjs target/release/konturwerk.exe konturwerk-windows.png
+          node tests/e2e/windows-smoke.mjs target/release/konturdraw.exe konturdraw-windows.png
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: rauchtest-bild
-          path: konturwerk-windows.png
+          path: konturdraw-windows.png
           if-no-files-found: ignore
           retention-days: 14
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: konturwerk-windows
+          name: konturdraw-windows
           path: |
             target/release/bundle/msi/*.msi
             target/release/bundle/nsis/*.exe

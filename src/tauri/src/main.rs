@@ -9,7 +9,7 @@ mod shape;
 mod text;
 mod trace;
 
-/// Rauchtest (6d): KONTURWERK_DEBUG_PORT öffnet das DevTools-Protokoll der WebView2 (nur Windows wirksam).
+/// Rauchtest (6d): KONTURDRAW_DEBUG_PORT öffnet das DevTools-Protokoll der WebView2 (nur Windows wirksam).
 /// WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS kam in der CI nicht an (Kommandozeile ohne Port). Ohne Variable bleibt alles Standard.
 fn browser_args(port: Option<&str>) -> Option<String> {
     let port: u16 = port?.trim().parse().ok().filter(|p| *p != 0)?;
@@ -18,7 +18,7 @@ fn browser_args(port: Option<&str>) -> Option<String> {
 
 fn main() {
     let mut context = tauri::generate_context!();
-    if let Some(args) = browser_args(std::env::var("KONTURWERK_DEBUG_PORT").ok().as_deref()) {
+    if let Some(args) = browser_args(std::env::var("KONTURDRAW_DEBUG_PORT").ok().as_deref()) {
         for window in &mut context.config_mut().app.windows {
             window.additional_browser_args = Some(args.clone());
         }
@@ -46,7 +46,7 @@ fn main() {
             trace::trace_image
         ])
         .run(context)
-        .expect("Konturwerk konnte nicht starten");
+        .expect("KonturDraw konnte nicht starten");
 }
 
 #[cfg(test)]

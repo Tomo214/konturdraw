@@ -61,7 +61,7 @@ describe('Paletten', () => {
     const back = parsePaletteFile(paletteFile(p), 'neu');
     expect(back).toEqual({ ...p, id: 'neu' });
     expect(() => parsePaletteFile('{kaputt', 'x')).toThrow(/Palette/);
-    expect(() => parsePaletteFile('{"format":"anderes","version":1,"name":"a","colors":[]}', 'x')).toThrow(/keine Konturwerk-Palette/);
+    expect(() => parsePaletteFile('{"format":"anderes","version":1,"name":"a","colors":[]}', 'x')).toThrow(/keine KonturDraw-Palette/);
     const bad = JSON.parse(paletteFile(p));
     bad.colors[0].color.values = [2, 0, 0, 0];
     expect(() => parsePaletteFile(JSON.stringify(bad), 'x')).toThrow(/Farbe/);

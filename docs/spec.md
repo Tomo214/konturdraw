@@ -1,4 +1,4 @@
-# Konturwerk – Funktions-Spezifikation (Phase 1)
+# KonturDraw – Funktions-Spezifikation (Phase 1)
 
 Stand: 2026-11-02 · Status: **Entwurf, wartet auf Abnahme** · Name = Arbeitstitel
 
@@ -267,7 +267,7 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 | 5 | Stencil-Drucker | Modell unbekannt → Druck über Systemdialog, kein Treiber-Spezialcode |
 | 6 | Plotter/Laser | Gerät unbekannt → DXF + HPGL generisch; Zielgerät nennen, dann testen |
 | 7 | Phasenplan | Nachzeichnen + Drucken fehlen im Original-Phasenplan → Vorschlag: neuer Schritt 3h nach 3g; Stencil-first spräche für 3h direkt nach 3c |
-| 8 | Name | „Konturwerk“ ist Arbeitstitel; Markencheck vor Veröffentlichung |
+| 8 | Name | „KonturDraw“ (06.11., vorher Arbeitstitel „Konturwerk“); Web-/GitHub-Suche frei, formelle Markenrecherche offen |
 | 9 | `.cdr`-Versionen | Nur was libcdr kann; neue CorelDRAW-Versionen evtl. nicht → in Phase 2 mit Testdateien prüfen (eigene `.cdr`-Dateien von dir nötig) |
 
 ## 16. Quellen (öffentliche Hilfe, nur Funktionsumfang übernommen)

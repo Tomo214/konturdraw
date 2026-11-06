@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- KonturDraw: Umriss eines K im Knoten-Modus (Kontur + Knoten). Eigene Gestaltung. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#202126"/>
+      <stop offset="1" stop-color="#141518"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)" filter="url(#shadow)"/>
+  <path d="M288 252H398V445L588 252H736L536 512L736 772H588L398 579V772H288Z"
+        fill="none" stroke="#f1ede4" stroke-width="30" stroke-linejoin="round"/>
+  <g fill="#ff6a3d">
+    <rect x="266" y="230" width="44" height="44"/>
+    <rect x="376" y="230" width="44" height="44"/>
+    <rect x="376" y="423" width="44" height="44"/>
+    <rect x="566" y="230" width="44" height="44"/>
+    <rect x="714" y="230" width="44" height="44"/>
+    <rect x="514" y="490" width="44" height="44"/>
+    <rect x="714" y="750" width="44" height="44"/>
+    <rect x="566" y="750" width="44" height="44"/>
+    <rect x="376" y="557" width="44" height="44"/>
+    <rect x="376" y="750" width="44" height="44"/>
+    <rect x="266" y="750" width="44" height="44"/>
+  </g>
+</svg>

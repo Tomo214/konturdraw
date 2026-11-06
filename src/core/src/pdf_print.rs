@@ -146,8 +146,8 @@ impl Meta {
 
         let mut info = pdf.document_info(self.info);
         info.title(TextStr(&p.title))
-            .creator(TextStr("Konturwerk"))
-            .producer(TextStr("Konturwerk"))
+            .creator(TextStr("KonturDraw"))
+            .producer(TextStr("KonturDraw"))
             .creation_date(p.time.pdf())
             .modified_date(p.time.pdf())
             .trapped(TrappingStatus::NotTrapped);
@@ -196,8 +196,8 @@ fn xmp(p: &Print, doc: &str, instance: &str) -> String {
 <xmp:CreateDate>{t}</xmp:CreateDate>
 <xmp:ModifyDate>{t}</xmp:ModifyDate>
 <xmp:MetadataDate>{t}</xmp:MetadataDate>
-<xmp:CreatorTool>Konturwerk</xmp:CreatorTool>
-<pdf:Producer>Konturwerk</pdf:Producer>
+<xmp:CreatorTool>KonturDraw</xmp:CreatorTool>
+<pdf:Producer>KonturDraw</pdf:Producer>
 <pdf:Trapped>False</pdf:Trapped>
 <xmpMM:DocumentID>uuid:{doc}</xmpMM:DocumentID>
 <xmpMM:InstanceID>uuid:{instance}</xmpMM:InstanceID>

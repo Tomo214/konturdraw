@@ -75,7 +75,7 @@ pub async fn open_kwk(app: AppHandle) -> Result<Option<Opened>, String> {
     let Some(p) = app
         .dialog()
         .file()
-        .add_filter("Konturwerk", &["kwk"])
+        .add_filter("KonturDraw", &["kwk"])
         .blocking_pick_file()
     else {
         return Ok(None);
@@ -96,7 +96,7 @@ pub async fn save_kwk(
         None => match app
             .dialog()
             .file()
-            .add_filter("Konturwerk", &["kwk"])
+            .add_filter("KonturDraw", &["kwk"])
             .set_file_name("Unbenannt.kwk")
             .blocking_save_file()
         {

@@ -97,8 +97,8 @@ export function parsePaletteFile(text: string, id: string): Palette {
   } catch {
     throw new Error('Palette-Datei ist kein gültiges JSON.');
   }
-  if (raw?.format !== FORMAT) throw new Error('Das ist keine Konturwerk-Palette.');
-  if (raw.version !== 1) throw new Error(`Palette stammt aus einer neueren Konturwerk-Version (${String(raw.version)}).`);
+  if (raw?.format !== FORMAT) throw new Error('Das ist keine KonturDraw-Palette.');
+  if (raw.version !== 1) throw new Error(`Palette stammt aus einer neueren KonturDraw-Version (${String(raw.version)}).`);
   const p = { id, name: raw.name, colors: raw.colors };
   checkPalette(p);
   return p as Palette;
