@@ -33,8 +33,9 @@ function presetTile(name: string, fg: Color, bg: Color): Node[] | null {
   return p ? [leaf(bg, [box(0, 0, 1, 1)]), leaf(fg, p.cell)] : null;
 }
 
+// Winkel gegen den Uhrzeigersinn wie die Objektdrehung (arrange.ts); y zeigt nach unten → negativ drehen.
 const cellMatrix = (origin: Point, size: number, angle: number, width: number): Mat =>
-  multiply(multiply(translate(origin.x, origin.y), rotate((angle * Math.PI) / 180)), scale(size / width, size / width));
+  multiply(multiply(translate(origin.x, origin.y), rotate((-angle * Math.PI) / 180)), scale(size / width, size / width));
 
 export function makePattern(name: string, fg: Color, bg: Color, size: number, angle: number, origin: Point): Pattern {
   const base: Pattern = { kind: 'pattern', width: 1, height: 1, matrix: cellMatrix(origin, size, angle, 1), tile: [] };
@@ -51,7 +52,7 @@ export const tilePage = (p: Pattern): Page => ({
 });
 
 export const patternSize = (p: Pattern): number => p.width * Math.hypot(p.matrix[0], p.matrix[1]);
-export const patternAngle = (p: Pattern): number => (Math.atan2(p.matrix[1], p.matrix[0]) * 180) / Math.PI;
+export const patternAngle = (p: Pattern): number => (-Math.atan2(p.matrix[1], p.matrix[0]) * 180) / Math.PI;
 
 /** Größe und Winkel neu, Ursprung und Kachel bleiben. */
 export const resizePattern = (p: Pattern, size: number, angle: number): Pattern => ({

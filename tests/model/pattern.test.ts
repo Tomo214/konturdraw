@@ -37,9 +37,10 @@ describe('Zweifarb-Vorlagen', () => {
     const p = makePattern(PATTERNS[0].name, RED, WHITE, 5, 30, { x: 2, y: 3 });
     expect(patternSize(p)).toBeCloseTo(5, 9);
     expect(patternAngle(p)).toBeCloseTo(30, 9);
+    // Winkel zählt wie die Objektdrehung gegen den Uhrzeigersinn: y zeigt nach unten, also geht die Kachel-x-Achse nach oben.
     const [ex, ey] = apply(p.matrix, 1, 0);
     expect(ex).toBeCloseTo(2 + 5 * Math.cos(Math.PI / 6), 9);
-    expect(ey).toBeCloseTo(3 + 5 * Math.sin(Math.PI / 6), 9);
+    expect(ey).toBeCloseTo(3 - 5 * Math.sin(Math.PI / 6), 9);
     const q = resizePattern(p, 8, -45);
     expect(patternSize(q)).toBeCloseTo(8, 9);
     expect(patternAngle(q)).toBeCloseTo(-45, 9);
