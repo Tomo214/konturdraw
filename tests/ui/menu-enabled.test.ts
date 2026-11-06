@@ -54,6 +54,15 @@ test('Formen-Befehle wie die Formen-Regeln: Kombinieren ab zwei, Aufbrechen nur 
   expect(on({ name: 'outline' }, ctx([]))).toBe(false);
 });
 
+test('Rahmen: Einfügen braucht Inhalt plus geschlossenes Ziel, Herausnehmen einen Rahmen mit Inhalt', () => {
+  expect(on({ name: 'frameInsert' }, ctx(['a']))).toBe(false);
+  expect(on({ name: 'frameInsert' }, ctx(['bild', 'a']))).toBe(true);
+  expect(on({ name: 'frameInsert' }, ctx(['a', 'bild']))).toBe(false);
+  expect(on({ name: 'frameExtract' }, ctx(['a']))).toBe(false);
+  const framed = addNodes(base, layer, [{ ...square('f'), contents: [square('c')] }]);
+  expect(on({ name: 'frameExtract' }, ctx(['f'], { doc: framed }))).toBe(true);
+});
+
 test('Nachzeichnen nur mit Bild, In Kurven nur mit Form oder Text', () => {
   expect(on({ name: 'trace' }, ctx(['a']))).toBe(false);
   expect(on({ name: 'trace' }, ctx(['bild']))).toBe(true);

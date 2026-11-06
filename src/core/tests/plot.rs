@@ -223,3 +223,42 @@ fn hpgl_einheiten_werden_geprueft() {
         );
     }
 }
+
+#[test]
+fn rahmen_schneidet_linien_und_wird_einmal_geschnitten() {
+    let sq = |x0: f64, y0: f64, x1: f64, y1: f64| Subpath {
+        nodes: vec![node(x0, y0), node(x1, y0), node(x1, y1), node(x0, y1)],
+        closed: true,
+    };
+    let line = || path(vec![node(0.0, 10.0), node(40.0, 10.0)], false, true);
+    let small = path(sq(8.0, 8.0, 12.0, 12.0).nodes, true, true);
+    let half = path(sq(10.0, 8.0, 20.0, 12.0).nodes, true, true); // ragt rechts heraus
+    let clip = |subpaths: Vec<Subpath>, fill_rule, children| Item::Clip {
+        matrix: IDENTITY,
+        subpaths,
+        fill_rule,
+        children,
+    };
+    // Rahmen = Füllung unter, Kontur über dem Inhalt: gleicher Umriss, nur einmal schneiden.
+    let frame = clip(
+        vec![sq(5.0, 5.0, 15.0, 15.0)],
+        None,
+        vec![line(), small, half],
+    );
+    // Unsichtbarer Rahmen mit Loch (gerade/ungerade): Umriss wird nicht geschnitten.
+    let ring = clip(
+        vec![sq(20.0, 2.0, 35.0, 17.0), sq(24.0, 6.0, 31.0, 13.0)],
+        Some(kw_core::scene::FillRule::EvenOdd),
+        vec![line()],
+    );
+    let scene = page(vec![square(), frame, square(), ring]);
+    let plot = Plot {
+        units_per_mm: 1.0,
+        origin: Origin::LowerLeft,
+    };
+    assert_eq!(
+        hpgl(&scene, &plot).unwrap(),
+        "IN;SP1;PU5,15;PD15,15,15,5,5,5,5,15;PU5,10;PD15,10;PU8,12;PD12,12,12,8,8,8,8,12;PU15,8;PD10,8,10,12,15,12;\
+         PU20,10;PD24,10;PU31,10;PD35,10;PU;SP0;"
+    );
+}

@@ -92,3 +92,29 @@ test('unsichtbare Ebenen fehlen, gesperrte sind markiert', () => {
     ['c', true],
   ]);
 });
+
+const black = { model: 'rgb' as const, values: [0, 0, 0] as const };
+const framed = (id: string, contents: Node[], x = 10): PathNode => ({
+  ...square(id, x, x, 20),
+  style: { fill: black, stroke: { color: black, width: 1, cap: 'butt', join: 'miter' } },
+  contents,
+});
+
+test('Rahmen mit Inhalt: Füllung, beschnittener Inhalt, Kontur; Kette und Klick gelten dem Rahmen', () => {
+  const items = buildScene(page([[framed('f', [square('a', 5, 5), group('g', [square('b')])]), square('z')]]));
+  expect(items.map((i) => [i.id, i.part ?? null])).toEqual([['f', 'fill'], ['a', null], ['b', null], ['f', 'stroke'], ['z', null]]);
+  const [fill, a, b, stroke, z] = items;
+  expect([a.chain, b.chain, a.topId]).toEqual([['f'], ['f'], 'f']);
+  expect(a.world).toEqual(translate(15, 15)); // im Koordinatensystem des Rahmens
+  expect([a.frame, b.frame]).toEqual([fill, fill]);
+  expect(b.clips).toEqual([{ subpaths: fill.subpaths, world: fill.world, fillRule: 'nonzero' }]);
+  expect([fill.clips, stroke.clips, stroke.frame, z.clips]).toEqual([undefined, undefined, undefined, undefined]);
+});
+
+test('Rahmen im Inhalt: Beschneidungen addieren sich, Klick gilt dem äußersten Rahmen; Deckkraft wirkt auf den Inhalt', () => {
+  const inner = { ...framed('i', [square('a')], 2), fillRule: 'evenodd' as const };
+  const items = buildScene(page([[{ ...framed('f', [inner]), opacity: 0.5 }]]));
+  expect(items.map((i) => [i.id, i.clips?.length ?? 0, i.opacity])).toEqual([['f', 0, 0.5], ['i', 1, 0.5], ['a', 2, 0.5], ['i', 1, 0.5], ['f', 0, 0.5]]);
+  expect(items[2].frame).toBe(items[0]);
+  expect(items[2].clips?.map((c) => c.fillRule)).toEqual(['nonzero', 'evenodd']);
+});

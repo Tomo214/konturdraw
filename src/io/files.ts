@@ -51,7 +51,9 @@ export async function exportPage(
   return bridge.exportFile(format, scene, images.pick(hashes(scene)), options, color ?? DEFAULT_COLOR_SETTINGS);
 }
 
-const hashes = (s: IrScene) => s.items.flatMap((it) => (it.kind === 'image' ? [it.image] : []));
+const hashesOf = (items: readonly IrItem[]): string[] =>
+  items.flatMap((it) => (it.kind === 'image' ? [it.image] : it.kind === 'clip' || it.kind === 'group' ? hashesOf(it.children) : []));
+const hashes = (s: IrScene) => hashesOf(s.items);
 
 /** Ganze Seite in die Druckansicht des Systems; gespiegelt = links ↔ rechts um die Seitenmitte (Transferpapier). */
 export async function printPage(page: Page, color: ColorSettings | undefined, mirror: boolean): Promise<string> {

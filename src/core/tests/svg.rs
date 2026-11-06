@@ -238,11 +238,84 @@ fn text_kommt_als_kurven() {
 fn nicht_unterstuetztes_wird_gemeldet() {
     let imp = import(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">
-        <clipPath id="c"><rect width="5" height="5"/></clipPath>
-        <g clip-path="url(#c)" opacity="0.5"><path d="M0 0 L10 0" stroke="black" stroke-dasharray="2 1"/></g></svg>"#,
+        <mask id="m"><rect width="5" height="5" fill="white"/></mask>
+        <clipPath id="d"><rect width="5" height="5"/></clipPath>
+        <clipPath id="c" clip-path="url(#d)"><rect width="8" height="8"/></clipPath>
+        <g mask="url(#m)" opacity="0.5"><path d="M0 0 L10 0" stroke="black" stroke-dasharray="2 1"/></g>
+        <g clip-path="url(#c)"><rect width="10" height="10"/></g></svg>"#,
     );
     let w = imp.warnings.join(" | ");
-    assert!(w.contains("Beschneidung"), "{w}");
+    assert!(
+        w.contains("Maske") && w.contains("Beschneidung einer Beschneidung"),
+        "{w}"
+    );
+}
+
+/// Rahmen (clip) mit Weltmatrix, in Zeichenreihenfolge.
+fn clips(items: &[Item], parent: &Mat, out: &mut Vec<(Mat, Item)>) {
+    for it in items {
+        match it {
+            Item::Group { matrix, children } => {
+                clips(children, &kw_core::scene::mul(parent, matrix), out)
+            }
+            Item::Clip {
+                matrix, children, ..
+            } => {
+                out.push((kw_core::scene::mul(parent, matrix), it.clone()));
+                clips(children, parent, out)
+            }
+            _ => {}
+        }
+    }
+}
+
+#[test]
+fn beschneidung_wird_rahmen_und_uebersteht_den_export() {
+    let imp = import(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">
+        <clipPath id="c"><path d="M0 0H40V40H0Z M10 10H30V30H10Z" clip-rule="evenodd"/></clipPath>
+        <g transform="translate(5 5)" clip-path="url(#c)"><rect width="50" height="50" fill="red"/></g></svg>"#,
+    );
+    assert!(imp.warnings.is_empty(), "{:?}", imp.warnings);
+    let check = |scene: &Scene, what: &str| {
+        let mut found = Vec::new();
+        clips(&scene.items, &kw_core::scene::IDENTITY, &mut found);
+        let [(
+            m,
+            Item::Clip {
+                subpaths,
+                fill_rule,
+                children,
+                ..
+            },
+        )] = found.as_slice()
+        else {
+            panic!(
+                "{what}: genau ein Rahmen erwartet, {} gefunden",
+                found.len()
+            );
+        };
+        assert!(fill_rule.is_some(), "{what}: gerade/ungerade");
+        assert_eq!(children.len(), 1, "{what}");
+        let w = world_points(m, subpaths);
+        let corners = [w[0][0][1], w[0][2][1], w[1][0][1]];
+        for (p, want) in corners.iter().zip([5.0, 45.0, 15.0]) {
+            assert!(
+                near(p.x, want * K, 1e-3) && near(p.y, want * K, 1e-3),
+                "{what}: {p:?} statt {want} px"
+            );
+        }
+        let red = paths(scene);
+        assert_eq!(rgb(&red[0].2), [1.0, 0.0, 0.0], "{what}");
+        let p = world_points(&red[0].0, &red[0].1)[0][0][1];
+        assert!(
+            near(p.x, 5.0 * K, 1e-3) && near(p.y, 5.0 * K, 1e-3),
+            "{what}: Inhalt bei {p:?}"
+        );
+    };
+    check(&imp.scene, "Import");
+    let svg = svg_export::export(&imp.scene, &Images::new(), &Cms::default()).unwrap();
+    check(&import(&svg).scene, "Export → Import");
 }
 
 /// (Füllung?, Kontur?, Deckkraft) je Pfad in Zeichenreihenfolge.

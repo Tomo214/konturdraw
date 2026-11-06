@@ -4,8 +4,8 @@
 use crate::color::{Cms, ColorMode};
 use crate::pdf_print::{self, Meta, Print};
 use crate::scene::{
-    apply, leaves, segments, Cap, Color, ColorModel, Fill, Gradient, GradientKind, Item, Join, Mat,
-    Point, Scene, Seg, Subpath,
+    apply, clipped_leaves, common_clips, segments, Cap, ClipRef, Color, ColorModel, Fill, Gradient,
+    GradientKind, Item, Join, Mat, Point, Scene, Seg, Subpath,
 };
 use crate::Images;
 use miniz_oxide::deflate::compress_to_vec_zlib;
@@ -208,7 +208,30 @@ pub(crate) fn write(
     let mut spots = Spots(Vec::new());
     let mut dashed = false;
 
-    for (m, it) in leaves(&scene.items) {
+    // Offene Beschneidungen je q … W n; Q setzt auch das Strichmuster zurück → merken.
+    let mut open: Vec<(ClipRef, bool)> = Vec::new();
+    for leaf in clipped_leaves(&scene.items) {
+        let chain: Vec<ClipRef> = open.iter().map(|(c, _)| *c).collect();
+        let k = common_clips(&chain, &leaf.clips);
+        while open.len() > k {
+            c.restore_state();
+            dashed = open.pop().map_or(dashed, |(_, d)| d);
+        }
+        for clip in &leaf.clips[k..] {
+            c.save_state();
+            path(&mut c, &clip.matrix, clip.subpaths);
+            if clip.subpaths.iter().all(|sp| sp.nodes.is_empty()) {
+                c.rect(0.0, 0.0, 0.0, 0.0); // leerer Umriss verdeckt alles; W ohne Pfad wirkte nicht
+            }
+            if clip.fill_rule.is_some() {
+                c.clip_even_odd()
+            } else {
+                c.clip_nonzero()
+            };
+            c.end_path();
+            open.push((*clip, dashed));
+        }
+        let (m, it) = (leaf.matrix, leaf.item);
         match it {
             Item::Path {
                 subpaths,
@@ -320,8 +343,13 @@ pub(crate) fn write(
                 c.x_object(Name(name.as_bytes()));
                 c.restore_state();
             }
-            Item::Group { .. } => unreachable!("leaves löst Gruppen auf"),
+            Item::Group { .. } | Item::Clip { .. } => {
+                unreachable!("clipped_leaves löst Gruppen und Rahmen auf")
+            }
         }
+    }
+    for _ in &open {
+        c.restore_state();
     }
     if let Some(p) = print {
         c.restore_state();

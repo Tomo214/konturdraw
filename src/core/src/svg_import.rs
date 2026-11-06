@@ -99,9 +99,6 @@ fn group(cx: &mut Ctx, g: &usvg::Group, world: &Mat, alpha: f64) -> Vec<Item> {
     for node in g.children() {
         match node {
             usvg::Node::Group(c) => {
-                if c.clip_path().is_some() {
-                    cx.warn("Beschneidung (clip-path) ignoriert.");
-                }
                 if c.mask().is_some() {
                     cx.warn("Maske ignoriert.");
                 }
@@ -134,11 +131,58 @@ fn overlaps(g: &Item) -> bool {
 
 fn sub_group(cx: &mut Ctx, g: &usvg::Group, world: &Mat, alpha: f64) -> Option<Item> {
     let m = mat(g.transform());
-    let children = group(cx, g, &mul(world, &m), alpha);
+    let mut children = group(cx, g, &mul(world, &m), alpha);
+    if let (Some(c), false) = (g.clip_path(), children.is_empty()) {
+        children = vec![frame(cx, c, children)];
+    }
     (!children.is_empty()).then_some(Item::Group {
         matrix: m,
         children,
     })
+}
+
+/// Beschneidung → Rahmen: alle Pfade des clipPath als ein Umriss (Gruppen-Matrizen eingerechnet).
+/// Mehrere Pfade = nonzero, exakt solange sie sich nicht gegenläufig überlappen.
+fn frame(cx: &mut Ctx, c: &usvg::ClipPath, children: Vec<Item>) -> Item {
+    fn outline(
+        cx: &mut Ctx,
+        g: &usvg::Group,
+        ts: usvg::Transform,
+        out: &mut Vec<(Vec<Subpath>, bool)>,
+    ) {
+        for node in g.children() {
+            match node {
+                usvg::Node::Path(p) if p.is_visible() => {
+                    if let Some(d) = p.data().clone().transform(ts) {
+                        let even_odd = p
+                            .fill()
+                            .is_some_and(|f| f.rule() == usvg::FillRule::EvenOdd);
+                        out.push((subpaths(&d), even_odd));
+                    }
+                }
+                usvg::Node::Group(c) => {
+                    if c.clip_path().is_some() {
+                        cx.warn("Beschneidung einer Beschneidung ignoriert.");
+                    }
+                    outline(cx, c, ts.pre_concat(c.transform()), out)
+                }
+                usvg::Node::Text(t) => outline(cx, t.flattened(), ts, out),
+                _ => {}
+            }
+        }
+    }
+    if c.clip_path().is_some() {
+        cx.warn("Beschneidung einer Beschneidung ignoriert.");
+    }
+    let mut parts = Vec::new();
+    outline(cx, c.root(), usvg::Transform::default(), &mut parts);
+    let even_odd = matches!(parts.as_slice(), [(_, true)]);
+    Item::Clip {
+        matrix: mat(c.transform()),
+        subpaths: parts.into_iter().flat_map(|p| p.0).collect(),
+        fill_rule: even_odd.then_some(FillRule::EvenOdd),
+        children,
+    }
 }
 
 /// Füllung und Kontur mit verschiedener Deckkraft → zwei Pfade (Füllung, darüber Kontur).

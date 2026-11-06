@@ -14,6 +14,7 @@ import {
   ungroupNodes,
   worldOf,
 } from '../model/document';
+import { extractContents, placeInFrame } from '../model/frame';
 import type { Box } from '../model/geometry';
 import { addGuide, lockGuides, moveGuide, setGrid, setOrigin } from '../model/guides';
 import { duplicatePage, insertPage, removePage } from '../model/pages';
@@ -88,6 +89,10 @@ export function editCommand(
     case 'nudge': {
       const step = doc.nudge ?? DEFAULT_NUDGE;
       return { doc: translateNodes(doc, ids, cmd.dx * step, cmd.dy * step) };
+    }
+    case 'frameInsert': case 'frameExtract': {
+      const r = (cmd.name === 'frameInsert' ? placeInFrame : extractContents)(doc, ids);
+      return { doc: r.doc, selected: new Set(r.selected) };
     }
     case 'align': return changed(align(doc, ids, cmd.edge, cmd.to));
     case 'distribute': return changed(distribute(doc, ids, cmd.mode, cmd.to));

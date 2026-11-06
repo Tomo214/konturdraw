@@ -288,9 +288,9 @@ export function ungroupNodes(doc: Doc, ids: Iterable<string>): { doc: Doc; ids: 
 }
 
 export function cloneWithNewIds(node: Node): Node {
-  return node.type === 'group'
-    ? { ...node, id: newId(), children: node.children.map(cloneWithNewIds) }
-    : { ...node, id: newId() };
+  if (node.type === 'group') return { ...node, id: newId(), children: node.children.map(cloneWithNewIds) };
+  if ((node.type === 'path' || node.type === 'shape') && node.contents) return { ...node, id: newId(), contents: node.contents.map(cloneWithNewIds) };
+  return { ...node, id: newId() };
 }
 
 /** Kopie mit neuen IDs, auf der Seite versetzt, direkt über dem Original (in derselben Gruppe). */
@@ -321,7 +321,7 @@ interface Place {
 }
 
 // Reihenfolge der Map = Stapelfolge von unten nach oben über alle Seiten.
-function places(doc: Doc): Map<string, Place> {
+export function places(doc: Doc): Map<string, Place> {
   const out = new Map<string, Place>();
   const walk = (children: Children, parent: string, world: Mat, path: readonly string[]) => {
     for (const n of children) {

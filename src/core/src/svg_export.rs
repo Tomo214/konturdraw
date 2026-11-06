@@ -1,7 +1,8 @@
 //! SVG-Export: Pfade in Seiten-mm (viewBox = mm), Kontur unverzerrt, Verläufe mit gradientTransform.
 use crate::color::{byte, Cms};
 use crate::scene::{
-    apply, leaves, segments, Cap, Color, Fill, GradientKind, Item, Join, Mat, Scene, Subpath,
+    apply, clipped_leaves, common_clips, segments, Cap, ClipRef, Color, Fill, GradientKind, Item,
+    Join, Mat, Scene, Subpath,
 };
 use crate::Images;
 use base64::Engine;
@@ -69,7 +70,28 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
     let (w, h) = (num(scene.width), num(scene.height));
     let mut defs = String::new();
     let mut body = String::new();
-    for (i, (m, it)) in leaves(&scene.items).into_iter().enumerate() {
+    // Offene Beschneidungen als verschachtelte <g clip-path> (Schnittmenge), je Umriss ein <clipPath>.
+    let mut open: Vec<ClipRef> = Vec::new();
+    for (i, leaf) in clipped_leaves(&scene.items).into_iter().enumerate() {
+        let k = common_clips(&open, &leaf.clips);
+        body.push_str(&"</g>\n".repeat(open.len() - k));
+        open.truncate(k);
+        for c in &leaf.clips[k..] {
+            let rule = if c.fill_rule.is_some() {
+                r#" clip-rule="evenodd""#
+            } else {
+                ""
+            };
+            let _ = write!(
+                defs,
+                r#"<clipPath id="c{}" clipPathUnits="userSpaceOnUse"><path d="{}"{rule}/></clipPath>"#,
+                c.id,
+                path_data(&c.matrix, c.subpaths)
+            );
+            let _ = writeln!(body, r#"<g clip-path="url(#c{})">"#, c.id);
+            open.push(*c);
+        }
+        let (m, it) = (leaf.matrix, leaf.item);
         match it {
             Item::Path {
                 subpaths,
@@ -186,9 +208,12 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                     mat(&m)
                 );
             }
-            Item::Group { .. } => unreachable!("leaves löst Gruppen auf"),
+            Item::Group { .. } | Item::Clip { .. } => {
+                unreachable!("clipped_leaves löst Gruppen und Rahmen auf")
+            }
         }
     }
+    body.push_str(&"</g>\n".repeat(open.len()));
     let defs = if defs.is_empty() {
         defs
     } else {

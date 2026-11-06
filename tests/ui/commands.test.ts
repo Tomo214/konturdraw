@@ -29,6 +29,15 @@ describe('editCommand', () => {
     expect(r.selected!.size).toBe(0);
   });
 
+  it('In Rahmen einfügen (Ziel zuletzt gewählt) und Inhalt herausnehmen', () => {
+    const r = editCommand(docWith(rect('a'), rect('f', 20)), ['a', 'f'], { name: 'frameInsert' }, [])!;
+    expect(ids(r.doc!)).toEqual(['f']);
+    expect([...r.selected!]).toEqual(['f']);
+    const back = editCommand(r.doc!, ['f'], { name: 'frameExtract' }, [])!;
+    expect(ids(back.doc!)).toEqual(['f', 'a']);
+    expect([...back.selected!]).toEqual(['a']);
+  });
+
   it('Einfügen nach Ausschneiden: neue IDs, eingefügtes gewählt', () => {
     const cut = editCommand(docWith(rect('a')), ['a'], { name: 'cut' }, [])!;
     const r = editCommand(cut.doc!, [], { name: 'paste' }, cut.clipboard!)!;

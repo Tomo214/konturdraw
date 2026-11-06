@@ -109,3 +109,47 @@ it('Kind einer Gruppe gewählt: Box nur um das Kind; nested erkennt die Kind-Aus
   expect(r.nested(new Set(['x']))).toBe(true);
   expect(r.nested(new Set(['g']))).toBe(false);
 });
+
+const black = { model: 'rgb' as const, values: [0, 0, 0] as const };
+const frameDoc = () => {
+  const f = { ...square('f'), style: { fill: black, stroke: { color: black, width: 1, cap: 'butt' as const, join: 'miter' as const } }, contents: [square('a', 20, 20)] };
+  const doc = createDocument(200, 200);
+  return addNodes(doc, doc.pages[0].layers[0].id, [f]).pages[0];
+};
+
+it('Rahmen mit Inhalt: Griffe, Rahmenauswahl, Berühren und Fangen sehen nur den Rahmen', () => {
+  vi.stubGlobal('document', { createElement: () => ({ getContext: () => null }) });
+  const r = new Renderer();
+  r.setPage(frameDoc());
+  expect(r.bounds(new Set(['f']))).toEqual({ minX: 0, minY: 0, maxX: 10, maxY: 10 });
+  expect(r.leavesOf(new Set(['f'])).map((it) => it.part)).toEqual(['fill', 'stroke']);
+  expect(r.inside({ minX: -1, minY: -1, maxX: 12, maxY: 12 })).toEqual(['f']);
+  expect(r.touching({ minX: 25, minY: 25, maxX: 26, maxY: 26 })).toEqual([]);
+  expect(r.scene.map((it) => it.id)).toEqual(['f', 'f']);
+});
+
+it('Klick auf den Inhalt liefert den Rahmen', () => {
+  vi.stubGlobal('Path2D', class { moveTo() {} lineTo() {} bezierCurveTo() {} closePath() {} addPath() {} });
+  const hit = { setTransform() {}, isPointInPath: () => true, isPointInStroke: () => false };
+  vi.stubGlobal('document', { createElement: () => ({ getContext: () => hit }) });
+  const r = new Renderer();
+  r.setPage(frameDoc());
+  expect(r.hitTest({ x: 0, y: 0, zoom: 1 }, 25, 25)).toMatchObject({ id: 'f', part: 'fill' });
+});
+
+it('Inhalt wird am Rahmen beschnitten: Füllung unten, Inhalt im eigenen Zustand, Kontur oben; Drahtmodell zeichnet den Rahmen einmal', () => {
+  vi.stubGlobal('document', { createElement: () => ({ getContext: () => null }) });
+  vi.stubGlobal('Path2D', class { moveTo() {} lineTo() {} bezierCurveTo() {} closePath() {} addPath() {} });
+  const calls: string[] = [];
+  const ctx = new Proxy({} as CanvasRenderingContext2D, {
+    get: (_, k) => (['fill', 'stroke', 'save', 'clip', 'restore'].includes(k as string) ? () => calls.push(k as string) : () => {}),
+    set: () => true,
+  });
+  const r = new Renderer();
+  r.setPage(frameDoc());
+  r.draw(ctx, { x: 0, y: 0, zoom: 4 }, 200, 200, 1);
+  expect(calls).toEqual(['fill', 'save', 'clip', 'fill', 'restore', 'stroke']);
+  calls.length = 0;
+  r.draw(ctx, { x: 0, y: 0, zoom: 4 }, 200, 200, 1, undefined, true);
+  expect(calls).toEqual(['stroke', 'save', 'clip', 'stroke', 'restore']);
+});

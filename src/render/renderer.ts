@@ -4,7 +4,7 @@ import { segmentsOf, subpathBounds } from '../model/bezier';
 import { multiply, type Box, type Mat } from '../model/geometry';
 import { isGradient } from '../model/style';
 import type { Color, Fill, Page, Subpath } from '../model/types';
-import { buildScene, worldScale, type SceneItem } from './scene';
+import { buildScene, paintOf, worldScale, type Clip, type SceneItem, type StyledItem } from './scene';
 import { screenToPage, snapshotTransform, toScreen, visibleBox, type Viewport } from './viewport';
 
 const PASTEBOARD = '#2b2b30';
@@ -81,6 +81,8 @@ const rule = (n: SceneItem['node']): CanvasFillRule => (n.type === 'path' && n.f
 export class Renderer {
   private page: Page | null = null;
   private items: SceneItem[] = [];
+  /** Ohne Rahmen-Inhalt: nur der Rahmen zählt für Auswahl, Griffe und Fangen. */
+  private outer: SceneItem[] = [];
   private tree = new RBush<SceneItem>();
   private leaves = new Map<string, number>();
   /** Objekte in Gruppen (nicht direkt auf einer Ebene). */
@@ -102,9 +104,10 @@ export class Renderer {
     this.items = buildScene(page);
     this.tree.clear();
     this.tree.load(this.items);
+    this.outer = this.items.filter((it) => !it.clips);
     this.leaves.clear();
     this.inner.clear();
-    for (const it of this.items) {
+    for (const it of this.outer) {
       this.leaves.set(it.topId, (this.leaves.get(it.topId) ?? 0) + 1);
       for (const id of it.chain.slice(1)) this.inner.add(id);
     }
@@ -112,7 +115,7 @@ export class Renderer {
 
   /** Sichtbare Blätter der gewählten Objekte (auch Kinder in Gruppen), mit Weltmatrix. */
   leavesOf(ids: ReadonlySet<string>): SceneItem[] {
-    return this.items.filter((it) => it.chain.some((id) => ids.has(id)));
+    return this.outer.filter((it) => it.chain.some((id) => ids.has(id)));
   }
 
   /** Ist ein gewähltes Objekt Kind einer Gruppe? Dann zeigt der Rahmen runde Griffe. */
@@ -142,7 +145,7 @@ export class Renderer {
     const hits = new Map<string, { n: number; order: number }>();
     for (const it of this.tree.search(r)) {
       const b = subpathBounds(it.subpaths, it.world);
-      if (it.locked || !b || b.minX < r.minX || b.minY < r.minY || b.maxX > r.maxX || b.maxY > r.maxY) continue;
+      if (it.locked || it.clips || !b || b.minX < r.minX || b.minY < r.minY || b.maxX > r.maxX || b.maxY > r.maxY) continue;
       const h = hits.get(it.topId);
       hits.set(it.topId, { n: (h?.n ?? 0) + 1, order: Math.max(h?.order ?? -1, it.order) });
     }
@@ -157,14 +160,14 @@ export class Renderer {
     const ids = new Set<string>();
     for (const it of this.tree.search(r)) {
       const b = subpathBounds(it.subpaths, it.world);
-      if (!it.locked && b && b.minX <= r.maxX && b.maxX >= r.minX && b.minY <= r.maxY && b.maxY >= r.minY) ids.add(it.topId);
+      if (!it.locked && !it.clips && b && b.minX <= r.maxX && b.maxX >= r.minX && b.minY <= r.maxY && b.maxY >= r.minY) ids.add(it.topId);
     }
     return [...ids];
   }
 
   /** Alle Blätter der Seite (für das Fangen). */
   get scene(): readonly SceneItem[] {
-    return this.items;
+    return this.outer;
   }
 
   /** under: zeichnet zwischen Seitenfläche und Objekten (Raster). wire: Drahtmodell, nur 1-px-Umrisse wie im Vorbild. */
@@ -186,55 +189,70 @@ export class Renderer {
     if (wire) [ctx.strokeStyle, ctx.lineWidth, ctx.globalCompositeOperation] = [WIRE, 1 / vp.zoom, 'difference'];
     let dashed = false; // Strichmuster bleibt im Kontext → nur beim Wechsel setzen
     for (const it of visible) {
-      if (wire) {
-        setMat(ctx, dpr, screen);
-        ctx.stroke(worldPath(it));
+      // Rahmen mit Inhalt: Umriss im Drahtmodell nur einmal (zweimal Differenz hebt sich auf).
+      if (wire && it.part === 'stroke') continue;
+      if (!it.clips) {
+        dashed = this.paint(ctx, it, screen, dpr, wire, dashed);
         continue;
       }
-      setMat(ctx, dpr, multiply(screen, it.world));
-      if (it.node.type === 'image') {
-        const { image, width, height } = it.node;
-        const src = this.images?.bitmap(image);
-        // Standard-Glättung des Canvas ist bilinear wie im PNG-Export.
-        ctx.globalAlpha = it.opacity;
-        if (src) ctx.drawImage(src, 0, 0, width, height);
-        else (ctx.fillStyle = LOADING), ctx.fillRect(0, 0, width, height);
-        ctx.globalAlpha = 1;
-        continue;
-      }
-      const { fill, stroke } = it.node.style;
-      const p = pathOf(it.subpaths);
-      // Füllung und Kontur je mit der Deckkraft (wie fill-/stroke-opacity im SVG-Export)
-      if (it.opacity < 1) ctx.globalAlpha = it.opacity;
-      if (fill) {
-        ctx.fillStyle = paint(ctx, fill);
-        ctx.fill(p, rule(it.node));
-      }
-      const s = worldScale(it.world);
-      if (stroke && s > 0) {
-        const width = stroke.scaleWithObject ? stroke.width * s : stroke.width; // in Seiten-mm
-        ctx.strokeStyle = css(stroke.color);
-        ctx.lineCap = stroke.cap;
-        ctx.lineJoin = stroke.join;
-        const local = similar(it.world);
-        const lineWidth = local ? width / s : width;
-        // Strichmuster × Breite, in denselben Einheiten wie lineWidth
-        if (stroke.dash || dashed) ctx.setLineDash(stroke.dash?.map((d) => d * lineWidth) ?? []);
-        dashed = !!stroke.dash;
-        if (local) {
-          ctx.lineWidth = lineWidth;
-          ctx.stroke(p);
-        } else {
-          setMat(ctx, dpr, screen);
-          ctx.lineWidth = lineWidth;
-          ctx.stroke(worldPath(it));
-        }
-      }
-      if (it.opacity < 1) ctx.globalAlpha = 1;
+      ctx.save();
+      for (const c of it.clips) setMat(ctx, dpr, multiply(screen, c.world)), ctx.clip(pathOf(c.subpaths), c.fillRule);
+      this.paint(ctx, it, screen, dpr, wire, dashed);
+      ctx.restore(); // setzt auch das Strichmuster zurück
     }
     ctx.globalCompositeOperation = 'source-over';
     if (dashed) ctx.setLineDash([]);
     this.lastVp = vp;
+  }
+
+  /** Ein Eintrag; liefert, ob danach ein Strichmuster gesetzt ist. */
+  private paint(ctx: CanvasRenderingContext2D, it: SceneItem, screen: Mat, dpr: number, wire: boolean, dashed: boolean): boolean {
+    if (wire) {
+      setMat(ctx, dpr, screen);
+      ctx.stroke(worldPath(it));
+      return dashed;
+    }
+    setMat(ctx, dpr, multiply(screen, it.world));
+    if (it.node.type === 'image') {
+      const { image, width, height } = it.node;
+      const src = this.images?.bitmap(image);
+      // Standard-Glättung des Canvas ist bilinear wie im PNG-Export.
+      ctx.globalAlpha = it.opacity;
+      if (src) ctx.drawImage(src, 0, 0, width, height);
+      else (ctx.fillStyle = LOADING), ctx.fillRect(0, 0, width, height);
+      ctx.globalAlpha = 1;
+      return dashed;
+    }
+    const { fill, stroke } = paintOf(it as StyledItem);
+    const p = pathOf(it.subpaths);
+    // Füllung und Kontur je mit der Deckkraft (wie fill-/stroke-opacity im SVG-Export)
+    if (it.opacity < 1) ctx.globalAlpha = it.opacity;
+    if (fill) {
+      ctx.fillStyle = paint(ctx, fill);
+      ctx.fill(p, rule(it.node));
+    }
+    const s = worldScale(it.world);
+    if (stroke && s > 0) {
+      const width = stroke.scaleWithObject ? stroke.width * s : stroke.width; // in Seiten-mm
+      ctx.strokeStyle = css(stroke.color);
+      ctx.lineCap = stroke.cap;
+      ctx.lineJoin = stroke.join;
+      const local = similar(it.world);
+      const lineWidth = local ? width / s : width;
+      // Strichmuster × Breite, in denselben Einheiten wie lineWidth
+      if (stroke.dash || dashed) ctx.setLineDash(stroke.dash?.map((d) => d * lineWidth) ?? []);
+      dashed = !!stroke.dash;
+      if (local) {
+        ctx.lineWidth = lineWidth;
+        ctx.stroke(p);
+      } else {
+        setMat(ctx, dpr, screen);
+        ctx.lineWidth = lineWidth;
+        ctx.stroke(worldPath(it));
+      }
+    }
+    if (it.opacity < 1) ctx.globalAlpha = 1;
+    return dashed;
   }
 
   /** Merkt sich das zuletzt voll gezeichnete Bild als Grundlage einer Pan/Zoom-Geste (architecture.md §6). */
@@ -266,24 +284,26 @@ export class Renderer {
     const hits = this.tree.search({ minX: x - tol, minY: y - tol, maxX: x + tol, maxY: y + tol });
     hits.sort((a, b) => b.order - a.order);
     const ctx = this.hitCtx;
+    // Inhalt zählt nur innerhalb seiner Rahmen und liefert den Rahmen.
+    const within = (c: Clip) => (ctx.setTransform(c.world[0], c.world[1], c.world[2], c.world[3], c.world[4], c.world[5]), ctx.isPointInPath(pathOf(c.subpaths), x, y, c.fillRule));
     for (const it of hits) {
-      if (it.locked) continue;
+      if (it.locked || (it.clips && !it.clips.every(within))) continue;
       // Text trifft man in seiner Box (auch zwischen den Buchstaben); Text auf Pfad nur auf den Glyphen.
       if (it.node.type === 'text' && !it.node.onPath) {
-        if (x >= it.minX - tol && x <= it.maxX + tol && y >= it.minY - tol && y <= it.maxY + tol) return it;
+        if (x >= it.minX - tol && x <= it.maxX + tol && y >= it.minY - tol && y <= it.maxY + tol) return it.frame ?? it;
         continue;
       }
       // Bild = gefülltes Rechteck ohne Kontur.
-      const { fill, stroke } = it.node.type === 'image' ? { fill: true, stroke: null } : it.node.style;
+      const { fill, stroke } = it.node.type === 'image' ? { fill: true, stroke: null } : paintOf(it as StyledItem);
       const p = pathOf(it.subpaths);
       const m = it.world;
       ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]);
-      if (fill && ctx.isPointInPath(p, x, y, rule(it.node))) return it;
+      if (fill && ctx.isPointInPath(p, x, y, rule(it.node))) return it.frame ?? it;
       // Kontur in Objekt-Einheiten; bei gestauchten Objekten nur angenähert (reicht für Klicks).
       const scale = worldScale(m);
       const local = stroke ? (stroke.scaleWithObject ? stroke.width : stroke.width / scale) : 0;
       ctx.lineWidth = Math.max(local, (2 * tol) / scale);
-      if (ctx.isPointInStroke(p, x, y)) return it;
+      if (ctx.isPointInStroke(p, x, y)) return it.frame ?? it;
     }
     return null;
   }

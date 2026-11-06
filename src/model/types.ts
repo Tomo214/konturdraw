@@ -80,6 +80,7 @@ export interface PathNode extends NodeBase {
   subpaths: readonly Subpath[];
   /** Fehlt = nonzero. Kombinieren setzt gerade/ungerade: wo sich Teilpfade überlappen, entsteht ein Loch. */
   fillRule?: 'evenodd';
+  contents?: readonly Node[];
 }
 
 /**
@@ -96,6 +97,11 @@ export interface ShapeNode extends NodeBase {
   type: 'shape';
   style: Style;
   shape: Shape;
+  /**
+   * Inhalt eines Rahmens („In Rahmen einfügen“), auch bei PathNode: im Koordinatensystem des Rahmens
+   * (wandert und skaliert mit), am Umriss beschnitten; Füllung des Rahmens liegt darunter, Kontur darüber.
+   */
+  contents?: readonly Node[];
 }
 
 /** Pixelbild auf (0,0)–(width,height) mm im Objektsystem; die Bytes liegen in der Bildablage (io/images.ts). */

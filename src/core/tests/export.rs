@@ -384,3 +384,72 @@ fn strichmuster_bleibt_nach_transparentem_pfad_richtig() {
         );
     }
 }
+
+/// Rahmen mit Inhalt (8b): Bild + Inhalt nur im Umriss, verschachtelt = Schnittmenge,
+/// gerade/ungerade mit Loch, danach wieder unbeschnitten.
+fn clip_scene() -> (Scene, Images) {
+    use serde_json::{json, Value};
+    let sq = |x0: f64, y0: f64, x1: f64, y1: f64| {
+        let n = |x: f64, y: f64| json!({ "x": x, "y": y, "type": "corner" });
+        json!({ "closed": true, "nodes": [n(x0, y0), n(x1, y0), n(x1, y1), n(x0, y1)] })
+    };
+    let rect = |rgb: [f64; 3], b: Value| json!({ "kind": "path", "matrix": IDENTITY, "subpaths": [b], "fill": { "model": "rgb", "values": rgb }, "stroke": null });
+    let image =
+        json!({ "kind": "image", "matrix": IDENTITY, "width": 40, "height": 20, "image": "bild" });
+    let inner = json!({ "kind": "clip", "matrix": IDENTITY, "subpaths": [sq(10.0, 5.0, 20.0, 15.0)], "children": [rect([0.0, 1.0, 0.0], sq(0.0, 0.0, 40.0, 20.0))] });
+    let frame = json!({ "kind": "clip", "matrix": [1, 0, 0, 1, 5, 5], "subpaths": [sq(0.0, 0.0, 10.0, 10.0)], "children": [image, inner] });
+    let ring = json!({ "kind": "clip", "matrix": IDENTITY, "fillRule": "evenodd", "subpaths": [sq(20.0, 2.0, 35.0, 17.0), sq(24.0, 6.0, 31.0, 13.0)], "children": [rect([0.0, 0.0, 1.0], sq(18.0, 0.0, 38.0, 20.0))] });
+    let empty = json!({ "kind": "clip", "matrix": IDENTITY, "subpaths": [], "children": [rect([1.0, 0.0, 0.0], sq(36.0, 1.0, 39.0, 4.0))] });
+    let after = rect([0.0, 0.0, 0.0], sq(36.0, 18.0, 39.0, 20.0));
+    let scene = serde_json::from_value(
+        json!({ "width": 40, "height": 20, "items": [frame, ring, empty, after] }),
+    )
+    .unwrap();
+    (scene, image_scene().1)
+}
+
+fn check_clip(pm: &Pixmap, what: &str) {
+    let probes = [
+        ("links vom Rahmen", 2.0, 10.0, [255, 255, 255]),
+        ("Bild im Rahmen", 7.0, 10.0, [255, 0, 0]),
+        ("Schnittmenge", 12.0, 10.0, [0, 255, 0]),
+        (
+            "innerer Rahmen außerhalb des äußeren",
+            17.0,
+            10.0,
+            [255, 255, 255],
+        ),
+        ("vor dem Ring", 19.0, 10.0, [255, 255, 255]),
+        ("Ring", 22.0, 10.0, [0, 0, 255]),
+        ("Loch im Ring", 27.5, 10.0, [255, 255, 255]),
+        ("hinter dem Ring", 37.0, 10.0, [255, 255, 255]),
+        ("leerer Rahmen verdeckt alles", 37.5, 2.5, [255, 255, 255]),
+        ("danach unbeschnitten", 37.5, 19.0, [0, 0, 0]),
+    ];
+    let fails: Vec<_> = probes
+        .iter()
+        .filter_map(|(name, x, y, want)| {
+            let got = color_at(pm, 10.0, *x, *y);
+            (0..3)
+                .any(|i| got[i].abs_diff(want[i]) > 3)
+                .then(|| format!("{name}: {got:?} statt {want:?}"))
+        })
+        .collect();
+    assert!(fails.is_empty(), "{what}: {fails:#?}");
+}
+
+#[test]
+fn rahmen_beschneidet_in_allen_formaten() {
+    let (scene, images) = clip_scene();
+    let cms = Cms::default();
+    let png = png_export::export(&scene, &images, 254.0, &cms).unwrap();
+    check_clip(&Pixmap::decode_png(&png).unwrap(), "PNG");
+    let svg = svg_export::export(&scene, &images, &cms).unwrap();
+    assert_eq!(svg.matches("<clipPath").count(), 4, "{svg}");
+    assert!(svg.contains(r#"clip-rule="evenodd""#), "{svg}");
+    check_clip(&render_svg(&svg, 10.0), "SVG");
+    let pdf = pdf_export::export(&scene, &images, &cms).unwrap();
+    if let Some(pm) = render_pdf(&pdf, 400, "rahmen") {
+        check_clip(&pm, "PDF");
+    }
+}

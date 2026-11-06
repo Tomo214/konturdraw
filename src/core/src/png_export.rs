@@ -1,8 +1,8 @@
 //! PNG-Export über tiny-skia: DPI wählbar, transparenter Hintergrund (Spec §11).
 use crate::color::{byte, Cms};
 use crate::scene::{
-    apply, leaves, segments, Cap, Color, Fill, GradientKind, Item, Join, Mat, Point, Scene, Seg,
-    Subpath,
+    apply, clipped_leaves, segments, Cap, ClipRef, Color, Fill, FillRule, GradientKind, Item, Join,
+    Mat, Point, Scene, Seg, Subpath,
 };
 use crate::Images;
 use tiny_skia as sk;
@@ -95,6 +95,33 @@ fn paint(fill: &Fill, m: &Mat, cms: &Cms) -> sk::Paint<'static> {
     paint
 }
 
+fn rule(r: Option<FillRule>) -> sk::FillRule {
+    if r.is_some() {
+        sk::FillRule::EvenOdd
+    } else {
+        sk::FillRule::Winding
+    }
+}
+
+/// Schnittmenge der Umrisse als Maske; None = unbeschnitten, leerer Umriss verdeckt alles.
+fn clip_mask(clips: &[ClipRef], w: u32, h: u32, page: sk::Transform) -> Option<sk::Mask> {
+    if clips.is_empty() {
+        return None;
+    }
+    let mut mask = sk::Mask::new(w, h)?;
+    for (i, c) in clips.iter().enumerate() {
+        let Some(p) = path(&c.matrix, c.subpaths) else {
+            return sk::Mask::new(w, h);
+        };
+        if i == 0 {
+            mask.fill_path(&p, rule(c.fill_rule), true, page);
+        } else {
+            mask.intersect_path(&p, rule(c.fill_rule), true, page);
+        }
+    }
+    Some(mask)
+}
+
 pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec<u8>, String> {
     let k = dpi / 25.4; // Pixel je mm
     let (w, h) = (
@@ -104,7 +131,15 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
     let mut pm =
         sk::Pixmap::new(w, h).ok_or_else(|| format!("Bild mit {w} × {h} px ist zu groß."))?;
     let page = sk::Transform::from_scale(k as f32, k as f32);
-    for (m, it) in leaves(&scene.items) {
+    // Maske je Beschneidungskette, neu nur wenn die Kette wechselt.
+    let mut mask: (Vec<usize>, Option<sk::Mask>) = (Vec::new(), None);
+    for leaf in clipped_leaves(&scene.items) {
+        let chain: Vec<usize> = leaf.clips.iter().map(|c| c.id).collect();
+        if chain != mask.0 {
+            mask = (chain, clip_mask(&leaf.clips, w, h, page));
+        }
+        let clip = mask.1.as_ref();
+        let (m, it) = (leaf.matrix, leaf.item);
         match it {
             Item::Path {
                 subpaths,
@@ -118,14 +153,9 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                     continue;
                 };
                 if let Some(f) = fill {
-                    let rule = if fill_rule.is_some() {
-                        sk::FillRule::EvenOdd
-                    } else {
-                        sk::FillRule::Winding
-                    };
                     let mut fp = paint(f, &m, cms);
                     fp.shader.apply_opacity(*opacity as f32);
-                    pm.fill_path(&p, &fp, rule, page, None);
+                    pm.fill_path(&p, &fp, rule(*fill_rule), page, clip);
                 }
                 if let Some(s) = stroke {
                     let st = sk::Stroke {
@@ -147,7 +177,7 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                     };
                     let mut sp = paint(&Fill::Color(s.color.clone()), &m, cms);
                     sp.shader.apply_opacity(*opacity as f32);
-                    pm.stroke_path(&p, &sp, &st, page, None);
+                    pm.stroke_path(&p, &sp, &st, page, clip);
                 }
             }
             Item::Image {
@@ -178,10 +208,12 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                     img.as_ref(),
                     &q,
                     page.pre_concat(transform(&m)).pre_concat(fit),
-                    None,
+                    clip,
                 );
             }
-            Item::Group { .. } => unreachable!("leaves löst Gruppen auf"),
+            Item::Group { .. } | Item::Clip { .. } => {
+                unreachable!("clipped_leaves löst Gruppen und Rahmen auf")
+            }
         }
     }
     pm.encode_png()

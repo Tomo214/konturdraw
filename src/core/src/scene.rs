@@ -251,6 +251,16 @@ pub enum Item {
         matrix: Mat,
         children: Vec<Item>,
     },
+    /// Rahmen-Inhalt: Kinder nur innerhalb des Umrisses; `matrix` gilt nur für den Umriss,
+    /// die Kinder liegen im Koordinatensystem darüber.
+    Clip {
+        matrix: Mat,
+        subpaths: Vec<Subpath>,
+        /// fehlt = nonzero
+        #[serde(default, rename = "fillRule", skip_serializing_if = "Option::is_none")]
+        fill_rule: Option<FillRule>,
+        children: Vec<Item>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -260,21 +270,76 @@ pub struct Scene {
     pub items: Vec<Item>,
 }
 
-/// Pfade und Bilder in Zeichenreihenfolge mit Weltmatrix (Gruppen aufgelöst).
-pub fn leaves(items: &[Item]) -> Vec<(Mat, &Item)> {
-    fn visit<'a>(items: &'a [Item], parent: &Mat, out: &mut Vec<(Mat, &'a Item)>) {
+/// Beschneidungsumriss mit Weltmatrix; gleiche `id` = derselbe clip-Eintrag.
+#[derive(Clone, Copy, Debug)]
+pub struct ClipRef<'a> {
+    pub id: usize,
+    pub matrix: Mat,
+    pub subpaths: &'a [Subpath],
+    pub fill_rule: Option<FillRule>,
+}
+
+/// Pfad oder Bild mit Weltmatrix und seinen Beschneidungen (äußere zuerst, leer = keine).
+pub struct Leaf<'a> {
+    pub matrix: Mat,
+    pub item: &'a Item,
+    pub clips: Vec<ClipRef<'a>>,
+}
+
+/// Pfade und Bilder in Zeichenreihenfolge, Gruppen aufgelöst, Beschneidungen je Blatt.
+pub fn clipped_leaves(items: &[Item]) -> Vec<Leaf<'_>> {
+    fn visit<'a>(
+        items: &'a [Item],
+        parent: &Mat,
+        clips: &[ClipRef<'a>],
+        next: &mut usize,
+        out: &mut Vec<Leaf<'a>>,
+    ) {
         for it in items {
             match it {
-                Item::Group { matrix, children } => visit(children, &mul(parent, matrix), out),
-                Item::Path { matrix, .. } | Item::Image { matrix, .. } => {
-                    out.push((mul(parent, matrix), it))
+                Item::Group { matrix, children } => {
+                    visit(children, &mul(parent, matrix), clips, next, out)
                 }
+                Item::Clip {
+                    matrix,
+                    subpaths,
+                    fill_rule,
+                    children,
+                } => {
+                    let mut inner = clips.to_vec();
+                    inner.push(ClipRef {
+                        id: *next,
+                        matrix: mul(parent, matrix),
+                        subpaths,
+                        fill_rule: *fill_rule,
+                    });
+                    *next += 1;
+                    visit(children, parent, &inner, next, out)
+                }
+                Item::Path { matrix, .. } | Item::Image { matrix, .. } => out.push(Leaf {
+                    matrix: mul(parent, matrix),
+                    item: it,
+                    clips: clips.to_vec(),
+                }),
             }
         }
     }
     let mut out = Vec::new();
-    visit(items, &IDENTITY, &mut out);
+    visit(items, &IDENTITY, &[], &mut 0, &mut out);
     out
+}
+
+/// Pfade und Bilder in Zeichenreihenfolge mit Weltmatrix (Gruppen aufgelöst, Beschneidung übergangen).
+pub fn leaves(items: &[Item]) -> Vec<(Mat, &Item)> {
+    clipped_leaves(items)
+        .into_iter()
+        .map(|l| (l.matrix, l.item))
+        .collect()
+}
+
+/// Wie viele Beschneidungen zweier Ketten von außen her übereinstimmen.
+pub fn common_clips(a: &[ClipRef], b: &[ClipRef]) -> usize {
+    a.iter().zip(b).take_while(|(x, y)| x.id == y.id).count()
 }
 
 pub enum Seg {

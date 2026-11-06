@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { fromIr, placeImport, toIr, type IrItem, type IrScene } from '../../src/io/ir';
 import { addLayer, addNodes, createDocument, updateLayer } from '../../src/model/document';
-import { multiply, scale, translate } from '../../src/model/geometry';
+import { IDENTITY, multiply, scale, translate } from '../../src/model/geometry';
 
 const IDENTITY_T = translate(0, 0);
 import type { Doc, Node, Stroke } from '../../src/model/types';
@@ -30,7 +30,7 @@ describe('toIr', () => {
   it('Seitengröße und Formen als Bézier-Teilpfade', () => {
     const ir = toIr(goldenPage());
     expect([ir.width, ir.height]).toEqual([200, 140]);
-    expect(ir.items).toHaveLength(15);
+    expect(ir.items).toHaveLength(18); // Rahmen = Füllung, Beschneidung, Kontur
     expect(path(ir.items[10])?.fillRule).toBe('evenodd');
     expect(path(ir.items[0])?.subpaths[0].nodes).toHaveLength(4);
     expect(path(ir.items[2])?.subpaths[0].nodes.every((n) => n.handleIn && n.handleOut)).toBe(true);
@@ -107,11 +107,12 @@ describe('toIr', () => {
   });
 });
 
+const pageOf = (ir: IrScene, nodes: Node[]) => {
+  const doc = createDocument(ir.width, ir.height);
+  return addNodes(doc, doc.pages[0].layers[0].id, nodes).pages[0];
+};
+
 describe('fromIr', () => {
-  const pageOf = (ir: IrScene, nodes: Node[]) => {
-    const doc = createDocument(ir.width, ir.height);
-    return addNodes(doc, doc.pages[0].layers[0].id, nodes).pages[0];
-  };
 
   it('Rundreise toIr → fromIr → toIr: Golden-Szene unverändert', () => {
     const ir = toIr(goldenPage());
@@ -146,5 +147,46 @@ describe('placeImport', () => {
   it('Pixelbild: zu groß → auf Seite eingepasst und mittig', () => {
     expect(placeImport(page, { width: 400, height: 100, items: [] }, true)).toEqual(multiply(translate(0, 25), scale(0.5, 0.5)));
     expect(placeImport(page, { width: 20, height: 10, items: [] }, true)).toEqual(translate(90, 45));
+  });
+});
+
+describe('Rahmen mit Inhalt', () => {
+  const black = { model: 'rgb' as const, values: [0, 0, 0] as const };
+  // Kurzform: Pfad = [Matrix-Versatz, Füllung?, Kontur?, Deckkraft], Beschneidung = ['clip', Regel, Kinder]
+  const brief = (it: IrItem): unknown =>
+    it.kind === 'clip'
+      ? ['clip', it.matrix.slice(4), it.fillRule ?? 'nonzero', it.children.map(brief)]
+      : it.kind === 'path' ? [it.matrix.slice(4), !!it.fill, !!it.stroke, it.opacity ?? 1] : it.kind;
+
+  it('toIr: Füllung, Beschneidung mit dem Inhalt in Weltlage, Kontur; leere Teile entfallen, Deckkraft wirkt auf alles', () => {
+    const inner = { ...square('i', 0, 0, 10), fillRule: 'evenodd' as const, contents: [square('b')] };
+    const f = { ...square('f', 10, 10, 20), style: { fill: black, stroke: stroke(1) }, opacity: 0.5, contents: [square('a', 5, 5), inner] };
+    expect(toIr(docWith([f]).pages[0]).items.map(brief)).toEqual([
+      [[10, 10], true, false, 0.5],
+      ['clip', [10, 10], 'nonzero', [
+        [[15, 15], true, false, 0.5],
+        [[10, 10], true, false, 0.5],
+        ['clip', [10, 10], 'evenodd', [[[10, 10], true, false, 0.5]]],
+      ]],
+      [[10, 10], false, true, 0.5],
+    ]);
+  });
+
+  it('toIr mit Auswahl: Fläche = Rahmen (Inhalt außerhalb zählt nicht), Versatz auch im Inhalt', () => {
+    const f = { ...square('f', 10, 10, 20), contents: [square('a', 30, 30)] };
+    const ir = toIr(docWith([f]).pages[0], new Set(['f']));
+    expect([ir.width, ir.height]).toEqual([20, 20]);
+    expect(ir.items.map(brief)).toEqual([[[0, 0], true, false, 1], ['clip', [0, 0], 'nonzero', [[[30, 30], true, false, 1]]]]);
+  });
+
+  it('fromIr: Beschneidung wird unsichtbarer Rahmen, Inhalt in seinen Koordinaten; Rundreise gleich', () => {
+    const sq = toIr(docWith([square('x', 7, 7)]).pages[0]).items[0];
+    const items: IrItem[] = [{ kind: 'clip', matrix: translate(5, 5), subpaths: square('c').subpaths, fillRule: 'evenodd', children: [sq] }];
+    const [f] = fromIr(items);
+    expect(f).toMatchObject({ type: 'path', transform: translate(5, 5), style: { fill: null, stroke: null }, fillRule: 'evenodd', contents: [{ type: 'path', transform: translate(2, 2) }] });
+    expect(toIr(pageOf({ width: 50, height: 50, items }, [f])).items.map(brief)).toEqual([['clip', [5, 5], 'evenodd', [[[7, 7], true, false, 1]]]]);
+    // Nicht umkehrbare Matrix: Umriss wird eingerechnet, Inhalt behält seine Matrizen.
+    const [flat] = fromIr([{ ...items[0], matrix: scale(0, 1) }] as IrItem[]);
+    expect(flat).toMatchObject({ transform: IDENTITY, contents: [{ transform: translate(7, 7) }] });
   });
 });

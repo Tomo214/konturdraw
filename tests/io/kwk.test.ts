@@ -26,6 +26,17 @@ describe('.kwk-Dokument', () => {
     expect([...usedImages(doc)].sort()).toEqual(['aa', 'bb']);
   });
 
+  it('Rahmen-Inhalt: Rundreise, Bilder darin zählen, Unsinn und fehlendes Bild → Fehler', () => {
+    const base = sample();
+    const doc = addNodes(base, base.pages[0].layers[0].id, [{ ...square('f'), contents: [img('m', 'cc'), square('n')] }]);
+    expect([...usedImages(doc)].sort()).toEqual(['aa', 'bb', 'cc']);
+    expect(parseDocument(serialize(doc), new Set(['aa', 'bb', 'cc']))).toEqual(doc);
+    expect(() => parseDocument(serialize(doc), new Set(['aa', 'bb']))).toThrow(/Bild cc fehlt/);
+    const d = JSON.parse(serialize(doc));
+    d.pages[0].layers[0].children.at(-1).contents = 'x';
+    expect(() => parseDocument(JSON.stringify(d), new Set(['aa', 'bb', 'cc']))).toThrow(/Rahmeninhalt/);
+  });
+
   const bad = (mutate: (d: any) => void) => {
     const d = JSON.parse(serialize(sample()));
     mutate(d);

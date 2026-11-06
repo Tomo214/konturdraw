@@ -14,6 +14,7 @@ export function usedImages(doc: Doc): Set<string> {
   const visit = (n: Node): void => {
     if (n.type === 'group') n.children.forEach(visit);
     else if (n.type === 'image') out.add(n.image);
+    else if (n.type !== 'text') n.contents?.forEach(visit);
   };
   for (const p of doc.pages) for (const l of p.layers) l.children.forEach(visit);
   return out;
@@ -136,6 +137,10 @@ function text(n: Json): void {
   list(n.outline, 'Textumriss').forEach(subpath);
 }
 
+function contents(n: Json, images: ReadonlySet<string>): void {
+  if (n.contents !== undefined) for (const c of list(n.contents, 'Rahmeninhalt')) node(c, images);
+}
+
 function node(v: unknown, images: ReadonlySet<string>): void {
   const n = obj(v, 'Objekt');
   str(n.id, 'Objekt-ID');
@@ -153,10 +158,12 @@ function node(v: unknown, images: ReadonlySet<string>): void {
     case 'shape':
       style(n.style);
       shape(n.shape);
+      contents(n, images);
       return;
     case 'path':
       style(n.style);
       list(n.subpaths, 'Teilpfade').forEach(subpath);
+      contents(n, images);
       return;
     case 'text':
       style(n.style);

@@ -113,6 +113,10 @@ export const MENUS: readonly { label: string; key: string; items: readonly MenuE
         ],
       },
       {
+        label: 'Rahmen',
+        items: [item('In Rahmen einfügen', { name: 'frameInsert' }), item('Inhalt herausnehmen', { name: 'frameExtract' })],
+      },
+      {
         label: 'Ausrichten und Verteilen',
         items: [
           align('Links ausrichten', 'left', 'L'),

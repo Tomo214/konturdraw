@@ -984,6 +984,271 @@
     },
     "stroke": null,
     "opacity": 0.25
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     104,
+     78
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 0,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 24,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 24,
+        "y": 16,
+        "type": "corner"
+       },
+       {
+        "x": 0,
+        "y": 16,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "model": "rgb",
+     "values": [
+      0,
+      1,
+      0
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "clip",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     104,
+     78
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 0,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 24,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 24,
+        "y": 16,
+        "type": "corner"
+       },
+       {
+        "x": 0,
+        "y": 16,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "children": [
+     {
+      "kind": "path",
+      "matrix": [
+       1,
+       0,
+       0,
+       1,
+       104,
+       78
+      ],
+      "subpaths": [
+       {
+        "closed": true,
+        "nodes": [
+         {
+          "x": -10,
+          "y": 4,
+          "type": "corner"
+         },
+         {
+          "x": 10,
+          "y": 4,
+          "type": "corner"
+         },
+         {
+          "x": 10,
+          "y": 12,
+          "type": "corner"
+         },
+         {
+          "x": -10,
+          "y": 12,
+          "type": "corner"
+         }
+        ]
+       }
+      ],
+      "fill": {
+       "model": "rgb",
+       "values": [
+        1,
+        0,
+        0
+       ]
+      },
+      "stroke": null
+     },
+     {
+      "kind": "path",
+      "matrix": [
+       1,
+       0,
+       0,
+       1,
+       104,
+       78
+      ],
+      "subpaths": [
+       {
+        "closed": true,
+        "nodes": [
+         {
+          "x": 24,
+          "y": -6,
+          "type": "symmetric",
+          "handleIn": {
+           "x": 19.581722001353654,
+           "y": -6
+          },
+          "handleOut": {
+           "x": 28.418277998646346,
+           "y": -6
+          }
+         },
+         {
+          "x": 32,
+          "y": 2,
+          "type": "symmetric",
+          "handleIn": {
+           "x": 32,
+           "y": -2.4182779986463476
+          },
+          "handleOut": {
+           "x": 32,
+           "y": 6.418277998646348
+          }
+         },
+         {
+          "x": 24,
+          "y": 10,
+          "type": "symmetric",
+          "handleIn": {
+           "x": 28.418277998646346,
+           "y": 10
+          },
+          "handleOut": {
+           "x": 19.581722001353654,
+           "y": 10
+          }
+         },
+         {
+          "x": 16,
+          "y": 2,
+          "type": "symmetric",
+          "handleIn": {
+           "x": 16,
+           "y": 6.418277998646348
+          },
+          "handleOut": {
+           "x": 16,
+           "y": -2.4182779986463476
+          }
+         }
+        ]
+       }
+      ],
+      "fill": {
+       "model": "rgb",
+       "values": [
+        0,
+        0,
+        1
+       ]
+      },
+      "stroke": null
+     }
+    ]
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     104,
+     78
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 0,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 24,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 24,
+        "y": 16,
+        "type": "corner"
+       },
+       {
+        "x": 0,
+        "y": 16,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": null,
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 1,
+     "cap": "butt",
+     "join": "miter"
+    }
    }
   ]
  },
@@ -1383,6 +1648,83 @@
     255
    ],
    3
+  ],
+  [
+   "Rahmen: Füllung unter Inhalt",
+   125,
+   92,
+   [
+    0,
+    255,
+    0
+   ],
+   1
+  ],
+  [
+   "Rahmen: Inhalt innen",
+   108,
+   86,
+   [
+    255,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Rahmen: Inhalt links beschnitten",
+   100,
+   86,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Rahmen: Kontur über Inhalt",
+   104,
+   86,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Rahmen: Ellipse innen",
+   126,
+   84,
+   [
+    0,
+    0,
+    255
+   ],
+   1
+  ],
+  [
+   "Rahmen: Ellipse oben beschnitten",
+   128,
+   75,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Rahmen: Ellipse rechts beschnitten",
+   132,
+   82,
+   [
+    255,
+    255,
+    255
+   ],
+   1
   ]
  ]
 }

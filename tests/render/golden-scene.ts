@@ -2,7 +2,7 @@
 // von vitest (Vorlage tests/fixtures/golden-scene.json) und darüber von den Export-Tests in kw-core (3g-1).
 import { addNodes, createDocument } from '../../src/model/document';
 import { IDENTITY, multiply, scale, translate, type Mat } from '../../src/model/geometry';
-import type { Color, Fill, Node, Page, Shape, Stroke, Style } from '../../src/model/types';
+import type { Color, Fill, Node, Page, Shape, ShapeNode, Stroke, Style } from '../../src/model/types';
 
 const rgb = (r: number, g: number, b: number): Color => ({ model: 'rgb', values: [r, g, b] });
 const [RED, BLUE, GREEN, PURPLE, BLACK, WHITE] = [rgb(1, 0, 0), rgb(0, 0, 1), rgb(0, 1, 0), rgb(0.5, 0, 0.5), rgb(0, 0, 0), rgb(1, 1, 1)];
@@ -10,7 +10,7 @@ const stroke = (width: number, extra: Partial<Stroke> = {}): Stroke => ({ color:
 
 export function goldenPage(): Page {
   let n = 0;
-  const shape = (s: Shape, style: Style, transform: Mat = IDENTITY): Node => ({ type: 'shape', id: `s${n++}`, transform, style, shape: s });
+  const shape = (s: Shape, style: Style, transform: Mat = IDENTITY): ShapeNode => ({ type: 'shape', id: `s${n++}`, transform, style, shape: s });
   const fill = (f: Fill): Style => ({ fill: f, stroke: null });
   const box = (x: number, y: number, width: number, height: number) => ({ x, y, width, height });
   const line = (y: number, cap: Stroke['cap']): Node => ({
@@ -62,6 +62,11 @@ export function goldenPage(): Page {
     { ...shape({ kind: 'rect', ...box(176, 10, 18, 14), radius: 0 }, { fill: RED, stroke: stroke(2) }), opacity: 0.5 },
     // Gruppe 50 % × Kind 50 % = 25 %.
     { type: 'group', id: `g${n++}`, transform: IDENTITY, opacity: 0.5, children: [{ ...shape({ kind: 'rect', ...box(176, 28, 18, 10), radius: 0 }, fill(BLUE)), opacity: 0.5 }] },
+    // Rahmen (8b): Füllung unter, Kontur über dem Inhalt; Inhalt in Rahmen-Koordinaten, am Umriss beschnitten.
+    {
+      ...shape({ kind: 'rect', ...box(0, 0, 24, 16), radius: 0 }, { fill: GREEN, stroke: stroke(1) }, translate(104, 78)),
+      contents: [shape({ kind: 'rect', ...box(-10, 4, 20, 8), radius: 0 }, fill(RED)), shape({ kind: 'ellipse', ...box(16, -6, 16, 16) }, fill(BLUE))],
+    },
   ];
 
   const doc = createDocument(200, 140);
@@ -109,4 +114,11 @@ export const PROBES: [string, number, number, RGB, number][] = [
   ['Transparenz: Kontur außen 50 %', 175.5, 17, [128, 128, 128], 3],
   ['Transparenz: Kontur innen über Füllung', 176.5, 17, [128, 64, 64], 4],
   ['Transparenz: Gruppe × Objekt = 25 %', 185, 33, [191, 191, 255], 3],
+  ['Rahmen: Füllung unter Inhalt', 125, 92, [0, 255, 0], 1],
+  ['Rahmen: Inhalt innen', 108, 86, [255, 0, 0], 1],
+  ['Rahmen: Inhalt links beschnitten', 100, 86, W, 1],
+  ['Rahmen: Kontur über Inhalt', 104, 86, K, 1],
+  ['Rahmen: Ellipse innen', 126, 84, [0, 0, 255], 1],
+  ['Rahmen: Ellipse oben beschnitten', 128, 75, W, 1],
+  ['Rahmen: Ellipse rechts beschnitten', 132, 82, W, 1],
 ];

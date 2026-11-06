@@ -1,5 +1,6 @@
 // Ausgegraute Menüeinträge wie Vorbild: was gerade nichts bewirken kann, ist aus. Formen-Regeln kommen aus dem Modell selbst.
 import { findNode } from '../model/document';
+import { extractContents, placeInFrame } from '../model/frame';
 import { planOutline } from '../model/outline';
 import { planShaping } from '../model/shaping';
 import type { Doc, Node } from '../model/types';
@@ -48,6 +49,8 @@ export function enabledFor(cmd: Command, c: MenuContext): boolean {
     case 'ungroup': return c.selected.some((id) => findNode(c.doc, id)?.type === 'group');
     case 'shaping': return works(() => planShaping(c.doc, c.selected, cmd.op));
     case 'outline': return works(() => planOutline(c.doc, c.selected));
+    case 'frameInsert': return works(() => placeInFrame(c.doc, c.selected));
+    case 'frameExtract': return works(() => extractContents(c.doc, c.selected));
     case 'toCurves': return leafs().some((x) => x.type === 'shape' || x.type === 'text');
     case 'trace': return leafs().some((x) => x.type === 'image');
     case 'page':

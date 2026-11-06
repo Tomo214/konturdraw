@@ -36,6 +36,19 @@ describe('Dateiabläufe', () => {
     expect(scene).toEqual({ width: 100, height: 50, items: [{ kind: 'group', matrix: [-1, 0, 0, 1, 100, 0], children: toIr(page).items }] });
   });
 
+  it('Bilder im Rahmen-Inhalt gehen mit Export, Druck und Speichern mit', async () => {
+    const d = doc([{ ...square('f', 0, 0, 20), contents: [img('a', 'h2')] }]);
+    vi.mocked(bridge.exportFile).mockResolvedValue('/e.svg');
+    await exportPage(d.pages[0], undefined, 'svg', DEFAULT_EXPORT_OPTIONS);
+    expect(vi.mocked(bridge.exportFile).mock.lastCall![2]).toEqual({ h2: 'BBBB' });
+    vi.mocked(bridge.printFile).mockResolvedValue('/d.pdf');
+    await printPage(d.pages[0], undefined, false);
+    expect(vi.mocked(bridge.printFile).mock.lastCall![1]).toEqual({ h2: 'BBBB' });
+    vi.mocked(bridge.saveKwk).mockResolvedValue('/x.kwk');
+    await saveFile(d, null);
+    expect(vi.mocked(bridge.saveKwk).mock.lastCall![2]).toEqual({ h2: 'BBBB' });
+  });
+
   it('Speichern schickt nur benutzte Bilder mit', async () => {
     const d = doc([img('a', 'h1'), img('b', 'h2')]);
     vi.mocked(bridge.saveKwk).mockResolvedValue('/x.kwk');
