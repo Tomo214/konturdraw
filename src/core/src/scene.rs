@@ -156,9 +156,27 @@ pub struct Gradient {
     pub stops: Vec<GradientStop>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PatternKind {
+    Pattern,
+}
+
+/// Musterfüllung (8c): Kachel (0, 0)–(width, height) mit eigenen Objekten, wiederholt;
+/// `matrix` bildet Kachel- auf Objekt-Koordinaten ab.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct Pattern {
+    pub kind: PatternKind,
+    pub width: f64,
+    pub height: f64,
+    pub matrix: Mat,
+    pub items: Vec<Item>,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum Fill {
+    Pattern(Pattern),
     Gradient(Gradient),
     Color(Color),
 }

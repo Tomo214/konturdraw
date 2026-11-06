@@ -24,7 +24,20 @@ export interface Gradient {
   stops: readonly GradientStop[];
 }
 
-export type Fill = Color | Gradient;
+/**
+ * Kachelmuster: Kachel (0,0)–(width,height) in eigenen Koordinaten, matrix bildet sie ins Objektsystem ab
+ * (Lage, Größe, Winkel). twoColor = aus einer Zweifarb-Vorlage erzeugt; tile ist dann deren Ergebnis.
+ */
+export interface Pattern {
+  kind: 'pattern';
+  width: number;
+  height: number;
+  matrix: Mat;
+  tile: readonly Node[];
+  twoColor?: { name: string; fg: Color; bg: Color };
+}
+
+export type Fill = Color | Gradient | Pattern;
 
 export interface Stroke {
   color: Color;

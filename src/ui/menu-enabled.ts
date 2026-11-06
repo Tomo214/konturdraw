@@ -2,6 +2,7 @@
 import { findNode } from '../model/document';
 import { extractContents, placeInFrame } from '../model/frame';
 import { planOutline } from '../model/outline';
+import { patternFromSelection } from '../model/pattern';
 import { planShaping } from '../model/shaping';
 import type { Doc, Node } from '../model/types';
 import type { Command } from './shortcuts';
@@ -51,6 +52,7 @@ export function enabledFor(cmd: Command, c: MenuContext): boolean {
     case 'outline': return works(() => planOutline(c.doc, c.selected));
     case 'frameInsert': return works(() => placeInFrame(c.doc, c.selected));
     case 'frameExtract': return works(() => extractContents(c.doc, c.selected));
+    case 'patternFromSelection': return works(() => patternFromSelection(c.doc, c.selected));
     case 'toCurves': return leafs().some((x) => x.type === 'shape' || x.type === 'text');
     case 'trace': return leafs().some((x) => x.type === 'image');
     case 'page':

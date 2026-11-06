@@ -1,11 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { fromIr, placeImport, toIr, type IrItem, type IrScene } from '../../src/io/ir';
+import { fromIr, placeImport, toIr, type IrItem, type IrPattern, type IrScene } from '../../src/io/ir';
 import { addLayer, addNodes, createDocument, updateLayer } from '../../src/model/document';
 import { IDENTITY, multiply, scale, translate } from '../../src/model/geometry';
 
 const IDENTITY_T = translate(0, 0);
-import type { Doc, Node, Stroke } from '../../src/model/types';
+import type { Doc, Node, Pattern, Stroke } from '../../src/model/types';
 import { square } from '../model/fixtures';
 import { goldenPage, PROBES } from '../render/golden-scene';
 
@@ -30,7 +30,7 @@ describe('toIr', () => {
   it('Seitengröße und Formen als Bézier-Teilpfade', () => {
     const ir = toIr(goldenPage());
     expect([ir.width, ir.height]).toEqual([200, 140]);
-    expect(ir.items).toHaveLength(18); // Rahmen = Füllung, Beschneidung, Kontur
+    expect(ir.items).toHaveLength(20); // Rahmen = Füllung, Beschneidung, Kontur; + 2 Musterobjekte
     expect(path(ir.items[10])?.fillRule).toBe('evenodd');
     expect(path(ir.items[0])?.subpaths[0].nodes).toHaveLength(4);
     expect(path(ir.items[2])?.subpaths[0].nodes.every((n) => n.handleIn && n.handleOut)).toBe(true);
@@ -134,6 +134,28 @@ describe('fromIr', () => {
     const sq = toIr(docWith([{ ...square('a'), style: { fill: null, stroke: stroke(0.7) } }]).pages[0]).items[0];
     const [g] = fromIr([{ kind: 'group', matrix: scale(3, 3), children: [sq] }]);
     expect(path(toIr(pageOf({ width: 50, height: 50, items: [] }, [g])).items[0])?.stroke?.width).toBe(0.7);
+  });
+});
+
+describe('Musterfüllung', () => {
+  const RED = { model: 'rgb' as const, values: [1, 0, 0] as const };
+  const tile = [square('t', 0, 0, 2)];
+  const filled = (): Node => ({ ...square('a', 10, 5), style: { fill: { kind: 'pattern', width: 4, height: 4, matrix: [2, 0, 0, 2, 1, 1], tile, twoColor: { name: 'Punkte', fg: RED, bg: RED } }, stroke: null } });
+
+  it('toIr: Kachel als IR-Objekte in Kachel-Koordinaten, Matrix Kachel → Objekt, Vorlagenname entfällt', () => {
+    const f = path(toIr(docWith([filled()]).pages[0]).items[0])!.fill as IrPattern;
+    expect(f).toEqual({ kind: 'pattern', width: 4, height: 4, matrix: [2, 0, 0, 2, 1, 1], items: toIr({ id: '', width: 4, height: 4, layers: [{ id: 'l', name: '', visible: true, locked: false, printable: true, children: tile }] }).items });
+    expect(path(f.items[0])!.matrix).toEqual(IDENTITY_T);
+  });
+
+  it('fromIr: Kachel wird wieder Modell-Kachel; Rundreise gleich', () => {
+    const ir = toIr(docWith([filled()]).pages[0]);
+    const back = fromIr(ir.items);
+    const fill = (back[0] as Extract<Node, { type: 'path' }>).style.fill as Pattern;
+    expect(fill.kind).toBe('pattern');
+    expect(fill.tile[0].type).toBe('path');
+    expect(fill.twoColor).toBeUndefined();
+    expect(toIr(docWith(back).pages[0])).toEqual(ir);
   });
 });
 

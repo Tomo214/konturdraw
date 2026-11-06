@@ -1,6 +1,8 @@
 // SVG-Import (Spec §11: Pfade, Formen, Gruppen, Füllung/Kontur, Text als Kurven) + Roundtrip Export → Import.
 use kw_core::color::Cms;
-use kw_core::scene::{leaves, Color, Fill, GradientKind, Item, Mat, Point, Scene, Stroke, Subpath};
+use kw_core::scene::{
+    leaves, mul, Color, Fill, GradientKind, Item, Mat, Point, Scene, Stroke, Subpath,
+};
 use kw_core::{svg_export, svg_import, Images};
 
 const K: f64 = 25.4 / 96.0; // SVG-px → mm
@@ -463,6 +465,16 @@ fn roundtrip_export_import_golden() {
                     "Objekt {i}"
                 );
                 assert_eq!(g.stops.len(), h.stops.len());
+            }
+            // Musterkachel: Lage auf der Seite (SVG rechnet in f32) und Inhalt bleiben
+            (Some(Fill::Pattern(p)), Some(Fill::Pattern(q))) => {
+                let (m, n) = (mul(&x.0, &p.matrix), mul(&y.0, &q.matrix));
+                assert!(
+                    (0..6).all(|k| near(m[k], n[k], 1e-3)),
+                    "Objekt {i}: Muster {m:?} ≠ {n:?}"
+                );
+                assert!(near(p.width, q.width, 1e-3) && near(p.height, q.height, 1e-3));
+                assert_eq!(p.items.len(), q.items.len(), "Objekt {i}: Kachel");
             }
             (None, None) => {}
             other => panic!("Objekt {i}: Füllung {other:?}"),

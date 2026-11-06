@@ -1,9 +1,11 @@
 import RBush from 'rbush';
 import { display } from '../io/colors';
 import { segmentsOf, subpathBounds } from '../model/bezier';
-import { multiply, type Box, type Mat } from '../model/geometry';
-import { isGradient } from '../model/style';
-import type { Color, Fill, Page, Subpath } from '../model/types';
+import { multiply, scale, type Box, type Mat } from '../model/geometry';
+import { tilePage } from '../model/pattern';
+import { isGradient, isPattern } from '../model/style';
+import type { Color, Gradient, Page, Pattern, Subpath } from '../model/types';
+import { canvasPattern } from './pattern';
 import { buildScene, paintOf, worldScale, type Clip, type SceneItem, type StyledItem } from './scene';
 import { screenToPage, snapshotTransform, toScreen, visibleBox, type Viewport } from './viewport';
 
@@ -42,7 +44,7 @@ function css(c: Color): string {
 }
 
 // Verlauf in Objekt-Koordinaten: gilt, weil beim Füllen die Objektmatrix gesetzt ist.
-function paint(ctx: CanvasRenderingContext2D, f: Fill): string | CanvasGradient {
+function paint(ctx: CanvasRenderingContext2D, f: Color | Gradient): string | CanvasGradient {
   if (!isGradient(f)) return css(f);
   const { from: a, to: b } = f;
   const g =
@@ -89,6 +91,8 @@ export class Renderer {
   private inner = new Set<string>();
   private hitCtx = document.createElement('canvas').getContext('2d') as CanvasRenderingContext2D;
   private lastVp: Viewport | null = null;
+  /** Ein Bild war beim Zeichnen noch nicht dekodiert (Musterkachel dann nicht merken). */
+  private missing = false;
   private snap: { canvas: HTMLCanvasElement; vp: Viewport } | null = null;
 
   /** images: Bildablage; ohne sie erscheinen Bilder als Platzhalter. */
@@ -187,8 +191,14 @@ export class Renderer {
     const visible = this.tree.search(visibleBox(vp, w, h));
     visible.sort((a, b) => a.order - b.order);
     if (wire) [ctx.strokeStyle, ctx.lineWidth, ctx.globalCompositeOperation] = [WIRE, 1 / vp.zoom, 'difference'];
+    this.drawList(ctx, visible, screen, dpr, wire);
+    ctx.globalCompositeOperation = 'source-over';
+    this.lastVp = vp;
+  }
+
+  private drawList(ctx: CanvasRenderingContext2D, items: readonly SceneItem[], screen: Mat, dpr: number, wire: boolean): void {
     let dashed = false; // Strichmuster bleibt im Kontext → nur beim Wechsel setzen
-    for (const it of visible) {
+    for (const it of items) {
       // Rahmen mit Inhalt: Umriss im Drahtmodell nur einmal (zweimal Differenz hebt sich auf).
       if (wire && it.part === 'stroke') continue;
       if (!it.clips) {
@@ -200,9 +210,18 @@ export class Renderer {
       this.paint(ctx, it, screen, dpr, wire, dashed);
       ctx.restore(); // setzt auch das Strichmuster zurück
     }
-    ctx.globalCompositeOperation = 'source-over';
     if (dashed) ctx.setLineDash([]);
-    this.lastVp = vp;
+  }
+
+  /** Musterkachel: eigene Szene in Kachel-Koordinaten, screen = Kachel → Pixel; false = Bild fehlte noch. */
+  private pattern(ctx: CanvasRenderingContext2D, f: Pattern, object: Mat): CanvasPattern | null {
+    return canvasPattern(ctx, f, object, (c, screen) => {
+      const r = new Renderer(this.images);
+      r.setPage(tilePage(f));
+      r.drawList(c, r.items, screen, 1, false);
+      if (r.missing) this.missing = true;
+      return !r.missing;
+    });
   }
 
   /** Ein Eintrag; liefert, ob danach ein Strichmuster gesetzt ist. */
@@ -219,7 +238,7 @@ export class Renderer {
       // Standard-Glättung des Canvas ist bilinear wie im PNG-Export.
       ctx.globalAlpha = it.opacity;
       if (src) ctx.drawImage(src, 0, 0, width, height);
-      else (ctx.fillStyle = LOADING), ctx.fillRect(0, 0, width, height);
+      else (this.missing = true), (ctx.fillStyle = LOADING), ctx.fillRect(0, 0, width, height);
       ctx.globalAlpha = 1;
       return dashed;
     }
@@ -227,8 +246,9 @@ export class Renderer {
     const p = pathOf(it.subpaths);
     // Füllung und Kontur je mit der Deckkraft (wie fill-/stroke-opacity im SVG-Export)
     if (it.opacity < 1) ctx.globalAlpha = it.opacity;
-    if (fill) {
-      ctx.fillStyle = paint(ctx, fill);
+    const fs = fill && (isPattern(fill) ? this.pattern(ctx, fill, multiply(scale(dpr, dpr), multiply(screen, it.world))) : paint(ctx, fill));
+    if (fs) {
+      ctx.fillStyle = fs;
       ctx.fill(p, rule(it.node));
     }
     const s = worldScale(it.world);

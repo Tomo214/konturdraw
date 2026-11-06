@@ -17,7 +17,7 @@ export type Command =
         | 'forward' | 'backward' | 'front' | 'back' | 'cut' | 'copy' | 'paste' | 'deselect'
         | 'zoomFit' | 'zoom100' | 'zoomSelection' | 'zoomIn' | 'zoomOut' | 'toCurves' | 'outline' | 'trace' | 'print'
         | 'new' | 'open' | 'save' | 'saveAs' | 'import' | 'export' | 'pickToggle' | 'proof' | 'docOptions'
-        | 'frameInsert' | 'frameExtract';
+        | 'frameInsert' | 'frameExtract' | 'patternFromSelection';
     }
   /** dx/dy in Verschiebe-Schritten des Dokuments. */
   | { name: 'nudge'; dx: number; dy: number }

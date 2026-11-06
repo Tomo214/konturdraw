@@ -49,6 +49,16 @@ describe('Dateiabläufe', () => {
     expect(vi.mocked(bridge.saveKwk).mock.lastCall![2]).toEqual({ h2: 'BBBB' });
   });
 
+  it('Bilder in Musterkacheln gehen mit Export und Druck mit', async () => {
+    const d = doc([{ ...square('f', 0, 0, 20), style: { fill: { kind: 'pattern', width: 4, height: 2, matrix: [1, 0, 0, 1, 0, 0], tile: [img('a', 'h3')] }, stroke: null } }]);
+    vi.mocked(bridge.exportFile).mockResolvedValue('/e.svg');
+    await exportPage(d.pages[0], undefined, 'svg', DEFAULT_EXPORT_OPTIONS);
+    expect(vi.mocked(bridge.exportFile).mock.lastCall![2]).toEqual({ h3: 'CCCC' });
+    vi.mocked(bridge.printFile).mockResolvedValue('/d.pdf');
+    await printPage(d.pages[0], undefined, false);
+    expect(vi.mocked(bridge.printFile).mock.lastCall![1]).toEqual({ h3: 'CCCC' });
+  });
+
   it('Speichern schickt nur benutzte Bilder mit', async () => {
     const d = doc([img('a', 'h1'), img('b', 'h2')]);
     vi.mocked(bridge.saveKwk).mockResolvedValue('/x.kwk');

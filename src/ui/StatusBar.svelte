@@ -15,7 +15,7 @@
     stroke,
   }: { cursor: readonly [number, number] | null; units: Unit; info: string; notice: string; fill: FillSpec; stroke: Stroke | null } = $props();
 
-  const FILL: Record<FillSpec['kind'], string> = { none: 'Keine Füllung', solid: 'Vollton', linear: 'Verlauf linear', radial: 'Verlauf radial' };
+  const FILL: Record<FillSpec['kind'], string> = { none: 'Keine Füllung', solid: 'Vollton', linear: 'Verlauf linear', radial: 'Verlauf radial', pattern: 'Muster' };
 </script>
 
 <footer>

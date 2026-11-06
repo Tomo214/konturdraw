@@ -116,6 +116,7 @@ export const MENUS: readonly { label: string; key: string; items: readonly MenuE
         label: 'Rahmen',
         items: [item('In Rahmen einfügen', { name: 'frameInsert' }), item('Inhalt herausnehmen', { name: 'frameExtract' })],
       },
+      item('Muster aus Auswahl', { name: 'patternFromSelection' }),
       {
         label: 'Ausrichten und Verteilen',
         items: [

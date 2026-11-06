@@ -1,5 +1,96 @@
-//! Ressourcen der PDF-Seite: Verlauf-Shadings und Bild-XObjects (ausgelagert aus pdf_export.rs).
+//! Ressourcen der PDF-Seite: Verlauf-Shadings, Bild-XObjects, Kachelmuster (ausgelagert aus pdf_export.rs).
 use super::*;
+use pdf_writer::writers::Resources;
+
+/// Ressourcen, die Seite und Musterkacheln gemeinsam nutzen; Namen dokumentweit eindeutig.
+#[derive(Default)]
+pub(super) struct Res {
+    pub shadings: Vec<(String, Ref)>,
+    pub xobjects: BTreeMap<String, (String, Ref)>,
+    pub alphas: Vec<(f64, Ref)>,
+    pub spots: Spots,
+    /// Kachelmuster, Name P<Objektnummer>
+    pub patterns: Vec<Ref>,
+}
+
+impl Res {
+    pub fn write(&self, mut res: Resources) {
+        let mut xo = res.x_objects();
+        for (name, r) in self.xobjects.values() {
+            xo.pair(Name(name.as_bytes()), *r);
+        }
+        xo.finish();
+        let mut sh = res.shadings();
+        for (name, r) in &self.shadings {
+            sh.pair(Name(name.as_bytes()), *r);
+        }
+        sh.finish();
+        let mut cs = res.color_spaces();
+        for (i, (_, r)) in self.spots.0.iter().enumerate() {
+            cs.pair(Name(format!("Cs{}", i + 1).as_bytes()), *r);
+        }
+        cs.finish();
+        let mut gs = res.ext_g_states();
+        for (i, (_, r)) in self.alphas.iter().enumerate() {
+            gs.pair(Name(format!("Gs{}", i + 1).as_bytes()), *r);
+        }
+        gs.finish();
+        let mut pt = res.patterns();
+        for r in &self.patterns {
+            pt.pair(Name(format!("P{}", r.get()).as_bytes()), *r);
+        }
+        pt.finish();
+    }
+}
+
+/// Musterkachel: Inhalt in Kachel-Koordinaten, Matrix = Elternraum ← Kachel.
+pub(super) struct Tile {
+    pub id: Ref,
+    pub content: Vec<u8>,
+    pub width: f64,
+    pub height: f64,
+    pub matrix: Mat,
+}
+
+impl Writer<'_> {
+    /// Kachelmuster anlegen, Name P<Objektnummer>; `parent` = Elternraum ← Objekt (Seite:
+    /// Standardraum in pt, Kachel: deren Musterraum). None = Kachel ohne Fläche.
+    pub(super) fn pattern(&mut self, p: &Pattern, parent: &Mat) -> Result<Option<String>, String> {
+        let matrix = mul(parent, &p.matrix);
+        let det = matrix[0] * matrix[3] - matrix[1] * matrix[2];
+        if !(p.width as f32 > 0.0 && p.height as f32 > 0.0 && det.abs() > 1e-12) {
+            return Ok(None);
+        }
+        let id = self.ids.next();
+        let mut c = Content::new();
+        self.draw(&mut c, &p.items, &IDENTITY)?;
+        self.res.patterns.push(id);
+        self.tiles.push(Tile {
+            id,
+            content: c.finish().to_vec(),
+            width: p.width,
+            height: p.height,
+            matrix,
+        });
+        Ok(Some(format!("P{}", id.get())))
+    }
+
+    pub(super) fn write_tiles(&mut self) {
+        for t in std::mem::take(&mut self.tiles) {
+            let data = compress_to_vec_zlib(&t.content, 6);
+            let (tw, th) = (t.width as f32, t.height as f32);
+            let mut tp = self.pdf.tiling_pattern(t.id, &data);
+            tp.filter(Filter::FlateDecode);
+            tp.paint_type(PaintType::Colored)
+                .tiling_type(TilingType::ConstantSpacing)
+                .bbox(Rect::new(0.0, 0.0, tw, th))
+                .x_step(tw)
+                .y_step(th)
+                .matrix(mat(&t.matrix));
+            self.res.write(tp.resources());
+        }
+    }
+}
 
 /// Shading in Objekt-Koordinaten; None bei entartetem Verlauf (Länge/Radius 0).
 /// CMYK-Modus oder ein CMYK-Stopp → DeviceCMYK, sonst DeviceRGB. Sonderfarben zählen mit ihrem Ersatzwert.

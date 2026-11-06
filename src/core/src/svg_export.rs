@@ -1,8 +1,8 @@
 //! SVG-Export: Pfade in Seiten-mm (viewBox = mm), Kontur unverzerrt, Verläufe mit gradientTransform.
 use crate::color::{byte, Cms};
 use crate::scene::{
-    apply, clipped_leaves, common_clips, segments, Cap, ClipRef, Color, Fill, GradientKind, Item,
-    Join, Mat, Scene, Subpath,
+    apply, clipped_leaves, common_clips, mul, segments, Cap, ClipRef, Color, Fill, GradientKind,
+    Item, Join, Mat, Scene, Subpath,
 };
 use crate::Images;
 use base64::Engine;
@@ -69,10 +69,30 @@ pub(crate) fn path_data(m: &Mat, subpaths: &[Subpath]) -> String {
 pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, String> {
     let (w, h) = (num(scene.width), num(scene.height));
     let mut defs = String::new();
+    let body = write_items(&scene.items, "", &mut defs, images, cms)?;
+    let defs = if defs.is_empty() {
+        defs
+    } else {
+        format!("<defs>{defs}</defs>\n")
+    };
+    Ok(format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w}mm\" height=\"{h}mm\" viewBox=\"0 0 {w} {h}\">\n{defs}{body}</svg>\n"
+    ))
+}
+
+/// Objekte als SVG-Körper; Verläufe, Rahmen und Muster landen in `defs`, ids mit `prefix`
+/// (Musterkacheln schreiben ihren Inhalt mit eigenem Präfix, damit ids eindeutig bleiben).
+fn write_items(
+    items: &[Item],
+    prefix: &str,
+    defs: &mut String,
+    images: &Images,
+    cms: &Cms,
+) -> Result<String, String> {
     let mut body = String::new();
     // Offene Beschneidungen als verschachtelte <g clip-path> (Schnittmenge), je Umriss ein <clipPath>.
     let mut open: Vec<ClipRef> = Vec::new();
-    for (i, leaf) in clipped_leaves(&scene.items).into_iter().enumerate() {
+    for (i, leaf) in clipped_leaves(items).into_iter().enumerate() {
         let k = common_clips(&open, &leaf.clips);
         body.push_str(&"</g>\n".repeat(open.len() - k));
         open.truncate(k);
@@ -84,11 +104,11 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
             };
             let _ = write!(
                 defs,
-                r#"<clipPath id="c{}" clipPathUnits="userSpaceOnUse"><path d="{}"{rule}/></clipPath>"#,
+                r#"<clipPath id="{prefix}c{}" clipPathUnits="userSpaceOnUse"><path d="{}"{rule}/></clipPath>"#,
                 c.id,
                 path_data(&c.matrix, c.subpaths)
             );
-            let _ = writeln!(body, r#"<g clip-path="url(#c{})">"#, c.id);
+            let _ = writeln!(body, r#"<g clip-path="url(#{prefix}c{})">"#, c.id);
             open.push(*c);
         }
         let (m, it) = (leaf.matrix, leaf.item);
@@ -115,6 +135,19 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                 let fill = match fill {
                     None => "none".to_string(),
                     Some(Fill::Color(c)) => hex(c, cms),
+                    Some(Fill::Pattern(p)) => {
+                        // Kachel in eigenen Koordinaten; patternTransform = Seite ← Objekt ← Kachel.
+                        let id = format!("{prefix}p{i}");
+                        let inner = write_items(&p.items, &format!("{id}-"), defs, images, cms)?;
+                        let _ = write!(
+                            defs,
+                            r#"<pattern id="{id}" patternUnits="userSpaceOnUse" width="{}" height="{}" patternTransform="{}">{inner}</pattern>"#,
+                            num(p.width),
+                            num(p.height),
+                            mat(&mul(&m, &p.matrix))
+                        );
+                        format!("url(#{id})")
+                    }
                     Some(Fill::Gradient(g)) => {
                         let stops: String = g
                             .stops
@@ -130,7 +163,7 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                         let (a, b) = (g.from, g.to);
                         let geo = match g.kind {
                             GradientKind::Linear => format!(
-                                r#"linearGradient id="g{i}" x1="{}" y1="{}" x2="{}" y2="{}""#,
+                                r#"linearGradient id="{prefix}g{i}" x1="{}" y1="{}" x2="{}" y2="{}""#,
                                 num(a.x),
                                 num(a.y),
                                 num(b.x),
@@ -139,7 +172,7 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                             GradientKind::Radial => {
                                 let r = num((b.x - a.x).hypot(b.y - a.y));
                                 format!(
-                                    r#"radialGradient id="g{i}" cx="{0}" cy="{1}" fx="{0}" fy="{1}" r="{r}""#,
+                                    r#"radialGradient id="{prefix}g{i}" cx="{0}" cy="{1}" fx="{0}" fy="{1}" r="{r}""#,
                                     num(a.x),
                                     num(a.y)
                                 )
@@ -151,7 +184,7 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                             r#"<{geo} gradientUnits="userSpaceOnUse" gradientTransform="{}">{stops}</{tag}>"#,
                             mat(&m)
                         );
-                        format!("url(#g{i})")
+                        format!("url(#{prefix}g{i})")
                     }
                 };
                 let stroke = match stroke {
@@ -214,12 +247,5 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
         }
     }
     body.push_str(&"</g>\n".repeat(open.len()));
-    let defs = if defs.is_empty() {
-        defs
-    } else {
-        format!("<defs>{defs}</defs>\n")
-    };
-    Ok(format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w}mm\" height=\"{h}mm\" viewBox=\"0 0 {w} {h}\">\n{defs}{body}</svg>\n"
-    ))
+    Ok(body)
 }

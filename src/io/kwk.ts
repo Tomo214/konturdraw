@@ -14,7 +14,10 @@ export function usedImages(doc: Doc): Set<string> {
   const visit = (n: Node): void => {
     if (n.type === 'group') n.children.forEach(visit);
     else if (n.type === 'image') out.add(n.image);
-    else if (n.type !== 'text') n.contents?.forEach(visit);
+    else {
+      if (n.style.fill && 'kind' in n.style.fill && n.style.fill.kind === 'pattern') n.style.fill.tile.forEach(visit);
+      if (n.type !== 'text') n.contents?.forEach(visit);
+    }
   };
   for (const p of doc.pages) for (const l of p.layers) l.children.forEach(visit);
   return out;
@@ -67,12 +70,22 @@ function point(v: unknown, what: string): void {
   num(p.y, what);
 }
 
-function style(v: unknown): void {
+function style(v: unknown, images: ReadonlySet<string>): void {
   const s = obj(v, 'Stil');
   if (s.fill !== null) {
     const f = obj(s.fill, 'Füllung');
     if (f.kind === undefined) color(f);
-    else {
+    else if (f.kind === 'pattern') {
+      if (!(finite(f.width) && f.width > 0 && finite(f.height) && f.height > 0)) fail('Muster: Kachelgröße ungültig.');
+      if (!Array.isArray(f.matrix) || f.matrix.length !== 6 || !f.matrix.every(finite)) fail('Muster: Matrix ungültig.');
+      for (const c of list(f.tile, 'Musterkachel')) node(c, images);
+      if (f.twoColor !== undefined) {
+        const t = obj(f.twoColor, 'Zweifarb-Muster');
+        str(t.name, 'Mustervorlage');
+        color(t.fg);
+        color(t.bg);
+      }
+    } else {
       oneOf(f.kind, ['linear', 'radial'], 'Verlauf');
       point(f.from, 'Verlauf');
       point(f.to, 'Verlauf');
@@ -156,17 +169,17 @@ function node(v: unknown, images: ReadonlySet<string>): void {
       if (!images.has(n.image)) fail(`Bild ${n.image} fehlt.`);
       return;
     case 'shape':
-      style(n.style);
+      style(n.style, images);
       shape(n.shape);
       contents(n, images);
       return;
     case 'path':
-      style(n.style);
+      style(n.style, images);
       list(n.subpaths, 'Teilpfade').forEach(subpath);
       contents(n, images);
       return;
     case 'text':
-      style(n.style);
+      style(n.style, images);
       text(n);
       return;
     default:

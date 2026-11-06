@@ -9,6 +9,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use usvg::tiny_skia_path::{self as tsp, PathSegment};
 
+mod pattern;
+
 const K: f64 = 25.4 / 96.0; // CSS-px → mm
 
 pub struct Imported {
@@ -204,6 +206,10 @@ fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat, alpha: f64) -> Vec<Item> {
             Fill::Gradient(g) => {
                 cx.warn("Verlauf in Kontur als Vollton übernommen.");
                 g.stops[0].color.clone()
+            }
+            Fill::Pattern(_) => {
+                cx.warn("Muster in Kontur als Grau übernommen.");
+                Color::rgb(0.5, 0.5, 0.5)
             }
         };
         // Breite in Seiten-mm; bei ungleichmäßiger Skalierung gemittelt.
@@ -416,10 +422,7 @@ fn paint(cx: &mut Ctx, p: &usvg::Paint) -> Option<Fill> {
                 stops: stops(cx, g.stops()),
             }))
         }
-        usvg::Paint::Pattern(_) => {
-            cx.warn("Muster als Grau übernommen.");
-            Some(Fill::Color(Color::rgb(0.5, 0.5, 0.5)))
-        }
+        usvg::Paint::Pattern(p) => Some(Fill::Pattern(pattern::convert(cx, p))),
     }
 }
 

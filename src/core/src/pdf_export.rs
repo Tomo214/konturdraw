@@ -4,17 +4,19 @@
 use crate::color::{Cms, ColorMode};
 use crate::pdf_print::{self, Meta, Print};
 use crate::scene::{
-    apply, clipped_leaves, common_clips, segments, Cap, ClipRef, Color, ColorModel, Fill, Gradient,
-    GradientKind, Item, Join, Mat, Point, Scene, Seg, Subpath,
+    apply, clipped_leaves, common_clips, mul, segments, Cap, ClipRef, Color, ColorModel, Fill,
+    Gradient, GradientKind, Item, Join, Mat, Pattern, Point, Scene, Seg, Subpath, IDENTITY,
 };
 use crate::Images;
 use miniz_oxide::deflate::compress_to_vec_zlib;
-use pdf_writer::types::{ColorSpaceOperand, FunctionShadingType, LineCapStyle, LineJoinStyle};
+use pdf_writer::types::{
+    ColorSpaceOperand, FunctionShadingType, LineCapStyle, LineJoinStyle, PaintType, TilingType,
+};
 use pdf_writer::{Content, Filter, Finish, Name, Pdf, Rect, Ref};
 use std::collections::BTreeMap;
 
 mod res;
-use res::{alpha_state, shading, xobject};
+use res::{alpha_state, shading, xobject, Res, Tile};
 
 const PT: f64 = 72.0 / 25.4; // pt je mm
 
@@ -56,6 +58,7 @@ impl Out<'_> {
 }
 
 /// Separation-Farbräume je Sonderfarbname, Ressourcen Cs1, Cs2, …; der Ersatzwert der ersten Verwendung gilt.
+#[derive(Default)]
 struct Spots(Vec<(String, Ref)>);
 
 impl Spots {
@@ -174,23 +177,31 @@ pub(crate) fn write(
         )?),
         None => None,
     };
-    let out = Out {
-        cms,
-        cmyk: cms.mode == ColorMode::Cmyk || print.is_some(),
+    let mut w = Writer {
+        pdf: Pdf::new(),
+        ids: Ids(0),
+        out: Out {
+            cms,
+            cmyk: cms.mode == ColorMode::Cmyk || print.is_some(),
+        },
+        images,
+        res: Res::default(),
+        tiles: Vec::new(),
     };
-    let mut pdf = Pdf::new();
-    let mut ids = Ids(0);
-    let (catalog, tree, page_id, content_id) = (ids.next(), ids.next(), ids.next(), ids.next());
+    let (catalog, tree, page_id, content_id) =
+        (w.ids.next(), w.ids.next(), w.ids.next(), w.ids.next());
     let margin = print.map_or(0.0, |p| p.margin());
-    let (w, h) = (
-        ((scene.width + 2.0 * margin) * PT) as f32,
-        ((scene.height + 2.0 * margin) * PT) as f32,
+    let (pw, ph) = (
+        (scene.width + 2.0 * margin) * PT,
+        (scene.height + 2.0 * margin) * PT,
     );
+    let (wf, hf) = (pw as f32, ph as f32);
 
     let mut c = Content::new();
     // Seite in mm, y nach unten – wie das Dokumentmodell; Ursprung = Ecke des Endformats.
+    let base = [PT, 0.0, 0.0, -PT, margin * PT, ph - margin * PT];
     let m = (margin * PT) as f32;
-    c.transform([PT as f32, 0.0, 0.0, -PT as f32, m, h - m]);
+    c.transform(mat(&base));
     if let Some(p) = print {
         let b = p.bleed as f32;
         c.save_state();
@@ -202,155 +213,7 @@ pub(crate) fn write(
         );
         c.clip_nonzero().end_path();
     }
-    let mut shadings: Vec<(String, Ref)> = Vec::new();
-    let mut xobjects: BTreeMap<String, (String, Ref)> = BTreeMap::new();
-    let mut alphas: Vec<(f64, Ref)> = Vec::new();
-    let mut spots = Spots(Vec::new());
-    let mut dashed = false;
-
-    // Offene Beschneidungen je q … W n; Q setzt auch das Strichmuster zurück → merken.
-    let mut open: Vec<(ClipRef, bool)> = Vec::new();
-    for leaf in clipped_leaves(&scene.items) {
-        let chain: Vec<ClipRef> = open.iter().map(|(c, _)| *c).collect();
-        let k = common_clips(&chain, &leaf.clips);
-        while open.len() > k {
-            c.restore_state();
-            dashed = open.pop().map_or(dashed, |(_, d)| d);
-        }
-        for clip in &leaf.clips[k..] {
-            c.save_state();
-            path(&mut c, &clip.matrix, clip.subpaths);
-            if clip.subpaths.iter().all(|sp| sp.nodes.is_empty()) {
-                c.rect(0.0, 0.0, 0.0, 0.0); // leerer Umriss verdeckt alles; W ohne Pfad wirkte nicht
-            }
-            if clip.fill_rule.is_some() {
-                c.clip_even_odd()
-            } else {
-                c.clip_nonzero()
-            };
-            c.end_path();
-            open.push((*clip, dashed));
-        }
-        let (m, it) = (leaf.matrix, leaf.item);
-        match it {
-            Item::Path {
-                subpaths,
-                fill,
-                stroke,
-                fill_rule,
-                opacity,
-                ..
-            } => {
-                // Deckkraft gilt für Füllung und Kontur je einzeln; Grafikzustand danach zurück.
-                let dashed_before = dashed;
-                if *opacity < 1.0 {
-                    c.save_state();
-                    let gs = alpha_state(&mut pdf, &mut ids, &mut alphas, *opacity);
-                    c.set_parameters(Name(gs.as_bytes()));
-                }
-                let even_odd = fill_rule.is_some();
-                let solid = match fill {
-                    None => None,
-                    Some(Fill::Color(col)) => Some(col),
-                    Some(Fill::Gradient(g)) => {
-                        let det = m[0] * m[3] - m[1] * m[2];
-                        match shading(&mut pdf, &mut ids, g, &out).filter(|_| det.abs() > 1e-12) {
-                            Some(r) => {
-                                let name = format!("Sh{}", shadings.len() + 1);
-                                c.save_state();
-                                path(&mut c, &m, subpaths);
-                                if even_odd {
-                                    c.clip_even_odd()
-                                } else {
-                                    c.clip_nonzero()
-                                };
-                                c.end_path()
-                                    .transform(mat(&m))
-                                    .shading(Name(name.as_bytes()));
-                                c.restore_state();
-                                shadings.push((name, r));
-                                None
-                            }
-                            None => g.stops.last().map(|s| &s.color),
-                        }
-                    }
-                };
-                if let Some(col) = solid {
-                    set_color(&mut c, col, &out, &mut pdf, &mut ids, &mut spots, false);
-                    path(&mut c, &m, subpaths);
-                    if even_odd {
-                        c.fill_even_odd()
-                    } else {
-                        c.fill_nonzero()
-                    };
-                }
-                if let Some(s) = stroke {
-                    set_color(&mut c, &s.color, &out, &mut pdf, &mut ids, &mut spots, true);
-                    c.set_line_width(s.width as f32).set_miter_limit(10.0);
-                    c.set_line_cap(match s.cap {
-                        Cap::Butt => LineCapStyle::ButtCap,
-                        Cap::Round => LineCapStyle::RoundCap,
-                        Cap::Square => LineCapStyle::ProjectingSquareCap,
-                    });
-                    c.set_line_join(match s.join {
-                        Join::Miter => LineJoinStyle::MiterJoin,
-                        Join::Round => LineJoinStyle::RoundJoin,
-                        Join::Bevel => LineJoinStyle::BevelJoin,
-                    });
-                    // Strichmuster bleibt im Grafikzustand → nur beim Wechsel setzen
-                    let dash = s.dash_pattern();
-                    if dash.is_some() || dashed {
-                        c.set_dash_pattern(dash.unwrap_or(&[]).iter().map(|x| *x as f32), 0.0);
-                        dashed = dash.is_some();
-                    }
-                    path(&mut c, &m, subpaths);
-                    c.stroke();
-                }
-                if *opacity < 1.0 {
-                    c.restore_state();
-                    dashed = dashed_before;
-                }
-            }
-            Item::Image {
-                width,
-                height,
-                image: hash,
-                opacity,
-                ..
-            } => {
-                let png = images
-                    .get(hash)
-                    .ok_or_else(|| format!("Bild {hash} fehlt in der Ablage."))?;
-                if !xobjects.contains_key(hash) {
-                    let r = xobject(&mut pdf, &mut ids, png, hash, &out)?;
-                    xobjects.insert(hash.clone(), (format!("Im{}", xobjects.len() + 1), r));
-                }
-                let name = &xobjects[hash].0;
-                // Bildraum: Einheitsquadrat, erste Zeile oben → auf (0,0)–(width,height) mit y nach unten.
-                c.save_state();
-                c.transform(mat(&m)).transform([
-                    *width as f32,
-                    0.0,
-                    0.0,
-                    -*height as f32,
-                    0.0,
-                    *height as f32,
-                ]);
-                if *opacity < 1.0 {
-                    let gs = alpha_state(&mut pdf, &mut ids, &mut alphas, *opacity);
-                    c.set_parameters(Name(gs.as_bytes()));
-                }
-                c.x_object(Name(name.as_bytes()));
-                c.restore_state();
-            }
-            Item::Group { .. } | Item::Clip { .. } => {
-                unreachable!("clipped_leaves löst Gruppen und Rahmen auf")
-            }
-        }
-    }
-    for _ in &open {
-        c.restore_state();
-    }
+    w.draw(&mut c, &scene.items, &base)?;
     if let Some(p) = print {
         c.restore_state();
         if p.marks {
@@ -360,11 +223,22 @@ pub(crate) fn write(
                 values: vec![1.0; 4],
                 spot: Some("All".into()),
             };
-            set_color(&mut c, &reg, &out, &mut pdf, &mut ids, &mut spots, true);
+            let Writer {
+                pdf, ids, out, res, ..
+            } = &mut w;
+            set_color(&mut c, &reg, out, pdf, ids, &mut res.spots, true);
             pdf_print::marks(&mut c, scene.width, scene.height, p);
         }
     }
+    w.write_tiles();
 
+    let Writer {
+        mut pdf,
+        mut ids,
+        out,
+        res,
+        ..
+    } = w;
     let meta = print.map(|_| Meta::new(&mut ids));
     let mut cat = pdf.catalog(catalog);
     cat.pages(tree);
@@ -374,15 +248,15 @@ pub(crate) fn write(
     cat.finish();
     pdf.pages(tree).kids([page_id]).count(1);
     let mut page = pdf.page(page_id);
-    page.media_box(Rect::new(0.0, 0.0, w, h))
+    page.media_box(Rect::new(0.0, 0.0, wf, hf))
         .parent(tree)
         .contents(content_id);
     if let Some(p) = print {
         let b = m - (p.bleed * PT) as f32;
-        page.trim_box(Rect::new(m, m, w - m, h - m));
-        page.bleed_box(Rect::new(b, b, w - b, h - b));
+        page.trim_box(Rect::new(m, m, wf - m, hf - m));
+        page.bleed_box(Rect::new(b, b, wf - b, hf - b));
     }
-    if !alphas.is_empty() {
+    if !res.alphas.is_empty() {
         // Transparenz braucht eine Mischgruppe der Seite; Farbraum = Ausgabe (PDF/X-4 verlangt ihn).
         let mut g = page.group();
         g.transparency();
@@ -393,28 +267,7 @@ pub(crate) fn write(
             cs.device_rgb();
         }
     }
-    let mut res = page.resources();
-    let mut xo = res.x_objects();
-    for (name, r) in xobjects.values() {
-        xo.pair(Name(name.as_bytes()), *r);
-    }
-    xo.finish();
-    let mut sh = res.shadings();
-    for (name, r) in &shadings {
-        sh.pair(Name(name.as_bytes()), *r);
-    }
-    sh.finish();
-    let mut cs = res.color_spaces();
-    for (i, (_, r)) in spots.0.iter().enumerate() {
-        cs.pair(Name(format!("Cs{}", i + 1).as_bytes()), *r);
-    }
-    cs.finish();
-    let mut gs = res.ext_g_states();
-    for (i, (_, r)) in alphas.iter().enumerate() {
-        gs.pair(Name(format!("Gs{}", i + 1).as_bytes()), *r);
-    }
-    gs.finish();
-    res.finish();
+    res.write(page.resources());
     page.finish();
     let data = compress_to_vec_zlib(&c.finish(), 6);
     pdf.stream(content_id, &data).filter(Filter::FlateDecode);
@@ -422,4 +275,196 @@ pub(crate) fn write(
         meta.finish(&mut pdf, p, icc, &data);
     }
     Ok(pdf.finish())
+}
+
+/// Dokument im Bau; Seite und Musterkacheln teilen dieselben Ressourcen.
+struct Writer<'a> {
+    pdf: Pdf,
+    ids: Ids,
+    out: Out<'a>,
+    images: &'a Images,
+    res: Res,
+    /// Kacheln, deren Inhalt erst am Ende geschrieben wird (Ressourcen dann vollständig).
+    tiles: Vec<Tile>,
+}
+
+impl Writer<'_> {
+    /// Objekte in `c`; `base` = Standardraum ← Szene des Inhaltsstroms (für Mustermatrizen).
+    fn draw(&mut self, c: &mut Content, items: &[Item], base: &Mat) -> Result<(), String> {
+        let mut dashed = false;
+        // Offene Beschneidungen je q … W n; Q setzt auch das Strichmuster zurück → merken.
+        let mut open: Vec<(ClipRef, bool)> = Vec::new();
+        for leaf in clipped_leaves(items) {
+            let chain: Vec<ClipRef> = open.iter().map(|(c, _)| *c).collect();
+            let k = common_clips(&chain, &leaf.clips);
+            while open.len() > k {
+                c.restore_state();
+                dashed = open.pop().map_or(dashed, |(_, d)| d);
+            }
+            for clip in &leaf.clips[k..] {
+                c.save_state();
+                path(c, &clip.matrix, clip.subpaths);
+                if clip.subpaths.iter().all(|sp| sp.nodes.is_empty()) {
+                    c.rect(0.0, 0.0, 0.0, 0.0); // leerer Umriss verdeckt alles; W ohne Pfad wirkte nicht
+                }
+                if clip.fill_rule.is_some() {
+                    c.clip_even_odd()
+                } else {
+                    c.clip_nonzero()
+                };
+                c.end_path();
+                open.push((*clip, dashed));
+            }
+            let (m, it) = (leaf.matrix, leaf.item);
+            match it {
+                Item::Path {
+                    subpaths,
+                    fill,
+                    stroke,
+                    fill_rule,
+                    opacity,
+                    ..
+                } => {
+                    // Deckkraft gilt für Füllung und Kontur je einzeln; Grafikzustand danach zurück.
+                    let dashed_before = dashed;
+                    if *opacity < 1.0 {
+                        c.save_state();
+                        let gs = alpha_state(
+                            &mut self.pdf,
+                            &mut self.ids,
+                            &mut self.res.alphas,
+                            *opacity,
+                        );
+                        c.set_parameters(Name(gs.as_bytes()));
+                    }
+                    let even_odd = fill_rule.is_some();
+                    let solid = match fill {
+                        None => None,
+                        Some(Fill::Color(col)) => Some(col),
+                        Some(Fill::Pattern(p)) => {
+                            if let Some(name) = self.pattern(p, &mul(base, &m))? {
+                                c.set_fill_color_space(ColorSpaceOperand::Pattern)
+                                    .set_fill_pattern([0.0f32; 0], Name(name.as_bytes()));
+                                path(c, &m, subpaths);
+                                if even_odd {
+                                    c.fill_even_odd()
+                                } else {
+                                    c.fill_nonzero()
+                                };
+                            }
+                            None
+                        }
+                        Some(Fill::Gradient(g)) => {
+                            let det = m[0] * m[3] - m[1] * m[2];
+                            match shading(&mut self.pdf, &mut self.ids, g, &self.out)
+                                .filter(|_| det.abs() > 1e-12)
+                            {
+                                Some(r) => {
+                                    let name = format!("Sh{}", self.res.shadings.len() + 1);
+                                    c.save_state();
+                                    path(c, &m, subpaths);
+                                    if even_odd {
+                                        c.clip_even_odd()
+                                    } else {
+                                        c.clip_nonzero()
+                                    };
+                                    c.end_path()
+                                        .transform(mat(&m))
+                                        .shading(Name(name.as_bytes()));
+                                    c.restore_state();
+                                    self.res.shadings.push((name, r));
+                                    None
+                                }
+                                None => g.stops.last().map(|s| &s.color),
+                            }
+                        }
+                    };
+                    let Writer {
+                        pdf, ids, out, res, ..
+                    } = self;
+                    if let Some(col) = solid {
+                        set_color(c, col, out, pdf, ids, &mut res.spots, false);
+                        path(c, &m, subpaths);
+                        if even_odd {
+                            c.fill_even_odd()
+                        } else {
+                            c.fill_nonzero()
+                        };
+                    }
+                    if let Some(s) = stroke {
+                        set_color(c, &s.color, out, pdf, ids, &mut res.spots, true);
+                        c.set_line_width(s.width as f32).set_miter_limit(10.0);
+                        c.set_line_cap(match s.cap {
+                            Cap::Butt => LineCapStyle::ButtCap,
+                            Cap::Round => LineCapStyle::RoundCap,
+                            Cap::Square => LineCapStyle::ProjectingSquareCap,
+                        });
+                        c.set_line_join(match s.join {
+                            Join::Miter => LineJoinStyle::MiterJoin,
+                            Join::Round => LineJoinStyle::RoundJoin,
+                            Join::Bevel => LineJoinStyle::BevelJoin,
+                        });
+                        // Strichmuster bleibt im Grafikzustand → nur beim Wechsel setzen
+                        let dash = s.dash_pattern();
+                        if dash.is_some() || dashed {
+                            c.set_dash_pattern(dash.unwrap_or(&[]).iter().map(|x| *x as f32), 0.0);
+                            dashed = dash.is_some();
+                        }
+                        path(c, &m, subpaths);
+                        c.stroke();
+                    }
+                    if *opacity < 1.0 {
+                        c.restore_state();
+                        dashed = dashed_before;
+                    }
+                }
+                Item::Image {
+                    width,
+                    height,
+                    image: hash,
+                    opacity,
+                    ..
+                } => {
+                    let png = self
+                        .images
+                        .get(hash)
+                        .ok_or_else(|| format!("Bild {hash} fehlt in der Ablage."))?;
+                    let xobjects = &mut self.res.xobjects;
+                    if !xobjects.contains_key(hash) {
+                        let r = xobject(&mut self.pdf, &mut self.ids, png, hash, &self.out)?;
+                        xobjects.insert(hash.clone(), (format!("Im{}", xobjects.len() + 1), r));
+                    }
+                    let name = xobjects[hash].0.clone();
+                    // Bildraum: Einheitsquadrat, erste Zeile oben → auf (0,0)–(width,height) mit y nach unten.
+                    c.save_state();
+                    c.transform(mat(&m)).transform([
+                        *width as f32,
+                        0.0,
+                        0.0,
+                        -*height as f32,
+                        0.0,
+                        *height as f32,
+                    ]);
+                    if *opacity < 1.0 {
+                        let gs = alpha_state(
+                            &mut self.pdf,
+                            &mut self.ids,
+                            &mut self.res.alphas,
+                            *opacity,
+                        );
+                        c.set_parameters(Name(gs.as_bytes()));
+                    }
+                    c.x_object(Name(name.as_bytes()));
+                    c.restore_state();
+                }
+                Item::Group { .. } | Item::Clip { .. } => {
+                    unreachable!("clipped_leaves löst Gruppen und Rahmen auf")
+                }
+            }
+        }
+        for _ in &open {
+            c.restore_state();
+        }
+        Ok(())
+    }
 }

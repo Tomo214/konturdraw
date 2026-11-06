@@ -15,6 +15,7 @@ import {
   worldOf,
 } from '../model/document';
 import { extractContents, placeInFrame } from '../model/frame';
+import { patternFromSelection } from '../model/pattern';
 import type { Box } from '../model/geometry';
 import { addGuide, lockGuides, moveGuide, setGrid, setOrigin } from '../model/guides';
 import { duplicatePage, insertPage, removePage } from '../model/pages';
@@ -92,6 +93,10 @@ export function editCommand(
     }
     case 'frameInsert': case 'frameExtract': {
       const r = (cmd.name === 'frameInsert' ? placeInFrame : extractContents)(doc, ids);
+      return { doc: r.doc, selected: new Set(r.selected) };
+    }
+    case 'patternFromSelection': {
+      const r = patternFromSelection(doc, ids);
       return { doc: r.doc, selected: new Set(r.selected) };
     }
     case 'align': return changed(align(doc, ids, cmd.edge, cmd.to));

@@ -52,7 +52,15 @@ export async function exportPage(
 }
 
 const hashesOf = (items: readonly IrItem[]): string[] =>
-  items.flatMap((it) => (it.kind === 'image' ? [it.image] : it.kind === 'clip' || it.kind === 'group' ? hashesOf(it.children) : []));
+  items.flatMap((it) =>
+    it.kind === 'image'
+      ? [it.image]
+      : it.kind === 'clip' || it.kind === 'group'
+        ? hashesOf(it.children)
+        : it.fill && 'kind' in it.fill && it.fill.kind === 'pattern'
+          ? hashesOf(it.fill.items)
+          : [],
+  );
 const hashes = (s: IrScene) => hashesOf(s.items);
 
 /** Ganze Seite in die Druckansicht des Systems; gespiegelt = links ↔ rechts um die Seitenmitte (Transferpapier). */

@@ -1249,6 +1249,299 @@
      "cap": "butt",
      "join": "miter"
     }
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 56,
+        "y": 74,
+        "type": "corner"
+       },
+       {
+        "x": 78,
+        "y": 74,
+        "type": "corner"
+       },
+       {
+        "x": 78,
+        "y": 96,
+        "type": "corner"
+       },
+       {
+        "x": 56,
+        "y": 96,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "kind": "pattern",
+     "width": 1,
+     "height": 1,
+     "matrix": [
+      5.196152422706632,
+      2.9999999999999996,
+      -2.9999999999999996,
+      5.196152422706632,
+      56,
+      74
+     ],
+     "items": [
+      {
+       "kind": "path",
+       "matrix": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
+       ],
+       "subpaths": [
+        {
+         "closed": true,
+         "nodes": [
+          {
+           "x": 0,
+           "y": 0,
+           "type": "corner"
+          },
+          {
+           "x": 1,
+           "y": 0,
+           "type": "corner"
+          },
+          {
+           "x": 1,
+           "y": 1,
+           "type": "corner"
+          },
+          {
+           "x": 0,
+           "y": 1,
+           "type": "corner"
+          }
+         ]
+        }
+       ],
+       "fill": {
+        "model": "rgb",
+        "values": [
+         0,
+         0,
+         1
+        ]
+       },
+       "stroke": null
+      },
+      {
+       "kind": "path",
+       "matrix": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
+       ],
+       "subpaths": [
+        {
+         "closed": true,
+         "nodes": [
+          {
+           "x": 0,
+           "y": 0,
+           "type": "corner"
+          },
+          {
+           "x": 1,
+           "y": 0,
+           "type": "corner"
+          },
+          {
+           "x": 1,
+           "y": 0.5,
+           "type": "corner"
+          },
+          {
+           "x": 0,
+           "y": 0.5,
+           "type": "corner"
+          }
+         ]
+        }
+       ],
+       "fill": {
+        "model": "rgb",
+        "values": [
+         1,
+         0,
+         0
+        ]
+       },
+       "stroke": null
+      }
+     ]
+    },
+    "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     80,
+     74
+    ],
+    "subpaths": [
+     {
+      "closed": true,
+      "nodes": [
+       {
+        "x": 0,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 20,
+        "y": 0,
+        "type": "corner"
+       },
+       {
+        "x": 20,
+        "y": 22,
+        "type": "corner"
+       },
+       {
+        "x": 0,
+        "y": 22,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": {
+     "kind": "pattern",
+     "width": 10,
+     "height": 10,
+     "matrix": [
+      0.5,
+      0,
+      0,
+      0.5,
+      0,
+      0
+     ],
+     "items": [
+      {
+       "kind": "path",
+       "matrix": [
+        1,
+        0,
+        0,
+        1,
+        0,
+        0
+       ],
+       "subpaths": [
+        {
+         "closed": true,
+         "nodes": [
+          {
+           "x": 5,
+           "y": 2,
+           "type": "symmetric",
+           "handleIn": {
+            "x": 3.3431457505076194,
+            "y": 2
+           },
+           "handleOut": {
+            "x": 6.656854249492381,
+            "y": 2
+           }
+          },
+          {
+           "x": 8,
+           "y": 5,
+           "type": "symmetric",
+           "handleIn": {
+            "x": 8,
+            "y": 3.3431457505076194
+           },
+           "handleOut": {
+            "x": 8,
+            "y": 6.656854249492381
+           }
+          },
+          {
+           "x": 5,
+           "y": 8,
+           "type": "symmetric",
+           "handleIn": {
+            "x": 6.656854249492381,
+            "y": 8
+           },
+           "handleOut": {
+            "x": 3.3431457505076194,
+            "y": 8
+           }
+          },
+          {
+           "x": 2,
+           "y": 5,
+           "type": "symmetric",
+           "handleIn": {
+            "x": 2,
+            "y": 6.656854249492381
+           },
+           "handleOut": {
+            "x": 2,
+            "y": 3.3431457505076194
+           }
+          }
+         ]
+        }
+       ],
+       "fill": {
+        "model": "rgb",
+        "values": [
+         0,
+         1,
+         0
+        ]
+       },
+       "stroke": {
+        "color": {
+         "model": "rgb",
+         "values": [
+          0,
+          0,
+          0
+         ]
+        },
+        "width": 2,
+        "cap": "butt",
+        "join": "miter"
+       }
+      }
+     ]
+    },
+    "stroke": null
    }
   ]
  },
@@ -1719,6 +2012,94 @@
    "Rahmen: Ellipse rechts beschnitten",
    132,
    82,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Muster: Streifen oben",
+   60.04422863405995,
+   84.99519052838329,
+   [
+    255,
+    0,
+    0
+   ],
+   3
+  ],
+  [
+   "Muster: Streifen unten",
+   58.54422863405995,
+   87.5932667397366,
+   [
+    0,
+    0,
+    255
+   ],
+   3
+  ],
+  [
+   "Muster: Wiederholung gedreht",
+   62.24038105676658,
+   93.19134295108992,
+   [
+    255,
+    0,
+    0
+   ],
+   3
+  ],
+  [
+   "Muster: neben dem Objekt frei",
+   79,
+   80,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Eigene Kachel: Ellipse",
+   82.5,
+   76.5,
+   [
+    0,
+    255,
+    0
+   ],
+   3
+  ],
+  [
+   "Eigene Kachel: nächste Kachel",
+   87.5,
+   76.5,
+   [
+    0,
+    255,
+    0
+   ],
+   3
+  ],
+  [
+   "Eigene Kachel: Kontur in Kachel-Einheiten",
+   84,
+   76.5,
+   [
+    0,
+    0,
+    0
+   ],
+   3
+  ],
+  [
+   "Eigene Kachel: Ecke frei",
+   85.25,
+   79.25,
    [
     255,
     255,

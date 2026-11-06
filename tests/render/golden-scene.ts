@@ -1,12 +1,16 @@
 // Feste Golden-Szene + Pixel-Proben (architecture.md §10, 3c). Ohne DOM: genutzt vom Browser-Golden (golden.ts),
 // von vitest (Vorlage tests/fixtures/golden-scene.json) und darüber von den Export-Tests in kw-core (3g-1).
 import { addNodes, createDocument } from '../../src/model/document';
-import { IDENTITY, multiply, scale, translate, type Mat } from '../../src/model/geometry';
+import { IDENTITY, apply, multiply, scale, translate, type Mat } from '../../src/model/geometry';
+import { makePattern } from '../../src/model/pattern';
 import type { Color, Fill, Node, Page, Shape, ShapeNode, Stroke, Style } from '../../src/model/types';
 
 const rgb = (r: number, g: number, b: number): Color => ({ model: 'rgb', values: [r, g, b] });
 const [RED, BLUE, GREEN, PURPLE, BLACK, WHITE] = [rgb(1, 0, 0), rgb(0, 0, 1), rgb(0, 1, 0), rgb(0.5, 0, 0.5), rgb(0, 0, 0), rgb(1, 1, 1)];
 const stroke = (width: number, extra: Partial<Stroke> = {}): Stroke => ({ color: BLACK, width, cap: 'butt', join: 'miter', ...extra });
+// Muster (8c): Streifen rot oben / blau unten je Zelle, 6 mm, um 30° gedreht, Ursprung an der Objektecke.
+const STRIPES = makePattern('Streifen', RED, BLUE, 6, 30, { x: 56, y: 74 });
+const cell = (u: number, v: number) => apply(STRIPES.matrix, u, v);
 
 export function goldenPage(): Page {
   let n = 0;
@@ -67,6 +71,13 @@ export function goldenPage(): Page {
       ...shape({ kind: 'rect', ...box(0, 0, 24, 16), radius: 0 }, { fill: GREEN, stroke: stroke(1) }, translate(104, 78)),
       contents: [shape({ kind: 'rect', ...box(-10, 4, 20, 8), radius: 0 }, fill(RED)), shape({ kind: 'ellipse', ...box(16, -6, 16, 16) }, fill(BLUE))],
     },
+    shape({ kind: 'rect', ...box(56, 74, 22, 22), radius: 0 }, fill(STRIPES)),
+    // Eigene Kachel 10 × 10 (halb so groß aufs Objekt): Ellipse mit Kontur 2 Kachel-Einheiten = 1 mm, Rest frei.
+    shape(
+      { kind: 'rect', ...box(0, 0, 20, 22), radius: 0 },
+      fill({ kind: 'pattern', width: 10, height: 10, matrix: scale(0.5, 0.5), tile: [shape({ kind: 'ellipse', ...box(2, 2, 6, 6) }, { fill: GREEN, stroke: stroke(2) })] }),
+      translate(80, 74),
+    ),
   ];
 
   const doc = createDocument(200, 140);
@@ -121,4 +132,12 @@ export const PROBES: [string, number, number, RGB, number][] = [
   ['Rahmen: Ellipse innen', 126, 84, [0, 0, 255], 1],
   ['Rahmen: Ellipse oben beschnitten', 128, 75, W, 1],
   ['Rahmen: Ellipse rechts beschnitten', 132, 82, W, 1],
+  ['Muster: Streifen oben', ...cell(1.5, 1.25), [255, 0, 0], 3],
+  ['Muster: Streifen unten', ...cell(1.5, 1.75), [0, 0, 255], 3],
+  ['Muster: Wiederholung gedreht', ...cell(2.5, 2.25), [255, 0, 0], 3],
+  ['Muster: neben dem Objekt frei', 79, 80, W, 1],
+  ['Eigene Kachel: Ellipse', 82.5, 76.5, [0, 255, 0], 3],
+  ['Eigene Kachel: nächste Kachel', 87.5, 76.5, [0, 255, 0], 3],
+  ['Eigene Kachel: Kontur in Kachel-Einheiten', 84, 76.5, K, 3],
+  ['Eigene Kachel: Ecke frei', 85.25, 79.25, W, 1],
 ];

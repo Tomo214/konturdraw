@@ -3,7 +3,7 @@ import { parseDocument, serialize, usedImages } from '../../src/io/kwk';
 import { addNodes, createDocument } from '../../src/model/document';
 import { translate } from '../../src/model/geometry';
 import { createText } from '../../src/model/text';
-import type { Doc, Node } from '../../src/model/types';
+import type { Doc, Node, Pattern } from '../../src/model/types';
 import { group, pt, square, sub } from '../model/fixtures';
 import { goldenPage } from '../render/golden-scene';
 
@@ -148,6 +148,29 @@ describe('.kwk-Dokument', () => {
     expect(bad((d) => (dashed(d).dash = [1, -1]))).toThrow(/Strichmuster/);
     expect(bad((d) => (dashed(d).dash = [0, 0]))).toThrow(/Strichmuster/);
     expect(bad((d) => (dashed(d).dash = 'x'))).toThrow(/Strichmuster/);
+  });
+
+  it('Musterfüllung: Rundreise, Bilder in der Kachel zählen, Unsinn → Fehler', () => {
+    const base = sample();
+    const fill: Pattern = { kind: 'pattern', width: 4, height: 2, matrix: [2, 0, 0, 2, 1, 1], tile: [img('t', 'dd'), square('u', 0, 0, 1)] };
+    const two: Pattern = { ...fill, twoColor: { name: 'Punkte', fg: { model: 'rgb', values: [1, 0, 0] }, bg: { model: 'gray', values: [1] } } };
+    const doc = addNodes(base, base.pages[0].layers[0].id, [
+      { ...square('m'), style: { fill, stroke: null } },
+      { ...square('n'), style: { fill: two, stroke: null } },
+    ]);
+    expect([...usedImages(doc)].sort()).toEqual(['aa', 'bb', 'dd']);
+    expect(parseDocument(serialize(doc), new Set(['aa', 'bb', 'dd']))).toEqual(doc);
+    expect(() => parseDocument(serialize(doc), new Set(['aa', 'bb']))).toThrow(/Bild dd fehlt/);
+    const broken = (mutate: (f: any) => void) => {
+      const d = JSON.parse(serialize(doc));
+      mutate(d.pages[0].layers[0].children.at(-1).style.fill);
+      return () => parseDocument(JSON.stringify(d), new Set(['aa', 'bb', 'dd']));
+    };
+    expect(broken((f) => (f.width = 0))).toThrow(/Muster/);
+    expect(broken((f) => (f.matrix = [1, 0, 0]))).toThrow(/Muster/);
+    expect(broken((f) => (f.tile = [{ type: 'x' }]))).toThrow(/Objekt/);
+    expect(broken((f) => (f.twoColor.fg = 'rot'))).toThrow();
+    expect(broken((f) => (f.kind = 'kachel'))).toThrow(/Verlauf|Muster/);
   });
 
   it('Bild ohne Datei in der Ablage → Fehler', () => {

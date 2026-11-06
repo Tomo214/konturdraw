@@ -1,6 +1,7 @@
 <script lang="ts">
   // Eigenschaften (Andockfenster): Füllung, Kontur, Formwerte der Auswahl bzw. Vorgaben für neue Objekte.
-  import { DASHES, dashIndex, mmField, type FillSpec } from '../model/style';
+  import { PATTERNS } from '../model/pattern';
+  import { DASHES, DEFAULT_PATTERN_SIZE, dashIndex, mmField, type FillSpec } from '../model/style';
   import ColorPicker from './ColorPicker.svelte';
   import type { Stroke } from '../model/types';
   import type { ShapeParams } from './tools/shape-tool';
@@ -27,6 +28,9 @@
   const num = (e: Event, min: number, max: number) => Math.min(max, Math.max(min, Number(value(e)) || min));
   // Wie im Vorbild: 0 % = deckend, 100 % = unsichtbar.
   const transparency = (e: Event) => 1 - num(e, 0, 100) / 100;
+  // Muster ohne gelesene Werte (noch keins am Objekt): erste Vorlage, Standardgröße, 0°.
+  const pat = $derived(fill.pattern ?? { preset: PATTERNS[0].name, size: DEFAULT_PATTERN_SIZE, angle: 0 });
+  const onpattern = (patch: Partial<typeof pat>) => onfill({ ...fill, pattern: { ...pat, ...patch } });
 </script>
 
 <div class="form">
@@ -38,15 +42,38 @@
       <option value="solid">Vollton</option>
       <option value="linear">Verlauf linear</option>
       <option value="radial">Verlauf radial</option>
+      <option value="pattern">Muster</option>
     </select>
   </label>
-  {#if fill.kind !== 'none'}
+  {#if fill.kind === 'pattern'}
+    <label class="row">
+      <span>Vorlage</span>
+      <select value={pat.preset} onchange={(e) => onpattern({ preset: value(e) })}>
+        {#each PATTERNS as p (p.name)}<option value={p.name}>{p.name}</option>{/each}
+        {#if !pat.preset}<option value="" disabled>eigene Kachel</option>{/if}
+      </select>
+    </label>
+    {#if pat.preset}
+      <span>Vordergrund</span>
+      <ColorPicker color={fill.a} title="Vordergrund" onchange={(c) => onfill({ ...fill, a: c, pattern: pat })} />
+      <span>Hintergrund</span>
+      <ColorPicker color={fill.b} title="Hintergrund" onchange={(c) => onfill({ ...fill, b: c, pattern: pat })} />
+    {/if}
+    <label class="row">
+      <span>Größe</span>
+      <span class="unit"><input type="number" min="0.1" max="1000" step="0.5" value={mmField(pat.size)} onchange={(e) => onpattern({ size: num(e, 0.1, 1000) })} /> mm</span>
+    </label>
+    <label class="row">
+      <span>Winkel</span>
+      <span class="unit"><input type="number" min="-360" max="360" step="5" value={mmField(pat.angle)} onchange={(e) => onpattern({ angle: Math.min(360, Math.max(-360, Number(value(e)) || 0)) })} /> °</span>
+    </label>
+  {:else if fill.kind !== 'none'}
     <span>Farbe</span>
     <ColorPicker color={fill.a} title="Farbe" onchange={(c) => onfill({ ...fill, a: c })} />
-  {/if}
-  {#if fill.kind === 'linear' || fill.kind === 'radial'}
-    <span>Endfarbe</span>
-    <ColorPicker color={fill.b} title="Endfarbe" onchange={(c) => onfill({ ...fill, b: c })} />
+    {#if fill.kind === 'linear' || fill.kind === 'radial'}
+      <span>Endfarbe</span>
+      <ColorPicker color={fill.b} title="Endfarbe" onchange={(c) => onfill({ ...fill, b: c })} />
+    {/if}
   {/if}
 
   <hr />

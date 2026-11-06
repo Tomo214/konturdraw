@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { addLayer, addNodes, createDocument, findNode } from '../../src/model/document';
 import { insertPage, pageLabel, renamePage } from '../../src/model/pages';
 import { IDENTITY } from '../../src/model/geometry';
+import { isPattern } from '../../src/model/pattern';
 import type { Doc, Node } from '../../src/model/types';
 import { MM_TO_PX, fitBox, fitPage, screenToPage } from '../../src/render/viewport';
 import { editCommand, pageCommand, pickToggle, viewCommand } from '../../src/ui/commands';
@@ -36,6 +37,14 @@ describe('editCommand', () => {
     const back = editCommand(r.doc!, ['f'], { name: 'frameExtract' }, [])!;
     expect(ids(back.doc!)).toEqual(['f', 'a']);
     expect([...back.selected!]).toEqual(['a']);
+  });
+
+  it('Muster aus Auswahl: Ziel (zuletzt gewählt) bekommt die Kachel, Originale bleiben, nur Ziel gewählt', () => {
+    const r = editCommand(docWith(rect('a'), rect('f', 20)), ['a', 'f'], { name: 'patternFromSelection' }, [])!;
+    expect(ids(r.doc!)).toEqual(['a', 'f']);
+    expect([...r.selected!]).toEqual(['f']);
+    const f = r.doc!.pages[0].layers[0].children[1];
+    expect(f.type !== 'group' && f.type !== 'image' && isPattern(f.style.fill)).toBe(true);
   });
 
   it('Einfügen nach Ausschneiden: neue IDs, eingefügtes gewählt', () => {

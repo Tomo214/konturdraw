@@ -1,20 +1,25 @@
 import { naiveSrgb } from './color';
 import { subpathBounds } from './bezier';
 import { findNode, updateNodes } from './document';
+import { PATTERNS, isPattern, makePattern, patternAngle, patternSize, recolorPattern, resizePattern } from './pattern';
 import { geometry, shapeSubpaths } from './shapes';
 import type { Color, Doc, Fill, Gradient, LeafNode, Node, Point, Stroke } from './types';
 
 export const BLACK: Color = { model: 'rgb', values: [0, 0, 0] };
 export const DEFAULT_STROKE: Stroke = { color: BLACK, width: 0.5, cap: 'round', join: 'round' };
 
-/** Füllung, wie Bedienfeld und Werkzeuge sie setzen: Art + Anfangs-/Endfarbe. */
+/** Füllung, wie Bedienfeld und Werkzeuge sie setzen: Art + Anfangs-/Endfarbe (Muster: Vorder-/Hintergrund). */
 export interface FillSpec {
-  kind: 'none' | 'solid' | 'linear' | 'radial';
+  kind: 'none' | 'solid' | 'linear' | 'radial' | 'pattern';
   a: Color;
   b: Color;
+  /** Muster: Vorlage ('' = eigene Kachel), Größe in mm, Winkel in Grad. */
+  pattern?: { preset: string; size: number; angle: number };
 }
 
-export const isGradient = (f: Fill): f is Gradient => 'kind' in f;
+export { isPattern };
+export const isGradient = (f: Fill): f is Gradient => 'kind' in f && f.kind !== 'pattern';
+export const DEFAULT_PATTERN_SIZE = 5;
 
 /** Farbfeld-Wert (#rrggbb) ↔ RGB 0..1; CMYK/Grau ohne Profil über die einfache Formel. */
 export const toHex = (c: Color): string =>
@@ -31,6 +36,10 @@ export const mmField = (v: number): number => +v.toFixed(4);
 /** Liest eine Füllung zurück; was sie nicht festlegt, kommt aus prev. */
 export function fillSpec(f: Fill | null, prev: FillSpec): FillSpec {
   if (!f) return { ...prev, kind: 'none' };
+  if (isPattern(f)) {
+    const t = f.twoColor;
+    return { ...prev, kind: 'pattern', a: t?.fg ?? prev.a, b: t?.bg ?? prev.b, pattern: { preset: t?.name ?? '', size: patternSize(f), angle: patternAngle(f) } };
+  }
   if (!isGradient(f)) return { ...prev, kind: 'solid', a: f };
   return { kind: f.kind, a: f.stops[0].color, b: f.stops[f.stops.length - 1].color };
 }
@@ -44,6 +53,13 @@ export function setFill(n: LeafNode, s: FillSpec): LeafNode {
   if (s.kind === 'none') return withFill(n, null);
   if (s.kind === 'solid') return withFill(n, s.a);
   const old = n.style.fill;
+  if (s.kind === 'pattern') {
+    const ps = s.pattern ?? { preset: PATTERNS[0].name, size: DEFAULT_PATTERN_SIZE, angle: 0 };
+    const size = Math.max(ps.size, 0.01);
+    if (isPattern(old)) return withFill(n, resizePattern(ps.preset ? recolorPattern(old, ps.preset, s.a, s.b) : old, size, ps.angle));
+    const o = subpathBounds(geometry(n)) ?? { minX: 0, minY: 0 };
+    return withFill(n, makePattern(ps.preset, s.a, s.b, size, ps.angle, { x: o.minX, y: o.minY }));
+  }
   if (old && isGradient(old)) {
     // nur Anfangs- und Endfarbe kommen aus dem Bedienfeld; Zwischenknoten und Lagen bleiben
     const last = old.stops.length - 1;

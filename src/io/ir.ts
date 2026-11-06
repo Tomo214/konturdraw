@@ -1,7 +1,8 @@
 import { subpathBounds, transformSubpath } from '../model/bezier';
 import { newId } from '../model/document';
 import { IDENTITY, invert, multiply, scale, translate, type Box, type Mat } from '../model/geometry';
-import type { Color, Fill, Node, Page, Stroke, Subpath } from '../model/types';
+import { tilePage } from '../model/pattern';
+import type { Color, Fill, Gradient, Node, Page, Stroke, Subpath } from '../model/types';
 import { buildScene, paintOf, worldScale, type Clip, type SceneItem, type StyledItem } from '../render/scene';
 
 /** Kontur im Austausch: Breite in Seiten-mm, unverzerrt (wie auf dem Bildschirm, renderer.ts). */
@@ -14,9 +15,19 @@ export interface IrStroke {
   dash?: number[];
 }
 
+/** Muster im Austausch: Kachel als IR-Objekte in Kachel-Koordinaten (0,0)–(width,height); matrix = Kachel → Objekt. */
+export interface IrPattern {
+  kind: 'pattern';
+  width: number;
+  height: number;
+  matrix: Mat;
+  items: IrItem[];
+}
+export type IrFill = Color | Gradient | IrPattern;
+
 /** Austausch mit kw-core (architecture.md §3): Export-Eingabe und Import-Ergebnis. mm, y nach unten. */
 export type IrItem =
-  | { kind: 'path'; matrix: Mat; subpaths: readonly Subpath[]; fill: Fill | null; stroke: IrStroke | null; fillRule?: 'evenodd'; opacity?: number }
+  | { kind: 'path'; matrix: Mat; subpaths: readonly Subpath[]; fill: IrFill | null; stroke: IrStroke | null; fillRule?: 'evenodd'; opacity?: number }
   | { kind: 'image'; matrix: Mat; width: number; height: number; image: string; opacity?: number }
   | { kind: 'group'; matrix: Mat; children: IrItem[] }
   /** Beschneidung (Rahmen-Inhalt): matrix gilt nur für den Umriss, Kinder liegen im Koordinatensystem darüber. */
@@ -28,6 +39,9 @@ export interface IrScene {
   items: IrItem[];
 }
 
+const irFill = (f: Fill | null): IrFill | null =>
+  f && 'kind' in f && f.kind === 'pattern' ? { kind: 'pattern', width: f.width, height: f.height, matrix: f.matrix, items: toIr(tilePage(f)).items } : f;
+
 function leaf(it: SceneItem): IrItem {
   const { node, world, subpaths, opacity } = it;
   const alpha = opacity < 1 ? { opacity } : {};
@@ -37,7 +51,7 @@ function leaf(it: SceneItem): IrItem {
   const dash = s?.dash ? { dash: s.dash.map((d) => d * width) } : {};
   const stroke = s && { color: s.color, width, cap: s.cap, join: s.join, ...dash };
   const rule = node.type === 'path' && node.fillRule ? { fillRule: node.fillRule } : {};
-  return { kind: 'path', matrix: world, subpaths, fill, stroke, ...rule, ...alpha };
+  return { kind: 'path', matrix: world, subpaths, fill: irFill(fill), stroke, ...rule, ...alpha };
 }
 
 // Rahmen mit Inhalt: leere Füllung bzw. Kontur entfällt (sonst schneidet der Plotter den Umriss doppelt).
@@ -112,7 +126,9 @@ export function fromIr(items: readonly IrItem[]): Node[] {
     // Strichmuster im Modell als Vielfache der Breite (wächst mit ihr)
     const dash = s?.dash && s.width > 0 ? { dash: s.dash.map((d) => d / s.width) } : {};
     const stroke = s && { color: s.color, width: s.width, cap: s.cap, join: s.join, ...dash };
-    return { ...base, type: 'path', style: { fill: it.fill, stroke }, subpaths: it.subpaths, ...(it.fillRule ? { fillRule: it.fillRule } : {}) };
+    const f = it.fill;
+    const fill = f && 'kind' in f && f.kind === 'pattern' ? { kind: f.kind, width: f.width, height: f.height, matrix: f.matrix, tile: fromIr(f.items) } : f;
+    return { ...base, type: 'path', style: { fill, stroke }, subpaths: it.subpaths, ...(it.fillRule ? { fillRule: it.fillRule } : {}) };
   });
 }
 

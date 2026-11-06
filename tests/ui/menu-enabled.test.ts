@@ -63,6 +63,12 @@ test('Rahmen: Einfügen braucht Inhalt plus geschlossenes Ziel, Herausnehmen ein
   expect(on({ name: 'frameExtract' }, ctx(['f'], { doc: framed }))).toBe(true);
 });
 
+test('Muster aus Auswahl: Kachel-Objekte plus Ziel mit Füllung (zuletzt gewählt)', () => {
+  expect(on({ name: 'patternFromSelection' }, ctx(['a']))).toBe(false);
+  expect(on({ name: 'patternFromSelection' }, ctx(['a', 'b']))).toBe(true);
+  expect(on({ name: 'patternFromSelection' }, ctx(['a', 'bild']))).toBe(false);
+});
+
 test('Nachzeichnen nur mit Bild, In Kurven nur mit Form oder Text', () => {
   expect(on({ name: 'trace' }, ctx(['a']))).toBe(false);
   expect(on({ name: 'trace' }, ctx(['bild']))).toBe(true);
