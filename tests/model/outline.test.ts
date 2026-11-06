@@ -57,6 +57,13 @@ describe('planOutline', () => {
     expect(r.selected).toEqual([inner[1].id, inner[3].id]);
   });
 
+  it('Strichmuster: Auftrag in Seiten-mm (× wirksame Breite), durchgehend ohne Muster', () => {
+    const leaf = stroked('k', 1, 1, pen({ width: 1, scaleWithObject: true, dash: [3, 1] }));
+    const g: GroupNode = { type: 'group', id: 'g', transform: scale(2, 2), children: [leaf, stroked('m', 20, 0, pen())] };
+    const plan = planOutline(docWith(g), ['g']);
+    expect(plan.jobs.map((j) => j.dash)).toEqual([[6, 2], undefined]);
+  });
+
   it('Formen zählen als Kurven; Bilder und Objekte ohne Kontur bleiben außen vor', () => {
     const rect: Node = { type: 'shape', id: 'r', transform: IDENTITY, style: { fill: null, stroke: pen() }, shape: { kind: 'rect', x: 0, y: 0, width: 4, height: 2, radius: 0 } };
     const img: Node = { type: 'image', id: 'i', transform: IDENTITY, image: 'x', width: 5, height: 5 } as Node;

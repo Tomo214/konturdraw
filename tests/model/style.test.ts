@@ -3,6 +3,8 @@ import { addNodes, createDocument, findNode } from '../../src/model/document';
 import { IDENTITY } from '../../src/model/geometry';
 import { shapeSubpaths } from '../../src/model/shapes';
 import {
+  DASHES,
+  dashIndex,
   DEFAULT_STROKE,
   fillSpec,
   fromHex,
@@ -173,4 +175,11 @@ test('Bild-Transparenz: wirkt auf Bilder in Auswahl und Gruppen, 1 = Feld weg, F
   const back = setImageOpacity(half, ['a'], 1);
   expect('opacity' in (findNode(back, 'a') as ImageNode)).toBe(false);
   expect((findNode(setImageOpacity(doc, ['a'], -2), 'a') as ImageNode).opacity).toBe(0);
+});
+
+test('Linienarten: Vorgabe zum Muster finden, durchgehend = ohne Muster, Fremdes = eigenes (-1)', () => {
+  expect(DASHES[dashIndex(undefined)].dash).toBeUndefined();
+  expect(DASHES[dashIndex([4, 2])].dash).toEqual([4, 2]);
+  expect(dashIndex([10.0008, 12.0012])).toBe(-1);
+  expect(DASHES.every((d) => !d.dash || (d.dash.length % 2 === 0 && d.dash.every((x) => x > 0)))).toBe(true);
 });

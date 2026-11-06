@@ -198,6 +198,7 @@ fn hpgl_ursprung_mitte_und_offene_pfade() {
             width: 0.3,
             cap: kw_core::scene::Cap::Butt,
             join: kw_core::scene::Join::Miter,
+            dash: vec![],
         }),
         fill_rule: None,
     };

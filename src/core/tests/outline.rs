@@ -1,6 +1,6 @@
 //! Kontur in Objekt (5c, spec.md §6): die Kontur wird eine Fläche, die genauso aussieht wie die
 //! gezeichnete Kontur (runder Stift, Enden, Ecken, Gehrungsgrenze 10). Geprüft: Fläche, Ecken, Kurven-Erhalt.
-use kw_core::boolean::outline::outline;
+use kw_core::boolean::outline::{outline, outline_dashed};
 use kw_core::scene::{Cap, Join, NodeType, PathPoint, Point, Subpath};
 
 const K: f64 = 0.552_284_749_8;
@@ -92,6 +92,23 @@ fn geschlossenes_quadrat_wird_ring_mit_exakten_ecken() {
     for (x, y) in [(-1.0, -1.0), (11.0, 11.0), (1.0, 1.0), (9.0, 9.0)] {
         assert!(has_corner(&r, x, y), "Ecke {x},{y}");
     }
+}
+
+#[test]
+fn gestrichelte_linie_wird_einzelne_striche() {
+    // 10 mm lang, 2 mm breit, Muster 3 mm Strich / 1 mm Lücke → Striche 0–3, 4–7, 8–10
+    let l = [line(&[(0.0, 0.0), (10.0, 0.0)])];
+    let r = outline_dashed(&l, 2.0, Cap::Butt, Join::Miter, &[3.0, 1.0]).unwrap();
+    assert_eq!(r.len(), 3, "drei Striche");
+    assert!((area(&r) - 16.0).abs() < 1e-6, "Fläche {}", area(&r));
+    let solid = outline_dashed(&l, 2.0, Cap::Butt, Join::Miter, &[]).unwrap();
+    assert_eq!(
+        solid,
+        outline(&l, 2.0, Cap::Butt, Join::Miter).unwrap(),
+        "leer = durchgehend"
+    );
+    let zero = outline_dashed(&l, 2.0, Cap::Butt, Join::Miter, &[0.0, 0.0]).unwrap();
+    assert_eq!(zero, solid, "unsinniges Muster = durchgehend");
 }
 
 #[test]

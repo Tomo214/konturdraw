@@ -46,6 +46,8 @@ fetch() { # Datei, SHA-256
 }
 fetch librevenge-0.0.6.tar.bz2 52a65e904d255dbdd97a8b7bb28d6574e14f999eb01416aff004502406d0904d
 fetch libcdr-0.1.9.tar.xz f7bb6abdd7f226820f288a93dd8d07759833c0250d9e202af90f9b312c4665a3
+# eigene Änderungen (MPL-2.0, siehe Kopf der Patch-Datei); fetch entpackt frisch → nie doppelt
+(cd "$B/src/libcdr-0.1.9" && patch -s -p1 <"$HERE/patches/libcdr-0.1.9-konturwerk.patch")
 
 STATIC="--prefix=$PREFIX --disable-shared --enable-static --disable-werror --without-docs"
 (cd "$B/src/librevenge-0.0.6" && ./configure -q $STATIC --disable-tests CPPFLAGS="$CPPFLAGS" && make -s -j8 install)

@@ -27,7 +27,7 @@ jobs:
         with:
           msystem: UCRT64
           update: false
-          install: make m4 curl bzip2 xz
+          install: make m4 curl bzip2 xz patch
           pacboy: gcc:p boost:p lcms2:p zlib:p icu:p pkgconf:p
       - name: kw-cdr.exe bauen
         run: sh src/cdr-import/build.sh

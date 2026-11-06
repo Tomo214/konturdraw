@@ -35,6 +35,7 @@ fn square(x: f64, fill: Option<Fill>, stroke: Option<Color>) -> Item {
         width: 0.5,
         cap: Cap::Butt,
         join: Join::Miter,
+        dash: vec![],
     });
     Item::Path {
         matrix: IDENTITY,

@@ -314,6 +314,7 @@ pub(crate) fn write(
     let mut xobjects: BTreeMap<String, (String, Ref)> = BTreeMap::new();
     let mut alphas: Vec<(f64, Ref)> = Vec::new();
     let mut spots = Spots(Vec::new());
+    let mut dashed = false;
 
     for (m, it) in leaves(&scene.items) {
         match it {
@@ -373,6 +374,12 @@ pub(crate) fn write(
                         Join::Round => LineJoinStyle::RoundJoin,
                         Join::Bevel => LineJoinStyle::BevelJoin,
                     });
+                    // Strichmuster bleibt im Grafikzustand → nur beim Wechsel setzen
+                    let dash = s.dash_pattern();
+                    if dash.is_some() || dashed {
+                        c.set_dash_pattern(dash.unwrap_or(&[]).iter().map(|x| *x as f32), 0.0);
+                        dashed = dash.is_some();
+                    }
                     path(&mut c, &m, subpaths);
                     c.stroke();
                 }

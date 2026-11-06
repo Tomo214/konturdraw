@@ -50,6 +50,14 @@ export function goldenPage(): Page {
     },
     // Drei Farbknoten (5c): Grün sitzt bei 25 %, nicht in der Mitte.
     shape({ kind: 'rect', ...box(70, 128, 100, 8), radius: 0 }, fill({ kind: 'linear', from: { x: 70, y: 132 }, to: { x: 170, y: 132 }, stops: [{ offset: 0, color: RED }, { offset: 0.25, color: GREEN }, { offset: 1, color: BLUE }] })),
+    // Gestrichelt, Muster × Breite: 2 mm breit → 4 mm Strich, 2 mm Lücke ab x = 20.
+    {
+      type: 'path',
+      id: `d${n++}`,
+      transform: IDENTITY,
+      style: { fill: null, stroke: stroke(2, { dash: [2, 1] }) },
+      subpaths: [{ closed: false, nodes: [{ x: 20, y: 135, type: 'corner' }, { x: 60, y: 135, type: 'corner' }] }],
+    },
   ];
 
   const doc = createDocument(200, 140);
@@ -90,4 +98,7 @@ export const PROBES: [string, number, number, RGB, number][] = [
   ['Gerade/ungerade: Teil A', 170, 90, [0, 0, 255], 1],
   ['Gerade/ungerade: Teil B', 192, 111, [0, 0, 255], 1],
   ['Gerade/ungerade: Überlappung frei', 181, 100, W, 1],
+  ['Gestrichelt: Strich', 22, 135, K, 1],
+  ['Gestrichelt: Lücke', 25, 135, W, 1],
+  ['Gestrichelt: nächster Strich', 28, 135, K, 1],
 ];

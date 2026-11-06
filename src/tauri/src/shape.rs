@@ -1,6 +1,6 @@
 //! Formen-Befehle: Aufträge kommen fertig geplant aus der Oberfläche (model/shaping.ts), gerechnet wird in kw-core.
 use kw_core::boolean::cut::{erase, knife};
-use kw_core::boolean::outline::outline;
+use kw_core::boolean::outline::outline_dashed;
 use kw_core::boolean::{apply, Op, Shape};
 use kw_core::scene::{Cap, Join, Subpath};
 use serde::Deserialize;
@@ -72,11 +72,14 @@ pub struct OutlineJob {
     width: f64,
     cap: Cap,
     join: Join,
+    /// Strich, Lücke, … in Seiten-mm; fehlt = durchgehend
+    #[serde(default)]
+    dash: Vec<f64>,
 }
 
 fn run_outline(jobs: &[OutlineJob]) -> Result<Vec<Vec<Subpath>>, String> {
     jobs.iter()
-        .map(|j| outline(&j.subpaths, j.width, j.cap, j.join))
+        .map(|j| outline_dashed(&j.subpaths, j.width, j.cap, j.join, &j.dash))
         .collect()
 }
 
@@ -139,5 +142,11 @@ mod tests {
         .unwrap();
         let r = run_outline(&[o]).unwrap();
         assert_eq!(r[0].len(), 2, "Ring: außen + Loch");
+        // Strichmuster in Seiten-mm: ein langer Strich mit Lücke zerteilt den Ring
+        let d: OutlineJob = serde_json::from_str(&format!(
+            r#"{{"subpaths":[{SQ}],"width":2,"cap":"butt","join":"miter","dash":[1,1]}}"#
+        ))
+        .unwrap();
+        assert!(run_outline(&[d]).unwrap()[0].len() > 2, "einzelne Striche");
     }
 }

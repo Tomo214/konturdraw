@@ -33,6 +33,8 @@ export interface Stroke {
   join: 'miter' | 'round' | 'bevel';
   /** Fehlt/false: Breite bleibt beim Skalieren gleich und wird nie verzerrt. */
   scaleWithObject?: boolean;
+  /** Strichmuster: Strich, Lücke, … als Vielfache der Breite (gerade Anzahl); fehlt = durchgehend. */
+  dash?: number[];
 }
 
 export interface Style {

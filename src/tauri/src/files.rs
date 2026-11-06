@@ -122,7 +122,7 @@ fn import_path(path: &Path) -> Result<Imported, String> {
         .extension()
         .map(|e| e.to_string_lossy().to_ascii_lowercase());
     let (imp, raster) = match ext.as_deref() {
-        Some("cdr") => (crate::cdr::import(path)?, false),
+        Some("cdr" | "cdt" | "cdrt") => (crate::cdr::import(path)?, false),
         Some("svg") => (svg_import::import(&read(path)?)?, false),
         _ => (raster::import_scene(&read(path)?)?, true),
     };
@@ -139,7 +139,10 @@ pub async fn import_file(app: AppHandle) -> Result<Option<Imported>, String> {
     let Some(p) = app
         .dialog()
         .file()
-        .add_filter("SVG, CDR, PNG, JPG", &["svg", "cdr", "png", "jpg", "jpeg"])
+        .add_filter(
+            "SVG, CDR, PNG, JPG",
+            &["svg", "cdr", "cdt", "cdrt", "png", "jpg", "jpeg"],
+        )
         .blocking_pick_file()
     else {
         return Ok(None);
@@ -339,6 +342,24 @@ mod tests {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/cdr/fdo65220-2.cdr");
         let cdr = import_path(&p).unwrap();
         assert!(!cdr.raster && cdr.images.is_empty() && !cdr.scene.items.is_empty());
+    }
+
+    #[test]
+    #[ignore = "braucht src/cdr-import/build.sh"]
+    fn cdr_vorlage_nach_dateiendung() {
+        // Vorlage = Dokument mit Kennung "CDT" statt "CDR" im RIFF-Kopf
+        let p =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/cdr/fdo65220-2.cdr");
+        let mut data = std::fs::read(p).unwrap();
+        let riff = data.windows(4).position(|w| w == b"RIFF").unwrap();
+        assert_eq!(&data[riff + 8..riff + 11], b"CDR");
+        data[riff + 10] = b'T';
+        let d = dir("vorlage");
+        for name in ["Vorlage.cdt", "Vorlage.CDRT"] {
+            std::fs::write(d.join(name), &data).unwrap();
+            let imp = import_path(&d.join(name)).unwrap();
+            assert!(!imp.raster && !imp.scene.items.is_empty(), "{name}");
+        }
     }
 
     #[test]

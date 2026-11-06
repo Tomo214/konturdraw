@@ -4,7 +4,7 @@
 use super::cut::polys_of;
 use super::recover::Index;
 use super::{check, path_segs};
-use crate::scene::{Cap, Join, Subpath};
+use crate::scene::{dash_pattern, Cap, Join, Subpath};
 use i_overlay::core::fill_rule::FillRule;
 use i_overlay::float::simplify::SimplifyShape;
 use kurbo::{BezPath, ParamCurve, StrokeOpts};
@@ -14,6 +14,18 @@ const MITER_LIMIT: f64 = 10.0;
 
 /// Umriss der Kontur mit runder, gleichmäßiger Feder der Breite width (gleiche Koordinaten wie subpaths).
 pub fn outline(subpaths: &[Subpath], width: f64, cap: Cap, join: Join) -> Result<Vec<Subpath>, String> {
+    outline_dashed(subpaths, width, cap, join, &[])
+}
+
+/// Wie outline, mit Strichmuster (Strich, Lücke, … in denselben Koordinaten; leer = durchgehend):
+/// jeder Strich wird eine eigene Fläche.
+pub fn outline_dashed(
+    subpaths: &[Subpath],
+    width: f64,
+    cap: Cap,
+    join: Join,
+    dash: &[f64],
+) -> Result<Vec<Subpath>, String> {
     if !(width.is_finite() && width > 0.0) {
         return Err("Die Konturbreite muss größer als 0 sein.".into());
     }
@@ -43,7 +55,8 @@ pub fn outline(subpaths: &[Subpath], width: f64, cap: Cap, join: Join) -> Result
             Join::Round => kurbo::Join::Round,
             Join::Bevel => kurbo::Join::Bevel,
         })
-        .with_miter_limit(MITER_LIMIT);
+        .with_miter_limit(MITER_LIMIT)
+        .with_dashes(0.0, dash_pattern(dash).unwrap_or(&[]).iter().copied());
     let path = kurbo::stroke(bez, &stroke, &StrokeOpts::default(), 1e-3);
     let mut segs = Vec::new();
     let polys = polys_of(&path, &mut segs);

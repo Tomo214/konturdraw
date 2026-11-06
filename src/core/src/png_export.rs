@@ -138,7 +138,9 @@ pub fn export(scene: &Scene, images: &Images, dpi: f64, cms: &Cms) -> Result<Vec
                             Join::Round => sk::LineJoin::Round,
                             Join::Bevel => sk::LineJoin::Bevel,
                         },
-                        dash: None,
+                        dash: s.dash_pattern().and_then(|d| {
+                            sk::StrokeDash::new(d.iter().map(|x| *x as f32).collect(), 0.0)
+                        }),
                     };
                     pm.stroke_path(
                         &p,

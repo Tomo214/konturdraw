@@ -95,7 +95,7 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 | Kontur: Breite (mm/pt), Farbe, keine | P0 |
 | Kontur: Linienenden (stumpf/rund/eckig), Ecken (spitz/rund/abgeschrägt) | P0 |
 | Kontur skaliert mit Objekt: an/aus | P1 |
-| Kontur gestrichelt | P2 |
+| Kontur gestrichelt | P2 ✓ 06.11. |
 | Kontur in Objekt umwandeln (Linie → Fläche, für Plotter/Logo) | P1 |
 | Linienstärke für Mehrfachauswahl auf einmal setzen | P0 |
 | Transformieren numerisch: Position, Größe (mm), Winkel, Schere | P0 |

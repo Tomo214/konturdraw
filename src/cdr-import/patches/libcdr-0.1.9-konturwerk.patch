@@ -1,0 +1,295 @@
+Konturwerk-Änderungen an libcdr 0.1.9 (MPL-2.0, https://www.mozilla.org/MPL/2.0/).
+Die geänderten Dateien bleiben unter MPL-2.0; Quelle = dieser Patch auf den Original-Tarball.
+Angewendet von build.sh mit `patch -p1` im entpackten libcdr-0.1.9.
+
+1. Bitmap-Transparenz: Maskenblock hinter dem Bild lesen, BMP mit Alpha (BITMAPV4) ausgeben.
+2. CorelDRAW 2024: Kennungsblock (0x960) vor dem Füllblock überspringen.
+3. CorelDRAW 2024: "ppdt" ohne passende Punktliste ist kein Spline → überspringen statt Abbruch.
+4. Vorlagen (.cdt/.cdrt): RIFF-Kennung "CDT" wie "CDR" behandeln.
+
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRCollector.h b/src/lib/CDRCollector.h
+--- a/src/lib/CDRCollector.h
++++ b/src/lib/CDRCollector.h
+@@ -82,7 +82,7 @@
+   virtual void collectPageSize(double width, double height, double offsetX, double offsetY) = 0;
+   virtual void collectPolygonTransform(unsigned numAngles, unsigned nextPoint, double rx, double ry, double cx, double cy) = 0;
+   virtual void collectBitmap(unsigned imageId, double x1, double x2, double y1, double y2) = 0;
+-  virtual void collectBmp(unsigned imageId, unsigned colorModel, unsigned width, unsigned height, unsigned bpp, const std::vector<unsigned> &palette, const std::vector<unsigned char> &bitmap) = 0;
++  virtual void collectBmp(unsigned imageId, unsigned colorModel, unsigned width, unsigned height, unsigned bpp, const std::vector<unsigned> &palette, const std::vector<unsigned char> &bitmap, const std::vector<unsigned char> &mask) = 0;
+   virtual void collectBmp(unsigned imageId, const std::vector<unsigned char> &bitmap) = 0;
+   virtual void collectBmpf(unsigned patternId, unsigned width, unsigned height, const std::vector<unsigned char> &pattern) = 0;
+   virtual void collectPpdt(const std::vector<std::pair<double, double> > &points, const std::vector<unsigned> &knotVector) = 0;
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRContentCollector.h b/src/lib/CDRContentCollector.h
+--- a/src/lib/CDRContentCollector.h
++++ b/src/lib/CDRContentCollector.h
+@@ -52,7 +52,7 @@
+   void collectPageSize(double, double, double, double) override {}
+   void collectPolygonTransform(unsigned numAngles, unsigned nextPoint, double rx, double ry, double cx, double cy) override;
+   void collectBitmap(unsigned imageId, double x1, double x2, double y1, double y2) override;
+-  void collectBmp(unsigned, unsigned, unsigned, unsigned, unsigned, const std::vector<unsigned> &, const std::vector<unsigned char> &) override {}
++  void collectBmp(unsigned, unsigned, unsigned, unsigned, unsigned, const std::vector<unsigned> &, const std::vector<unsigned char> &, const std::vector<unsigned char> &) override {}
+   void collectBmp(unsigned, const std::vector<unsigned char> &) override {}
+   void collectBmpf(unsigned, unsigned, unsigned, const std::vector<unsigned char> &) override {}
+   void collectPpdt(const std::vector<std::pair<double, double> > &points, const std::vector<unsigned> &knotVector) override;
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRDocument.cpp b/src/lib/CDRDocument.cpp
+--- a/src/lib/CDRDocument.cpp
++++ b/src/lib/CDRDocument.cpp
+@@ -37,7 +37,8 @@
+   if (signature_d != 'D' && signature_d != 'd')
+     return 0;
+   auto signature_r = (char)readU8(input);
+-  if (signature_r != 'R' && signature_r != 'r')
++  // "CDT": Vorlage (.cdt/.cdrt), gleicher Aufbau wie ein Dokument
++  if (signature_r != 'R' && signature_r != 'r' && signature_r != 'T' && signature_r != 't')
+     return 0;
+   unsigned char c = readU8(input);
+   if (c == 0x20)
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRDocumentStructure.h b/src/lib/CDRDocumentStructure.h
+--- a/src/lib/CDRDocumentStructure.h
++++ b/src/lib/CDRDocumentStructure.h
+@@ -29,6 +29,8 @@
+ #define CDR_FOURCC_CDR 0x524443
+ #define CDR_FOURCC_ccmm 0x6d6d6363
+ #define CDR_FOURCC_cdr 0x726463
++#define CDR_FOURCC_CDT 0x544443
++#define CDR_FOURCC_cdt 0x746463
+ #define CDR_FOURCC_clo  0x206f6c63
+ #define CDR_FOURCC_cloa 0x616f6c63
+ #define CDR_FOURCC_clof 0x666f6c63
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRParser.cpp b/src/lib/CDRParser.cpp
+--- a/src/lib/CDRParser.cpp
++++ b/src/lib/CDRParser.cpp
+@@ -638,7 +638,8 @@
+         m_collector->collectObject(level);
+       else if (listType == CDR_FOURCC_grp || listType == CDR_FOURCC_lnkg)
+         m_collector->collectGroup(level);
+-      else if ((listType & 0xffffff) == CDR_FOURCC_CDR || (listType & 0xffffff) == CDR_FOURCC_cdr)
++      else if ((listType & 0xffffff) == CDR_FOURCC_CDR || (listType & 0xffffff) == CDR_FOURCC_cdr
++               || (listType & 0xffffff) == CDR_FOURCC_CDT || (listType & 0xffffff) == CDR_FOURCC_cdt)
+       {
+         m_version = getCDRVersion((unsigned char)((listType & 0xff000000) >> 24));
+         if (m_version < 600)
+@@ -1422,7 +1423,13 @@
+     throw GenericException();
+   unsigned fillId = readU32(input);
+   if (m_version >= 1300)
+-    input->seek(8, librevenge::RVNG_SEEK_CUR);
++  {
++    // ab CorelDRAW 2024 steht vor dem Füllblock (Kennung 0x514) ein Kennungsblock (0x960, 16 Byte)
++    if (readU32(input) == 0x960)
++      input->seek(readU32(input) + 8, librevenge::RVNG_SEEK_CUR);
++    else
++      input->seek(4, librevenge::RVNG_SEEK_CUR);
++  }
+   unsigned short fillType = readU16(input);
+   libcdr::CDRColor color1;
+   libcdr::CDRColor color2;
+@@ -1971,9 +1978,40 @@
+   unsigned colorModel, width, height, bpp;
+   std::vector<unsigned> palette;
+   readRImage(colorModel, width, height, bpp, palette, bitmap, input);
+-  m_collector->collectBmp(imageId, colorModel, width, height, bpp, palette, bitmap);
++  std::vector<unsigned char> mask;
++  readBmpMask(width, height, mask, input);
++  m_collector->collectBmp(imageId, colorModel, width, height, bpp, palette, bitmap, mask);
+ }
+ 
++// Transparenz: hinter dem Bild folgt ein zweiter Bildblock ("RI", Länge, 0, Kopflänge, dann Kopf wie readRImage)
++// mit einer 8-Bit-Maske gleicher Größe, Zeilen auf 4 Byte aufgefüllt. Ohne Maske bleibt die Leseposition gleich.
++void libcdr::CDRParser::readBmpMask(unsigned width, unsigned height, std::vector<unsigned char> &mask, librevenge::RVNGInputStream *input)
++{
++  const long start = input->tell();
++  if (getRemainingLength(input) > 78 && readU8(input) == 0x52 && readU8(input) == 0x49)
++  {
++    input->seek(8, librevenge::RVNG_SEEK_CUR);
++    const unsigned headerLength = readU32(input);
++    input->seek(8, librevenge::RVNG_SEEK_CUR);
++    const unsigned maskWidth = readU32(input);
++    const unsigned maskHeight = readU32(input);
++    input->seek(4, librevenge::RVNG_SEEK_CUR);
++    const unsigned maskBpp = readU32(input);
++    input->seek(4, librevenge::RVNG_SEEK_CUR);
++    const unsigned maskSize = readU32(input);
++    if (maskWidth == width && maskHeight == height && maskBpp == 8 && height && maskSize / height >= width
++        && headerLength >= 46 && input->seek(start + headerLength, librevenge::RVNG_SEEK_SET) == 0
++        && maskSize <= getRemainingLength(input))
++    {
++      unsigned long numBytesRead = 0;
++      const unsigned char *buffer = input->read(maskSize, numBytesRead);
++      if (numBytesRead == maskSize)
++        mask.assign(buffer, buffer + maskSize);
++    }
++  }
++  input->seek(start, librevenge::RVNG_SEEK_SET);
++}
++
+ void libcdr::CDRParser::readOpacity(librevenge::RVNGInputStream *input, unsigned /* length */)
+ {
+   if (m_version < 1300)
+@@ -2024,6 +2062,10 @@
+     throw GenericException();
+   unsigned long pointNum = readU16(input);
+   const unsigned short pointSize = 2 * (m_precision == PRECISION_16BIT ? 2 : 4) + 4;
++  // ab CorelDRAW 2024 ist "ppdt" auch ein allgemeiner Eigenschaftsblock (Art steht in "ppid");
++  // passt die Punktliste nicht in den Block, ist es keine Spline-Punktliste
++  if (6 + pointNum * pointSize > length)
++    return;
+   if (pointNum > getRemainingLength(input) / pointSize)
+     pointNum = getRemainingLength(input) / pointSize;
+   input->seek(4, librevenge::RVNG_SEEK_CUR);
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRParser.h b/src/lib/CDRParser.h
+--- a/src/lib/CDRParser.h
++++ b/src/lib/CDRParser.h
+@@ -71,6 +71,7 @@
+   void readPolygonCoords(librevenge::RVNGInputStream *input);
+   void readPolygonTransform(librevenge::RVNGInputStream *input);
+   void readBmp(librevenge::RVNGInputStream *input, unsigned length);
++  void readBmpMask(unsigned width, unsigned height, std::vector<unsigned char> &mask, librevenge::RVNGInputStream *input);
+   void readBmpf(librevenge::RVNGInputStream *input, unsigned length);
+   void readPpdt(librevenge::RVNGInputStream *input, unsigned length);
+   void readFtil(librevenge::RVNGInputStream *input, unsigned length);
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRStylesCollector.cpp b/src/lib/CDRStylesCollector.cpp
+--- a/src/lib/CDRStylesCollector.cpp
++++ b/src/lib/CDRStylesCollector.cpp
+@@ -26,7 +26,7 @@
+ {
+ }
+ 
+-void libcdr::CDRStylesCollector::collectBmp(unsigned imageId, unsigned colorModel, unsigned width, unsigned height, unsigned bpp, const std::vector<unsigned> &palette, const std::vector<unsigned char> &bitmap)
++void libcdr::CDRStylesCollector::collectBmp(unsigned imageId, unsigned colorModel, unsigned width, unsigned height, unsigned bpp, const std::vector<unsigned> &palette, const std::vector<unsigned char> &bitmap, const std::vector<unsigned char> &mask)
+ {
+   libcdr::CDRInternalStream stream(bitmap);
+   librevenge::RVNGBinaryData image;
+@@ -42,7 +42,11 @@
+   if (tmpPixelSize > tmpDIBImageSize) // overflow !!!
+     return;
+ 
+-  unsigned tmpDIBOffsetBits = 14 + 40;
++  // mit Maske: BITMAPV4HEADER, damit die Alpha-Bytes gelten (bei BI_RGB werden sie ignoriert)
++  const unsigned long maskLineWidth = mask.size() / height;
++  const bool alpha = maskLineWidth >= width;
++  const unsigned infoSize = alpha ? 108 : 40;
++  unsigned tmpDIBOffsetBits = 14 + infoSize;
+   unsigned tmpDIBFileSize = tmpDIBOffsetBits + tmpDIBImageSize;
+   if (tmpDIBImageSize > tmpDIBFileSize) // overflow !!!
+     return;
+@@ -55,19 +59,29 @@
+   writeU32(image, tmpDIBOffsetBits); // OffsetBits
+ 
+   // Create DIB Info header
+-  writeU32(image, 40); // Size
++  writeU32(image, infoSize); // Size
+ 
+   writeU32(image, width);  // Width
+   writeU32(image, height); // Height
+ 
+   writeU16(image, 1); // Planes
+   writeU16(image, 32); // BitCount
+-  writeU32(image, 0); // Compression
++  writeU32(image, alpha ? 3 : 0); // Compression: BI_BITFIELDS bzw. BI_RGB
+   writeU32(image, tmpDIBImageSize); // SizeImage
+   writeU32(image, 0); // XPelsPerMeter
+   writeU32(image, 0); // YPelsPerMeter
+   writeU32(image, 0); // ColorsUsed
+   writeU32(image, 0); // ColorsImportant
++  if (alpha)
++  {
++    writeU32(image, 0x00ff0000); // RedMask
++    writeU32(image, 0x0000ff00); // GreenMask
++    writeU32(image, 0x000000ff); // BlueMask
++    writeU32(image, 0xff000000); // AlphaMask
++    writeU32(image, 0x73524742); // CSType 'sRGB'
++    for (int n = 0; n < 12; ++n)
++      writeU32(image, 0); // Endpoints, Gamma
++  }
+ 
+   // Cater for eventual padding
+   unsigned long lineWidth = bitmap.size() / height;
+@@ -78,6 +92,15 @@
+   {
+     unsigned i = 0;
+     unsigned k = 0;
++    unsigned col = 0;
++    // Pixel mit Alpha aus der Maske (Maske hat dieselbe Zeilenfolge wie das Bild)
++    auto writePixel = [&](unsigned c)
++    {
++      if (alpha && col < width)
++        c = (c & 0xffffff) | ((unsigned)mask[j * maskLineWidth + col] << 24);
++      ++col;
++      writeU32(image, c);
++    };
+     if (colorModel == 6)
+     {
+       while (i <lineWidth && k < width)
+@@ -88,9 +111,9 @@
+         while (k < width && l < 8)
+         {
+           if (c & 0x80)
+-            writeU32(image, 0xffffff);
++            writePixel(0xffffff);
+           else
+-            writeU32(image, 0);
++            writePixel(0);
+           c <<= 1;
+           l++;
+           k++;
+@@ -103,7 +126,7 @@
+       {
+         unsigned char c = bitmap[j*lineWidth+i];
+         i++;
+-        writeU32(image, m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, c)));
++        writePixel(m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, c)));
+       }
+     }
+     else if (!palette.empty())
+@@ -114,7 +137,7 @@
+         if (c >= palette.size())
+           c = palette.size() - 1;
+         i++;
+-        writeU32(image, m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, palette[c])));
++        writePixel(m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, palette[c])));
+       }
+     }
+     else if (bpp == 24 && lineWidth >= 3)
+@@ -123,7 +146,7 @@
+       {
+         unsigned c = ((unsigned)bitmap[j*lineWidth+i+2] << 16) | ((unsigned)bitmap[j*lineWidth+i+1] << 8) | ((unsigned)bitmap[j*lineWidth+i]);
+         i += 3;
+-        writeU32(image, m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, c)));
++        writePixel(m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, c)));
+         k++;
+       }
+     }
+@@ -133,7 +156,7 @@
+       {
+         unsigned c = (bitmap[j*lineWidth+i+3] << 24) | (bitmap[j*lineWidth+i+2] << 16) | (bitmap[j*lineWidth+i+1] << 8) | (bitmap[j*lineWidth+i]);
+         i += 4;
+-        writeU32(image, m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, c)));
++        writePixel(m_ps.getBMPColor(libcdr::CDRColor((unsigned short)colorModel, c)));
+         k++;
+       }
+     }
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CDRStylesCollector.h b/src/lib/CDRStylesCollector.h
+--- a/src/lib/CDRStylesCollector.h
++++ b/src/lib/CDRStylesCollector.h
+@@ -49,7 +49,7 @@
+   void collectPageSize(double width, double height, double offsetX, double offsetY) override;
+   void collectPolygonTransform(unsigned, unsigned, double, double, double, double) override {}
+   void collectBitmap(unsigned, double, double, double, double) override {}
+-  void collectBmp(unsigned imageId, unsigned colorModel, unsigned width, unsigned height, unsigned bpp, const std::vector<unsigned> &palette, const std::vector<unsigned char> &bitmap) override;
++  void collectBmp(unsigned imageId, unsigned colorModel, unsigned width, unsigned height, unsigned bpp, const std::vector<unsigned> &palette, const std::vector<unsigned char> &bitmap, const std::vector<unsigned char> &mask) override;
+   void collectBmp(unsigned imageId, const std::vector<unsigned char> &bitmap) override;
+   void collectBmpf(unsigned patternId, unsigned width, unsigned height, const std::vector<unsigned char> &pattern) override;
+   void collectPpdt(const std::vector<std::pair<double, double> > &, const std::vector<unsigned> &) override {}
+diff -ruN -x Makefile* -x libcdr.rc a/src/lib/CMXParser.cpp b/src/lib/CMXParser.cpp
+--- a/src/lib/CMXParser.cpp
++++ b/src/lib/CMXParser.cpp
+@@ -2021,7 +2021,7 @@
+       input->seek(oldOffset, librevenge::RVNG_SEEK_SET);
+       if (m_currentBitmap && !(m_currentBitmap->bitmap.empty()))
+         m_collector->collectBmp(j, m_currentBitmap->colorModel, m_currentBitmap->width, m_currentBitmap->height,
+-                                m_currentBitmap->bpp, m_currentBitmap->palette, m_currentBitmap->bitmap);
++                                m_currentBitmap->bpp, m_currentBitmap->palette, m_currentBitmap->bitmap, std::vector<unsigned char>());
+       m_currentBitmap = nullptr;
+     }
+     if (sizeInFile)

@@ -141,9 +141,6 @@ fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat) -> Option<Item> {
         paint(cx, f.paint())
     });
     let stroke = p.stroke().and_then(|s| {
-        if s.dasharray().is_some() {
-            cx.warn("Gestrichelte Kontur als durchgehende übernommen.");
-        }
         if s.opacity().get() < 1.0 {
             cx.warn("Deckkraft unter 100 % ignoriert.");
         }
@@ -156,9 +153,15 @@ fn path(cx: &mut Ctx, p: &usvg::Path, world: &Mat) -> Option<Item> {
         };
         // Breite in Seiten-mm; bei ungleichmäßiger Skalierung gemittelt.
         let det = world[0] * world[3] - world[1] * world[2];
+        let k = det.abs().sqrt();
         Some(Stroke {
             color,
-            width: s.width().get() as f64 * det.abs().sqrt(),
+            width: s.width().get() as f64 * k,
+            // usvg verdoppelt ungerade Listen schon (SVG-Regel)
+            dash: s
+                .dasharray()
+                .map(|d| d.iter().map(|x| *x as f64 * k).collect())
+                .unwrap_or_default(),
             cap: match s.linecap() {
                 usvg::LineCap::Butt => Cap::Butt,
                 usvg::LineCap::Round => Cap::Round,

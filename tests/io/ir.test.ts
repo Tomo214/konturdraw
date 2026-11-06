@@ -28,7 +28,7 @@ describe('toIr', () => {
   it('Seitengröße und Formen als Bézier-Teilpfade', () => {
     const ir = toIr(goldenPage());
     expect([ir.width, ir.height]).toEqual([200, 140]);
-    expect(ir.items).toHaveLength(12);
+    expect(ir.items).toHaveLength(13);
     expect(path(ir.items[10])?.fillRule).toBe('evenodd');
     expect(path(ir.items[0])?.subpaths[0].nodes).toHaveLength(4);
     expect(path(ir.items[2])?.subpaths[0].nodes.every((n) => n.handleIn && n.handleOut)).toBe(true);
@@ -40,6 +40,17 @@ describe('toIr', () => {
     const ir = toIr(docWith([fixed, scaled]).pages[0]);
     expect(ir.items.map((it) => path(it)?.stroke?.width)).toEqual([1, 3]);
     expect(path(ir.items[0])?.stroke).toEqual({ color: { model: 'rgb', values: [0, 0, 0] }, width: 1, cap: 'butt', join: 'miter' });
+  });
+
+  it('Strichmuster: im Modell × Breite, im IR in Seiten-mm, Rückweg wieder × Breite', () => {
+    const fixed = { ...square('a'), style: { fill: null, stroke: { ...stroke(2), dash: [3, 1] } }, transform: scale(3, 3) };
+    const scaled = { ...square('b'), style: { fill: null, stroke: { ...stroke(1, true), dash: [3, 1] } }, transform: scale(3, 3) };
+    const ir = toIr(docWith([fixed, scaled]).pages[0]);
+    expect(ir.items.map((it) => path(it)?.stroke?.dash)).toEqual([[6, 2], [9, 3]]);
+    const back = fromIr(ir.items).map((n) => (n.type === 'path' ? n.style.stroke : null));
+    expect(back.map((s) => [s?.width, s?.dash])).toEqual([[2, [3, 1]], [3, [3, 1]]]);
+    const hair = fromIr([{ ...ir.items[0], stroke: { ...path(ir.items[0])!.stroke!, width: 0 } } as IrItem])[0];
+    expect(hair.type === 'path' && hair.style.stroke).not.toHaveProperty('dash');
   });
 
   it('Gruppen: Weltmatrix landet am Blatt', () => {

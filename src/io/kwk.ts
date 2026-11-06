@@ -87,6 +87,11 @@ function style(v: unknown): void {
     oneOf(k.cap, ['butt', 'round', 'square'], 'Linienende');
     oneOf(k.join, ['miter', 'round', 'bevel'], 'Ecke');
     if (k.scaleWithObject !== undefined) bool(k.scaleWithObject, 'Konturskalierung');
+    if (k.dash !== undefined) {
+      const d = Array.isArray(k.dash) ? k.dash : [];
+      const ok = d.length >= 2 && d.length % 2 === 0 && d.every((x) => finite(x) && (x as number) >= 0) && d.some((x) => (x as number) > 0);
+      if (!ok) fail('Strichmuster ungültig.');
+    }
   }
 }
 

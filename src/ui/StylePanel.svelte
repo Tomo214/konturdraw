@@ -1,6 +1,6 @@
 <script lang="ts">
   // Eigenschaften (Andockfenster): Füllung, Kontur, Formwerte der Auswahl bzw. Vorgaben für neue Objekte.
-  import { mmField, type FillSpec } from '../model/style';
+  import { DASHES, dashIndex, mmField, type FillSpec } from '../model/style';
   import ColorPicker from './ColorPicker.svelte';
   import type { Stroke } from '../model/types';
   import type { ShapeParams } from './tools/shape-tool';
@@ -72,6 +72,13 @@
         <option value="miter">spitz</option>
         <option value="round">rund</option>
         <option value="bevel">abgeschrägt</option>
+      </select>
+    </label>
+    <label class="row">
+      <span>Linienart</span>
+      <select value={String(dashIndex(stroke.dash))} onchange={(e) => onstroke({ dash: DASHES[Number(value(e))].dash?.slice() })}>
+        {#each DASHES as d, i (d.name)}<option value={String(i)}>{d.name}</option>{/each}
+        {#if dashIndex(stroke.dash) < 0}<option value="-1" disabled>eigenes Muster</option>{/if}
       </select>
     </label>
     <label class="check wide">

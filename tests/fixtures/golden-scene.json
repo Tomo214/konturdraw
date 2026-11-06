@@ -830,6 +830,52 @@
      ]
     },
     "stroke": null
+   },
+   {
+    "kind": "path",
+    "matrix": [
+     1,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "subpaths": [
+     {
+      "closed": false,
+      "nodes": [
+       {
+        "x": 20,
+        "y": 135,
+        "type": "corner"
+       },
+       {
+        "x": 60,
+        "y": 135,
+        "type": "corner"
+       }
+      ]
+     }
+    ],
+    "fill": null,
+    "stroke": {
+     "color": {
+      "model": "rgb",
+      "values": [
+       0,
+       0,
+       0
+      ]
+     },
+     "width": 2,
+     "cap": "butt",
+     "join": "miter",
+     "dash": [
+      4,
+      2
+     ]
+    }
    }
   ]
  },
@@ -1150,6 +1196,39 @@
     255,
     255,
     255
+   ],
+   1
+  ],
+  [
+   "Gestrichelt: Strich",
+   22,
+   135,
+   [
+    0,
+    0,
+    0
+   ],
+   1
+  ],
+  [
+   "Gestrichelt: Lücke",
+   25,
+   135,
+   [
+    255,
+    255,
+    255
+   ],
+   1
+  ],
+  [
+   "Gestrichelt: nächster Strich",
+   28,
+   135,
+   [
+    0,
+    0,
+    0
    ],
    1
   ]

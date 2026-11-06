@@ -184,6 +184,7 @@ export class Renderer {
     const visible = this.tree.search(visibleBox(vp, w, h));
     visible.sort((a, b) => a.order - b.order);
     if (wire) [ctx.strokeStyle, ctx.lineWidth, ctx.globalCompositeOperation] = [WIRE, 1 / vp.zoom, 'difference'];
+    let dashed = false; // Strichmuster bleibt im Kontext → nur beim Wechsel setzen
     for (const it of visible) {
       if (wire) {
         setMat(ctx, dpr, screen);
@@ -213,17 +214,23 @@ export class Renderer {
         ctx.strokeStyle = css(stroke.color);
         ctx.lineCap = stroke.cap;
         ctx.lineJoin = stroke.join;
-        if (similar(it.world)) {
-          ctx.lineWidth = width / s;
+        const local = similar(it.world);
+        const lineWidth = local ? width / s : width;
+        // Strichmuster × Breite, in denselben Einheiten wie lineWidth
+        if (stroke.dash || dashed) ctx.setLineDash(stroke.dash?.map((d) => d * lineWidth) ?? []);
+        dashed = !!stroke.dash;
+        if (local) {
+          ctx.lineWidth = lineWidth;
           ctx.stroke(p);
         } else {
           setMat(ctx, dpr, screen);
-          ctx.lineWidth = width;
+          ctx.lineWidth = lineWidth;
           ctx.stroke(worldPath(it));
         }
       }
     }
     ctx.globalCompositeOperation = 'source-over';
+    if (dashed) ctx.setLineDash([]);
     this.lastVp = vp;
   }
 

@@ -13,6 +13,8 @@ export interface OutlineJob {
   width: number;
   cap: Stroke['cap'];
   join: Stroke['join'];
+  /** Strich, Lücke, … in Seiten-mm; fehlt = durchgehend */
+  dash?: number[];
 }
 
 export interface OutlinePlan {
@@ -51,13 +53,17 @@ function targets(doc: Doc, selection: readonly string[]): Target[] {
 export function planOutline(doc: Doc, selection: readonly string[]): OutlinePlan {
   const list = targets(doc, selection);
   if (!list.length) throw new Error('Kein gewähltes Objekt hat eine Kontur.');
-  const jobs = list.map(({ node, stroke: s, world }): OutlineJob => ({
-    subpaths: (toCurves(node) as PathNode).subpaths.map((sp) => transformSubpath(sp, world)),
+  const jobs = list.map(({ node, stroke: s, world }): OutlineJob => {
     // wie renderer.ts: mitskalierende Konturen wachsen mit dem Weltmaßstab
-    width: s.scaleWithObject ? s.width * Math.sqrt(Math.abs(det(world))) : s.width,
-    cap: s.cap,
-    join: s.join,
-  }));
+    const width = s.scaleWithObject ? s.width * Math.sqrt(Math.abs(det(world))) : s.width;
+    return {
+      subpaths: (toCurves(node) as PathNode).subpaths.map((sp) => transformSubpath(sp, world)),
+      width,
+      cap: s.cap,
+      join: s.join,
+      ...(s.dash ? { dash: s.dash.map((d) => d * width) } : {}),
+    };
+  });
   return {
     jobs,
     finish(results) {

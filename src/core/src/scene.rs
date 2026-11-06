@@ -186,6 +186,25 @@ pub struct Stroke {
     pub width: f64,
     pub cap: Cap,
     pub join: Join,
+    /// Strich, Lücke, … in Seiten-mm; leer = durchgehend.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dash: Vec<f64>,
+}
+
+impl Stroke {
+    /// Zeichenbares Strichmuster, sonst None = durchgehend.
+    pub fn dash_pattern(&self) -> Option<&[f64]> {
+        dash_pattern(&self.dash)
+    }
+}
+
+/// Strichmuster mit gerader Anzahl, nicht negativ und nicht alles 0, sonst None.
+pub fn dash_pattern(d: &[f64]) -> Option<&[f64]> {
+    let ok = d.len() >= 2
+        && d.len() % 2 == 0
+        && d.iter().all(|x| x.is_finite() && *x >= 0.0)
+        && d.iter().sum::<f64>() > 0.0;
+    ok.then_some(d)
 }
 
 /// Abweichung von nonzero; Kombinieren erzeugt gerade/ungerade (Überlappung = Loch).

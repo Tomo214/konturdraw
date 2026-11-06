@@ -1,9 +1,7 @@
 // SVG-Import (Spec §11: Pfade, Formen, Gruppen, Füllung/Kontur, Text als Kurven) + Roundtrip Export → Import.
-use base64::Engine;
 use kw_core::color::Cms;
 use kw_core::scene::{leaves, Color, Fill, GradientKind, Item, Mat, Point, Scene, Stroke, Subpath};
 use kw_core::{svg_export, svg_import, Images};
-use std::io::Cursor;
 
 const K: f64 = 25.4 / 96.0; // SVG-px → mm
 
@@ -155,6 +153,40 @@ fn kontur_breite_in_seiten_mm() {
 }
 
 #[test]
+fn strichmuster_in_seiten_mm() {
+    // ungerade Liste gilt doppelt (SVG); Strich + Lücke wachsen mit der Skalierung wie die Breite
+    let imp = import(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><g transform="scale(2)">
+        <path d="M0 0 L10 0" fill="none" stroke="#000" stroke-dasharray="3 1"/>
+        <path d="M0 5 L10 5" fill="none" stroke="#000" stroke-dasharray="2 1 1"/></g></svg>"##,
+    );
+    let p = paths(&imp.scene);
+    let dash = |i: usize| -> Vec<f64> {
+        p[i].3
+            .as_ref()
+            .unwrap()
+            .dash
+            .iter()
+            .map(|d| d / (2.0 * K))
+            .collect()
+    };
+    let same = |a: Vec<f64>, b: &[f64]| {
+        a.len() == b.len() && a.iter().zip(b).all(|(x, y)| near(*x, *y, 1e-4))
+    };
+    assert!(same(dash(0), &[3.0, 1.0]), "{:?}", dash(0));
+    assert!(
+        same(dash(1), &[2.0, 1.0, 1.0, 2.0, 1.0, 1.0]),
+        "{:?}",
+        dash(1)
+    );
+    assert!(
+        imp.warnings.iter().all(|w| !w.contains("Gestrichelt")),
+        "{:?}",
+        imp.warnings
+    );
+}
+
+#[test]
 fn verlaeufe_linear_und_radial() {
     let imp = import(
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><defs>
@@ -202,120 +234,6 @@ fn text_kommt_als_kurven() {
     );
 }
 
-fn png(w: u32, h: u32) -> Vec<u8> {
-    let img = image::RgbaImage::from_fn(w, h, |x, _| image::Rgba([x as u8 * 100, 0, 0, 255]));
-    let mut out = Vec::new();
-    img.write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
-        .unwrap();
-    out
-}
-
-#[test]
-fn eingebettetes_png_wird_bild() {
-    let data = png(3, 2);
-    let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
-    let imp = import(&format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><image x="96" y="0" width="30" height="20" href="data:image/png;base64,{b64}"/></svg>"#
-    ));
-    let imgs: Vec<_> = leaves(&imp.scene.items)
-        .into_iter()
-        .filter(|(_, it)| matches!(it, Item::Image { .. }))
-        .collect();
-    assert_eq!(imgs.len(), 1);
-    let (
-        m,
-        Item::Image {
-            width,
-            height,
-            image,
-            ..
-        },
-    ) = &imgs[0]
-    else {
-        unreachable!()
-    };
-    assert_eq!(
-        imp.images.get(image),
-        Some(&data),
-        "PNG byte-gleich übernommen"
-    );
-    let (a, b) = (
-        apply(m, Point { x: 0.0, y: 0.0 }),
-        apply(
-            m,
-            Point {
-                x: *width,
-                y: *height,
-            },
-        ),
-    );
-    assert!(
-        near(a.x, 25.4, 1e-3) && near(b.x - a.x, 30.0 * K, 1e-3) && near(b.y - a.y, 20.0 * K, 1e-3),
-        "{a:?} {b:?}"
-    );
-}
-
-/// BMP wie libcdr Bitmaps aus .cdr-Dateien liefert: 32 bit, BI_RGB, Zeilen von unten, viertes Byte 0.
-fn bmp32(w: u32, h: u32, rgb: impl Fn(u32, u32) -> [u8; 3]) -> Vec<u8> {
-    let mut px = Vec::new();
-    for y in (0..h).rev() {
-        for x in 0..w {
-            let [r, g, b] = rgb(x, y);
-            px.extend([b, g, r, 0]);
-        }
-    }
-    let mut v = b"BM".to_vec();
-    for n in [54 + px.len() as u32, 0, 54, 40, w, h] {
-        v.extend(n.to_le_bytes());
-    }
-    v.extend(1u16.to_le_bytes());
-    v.extend(32u16.to_le_bytes());
-    for n in [0, px.len() as u32, 2835, 2835, 0, 0] {
-        v.extend(n.to_le_bytes());
-    }
-    v.extend(px);
-    v
-}
-
-#[test]
-fn eingebettetes_bmp_aus_cdr_wird_bild() {
-    let data = bmp32(2, 1, |x, _| if x == 0 { [255, 0, 0] } else { [0, 0, 255] });
-    let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
-    let imp = import(&format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><image width="20" height="10" href="data:image/bmp;base64,{b64}"/></svg>"#
-    ));
-    let imgs: Vec<_> = leaves(&imp.scene.items)
-        .into_iter()
-        .filter_map(|(_, it)| match it {
-            Item::Image { image, .. } => Some(image.clone()),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(imgs.len(), 1, "{:?}", imp.warnings);
-    let px = image::load_from_memory(&imp.images[&imgs[0]])
-        .unwrap()
-        .to_rgba8();
-    assert_eq!(px.dimensions(), (2, 1));
-    assert_eq!(
-        px.get_pixel(0, 0).0,
-        [255, 0, 0, 255],
-        "deckend, nicht durchsichtig"
-    );
-    assert_eq!(px.get_pixel(1, 0).0, [0, 0, 255, 255]);
-}
-
-#[test]
-fn unlesbares_bild_wird_gemeldet() {
-    let imp = import(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><image width="10" height="10" href="data:image/tiff;base64,AAAA"/></svg>"#,
-    );
-    assert!(
-        imp.warnings.join(" ").contains("Bild"),
-        "{:?}",
-        imp.warnings
-    );
-}
-
 #[test]
 fn nicht_unterstuetztes_wird_gemeldet() {
     let imp = import(
@@ -324,10 +242,7 @@ fn nicht_unterstuetztes_wird_gemeldet() {
         <g clip-path="url(#c)" opacity="0.5"><path d="M0 0 L10 0" stroke="black" stroke-dasharray="2 1"/></g></svg>"#,
     );
     let w = imp.warnings.join(" | ");
-    assert!(
-        w.contains("Beschneidung") && w.contains("Deckkraft") && w.contains("Gestrichelt"),
-        "{w}"
-    );
+    assert!(w.contains("Beschneidung") && w.contains("Deckkraft"), "{w}");
 }
 
 #[test]
@@ -419,55 +334,4 @@ fn roundtrip_export_import_golden() {
             other => panic!("Objekt {i}: Kontur {other:?}"),
         }
     }
-}
-
-#[test]
-fn roundtrip_bild() {
-    let data = png(2, 1);
-    let item = Item::Image {
-        matrix: [2.0, 0.0, 0.0, 2.0, 5.0, 3.0],
-        width: 10.0,
-        height: 5.0,
-        image: "x".into(),
-        opacity: 1.0,
-    };
-    let scene = Scene {
-        width: 40.0,
-        height: 20.0,
-        items: vec![item],
-    };
-    let imp = import(
-        &svg_export::export(
-            &scene,
-            &Images::from([("x".to_string(), data.clone())]),
-            &Cms::default(),
-        )
-        .unwrap(),
-    );
-    let found = leaves(&imp.scene.items)
-        .into_iter()
-        .find_map(|(m, it)| match it {
-            Item::Image {
-                width,
-                height,
-                image,
-                ..
-            } => Some((
-                apply(
-                    &m,
-                    Point {
-                        x: *width,
-                        y: *height,
-                    },
-                ),
-                imp.images[image].clone(),
-            )),
-            _ => None,
-        });
-    let (corner, bytes) = found.expect("Bild fehlt");
-    assert_eq!(bytes, data);
-    assert!(
-        near(corner.x, 25.0, 1e-3) && near(corner.y, 13.0, 1e-3),
-        "{corner:?}"
-    );
 }

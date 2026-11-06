@@ -10,6 +10,8 @@ export interface IrStroke {
   width: number;
   cap: Stroke['cap'];
   join: Stroke['join'];
+  /** Strich, Lücke, … in Seiten-mm; fehlt = durchgehend */
+  dash?: number[];
 }
 
 /** Austausch mit kw-core (architecture.md §3): Export-Eingabe und Import-Ergebnis. mm, y nach unten. */
@@ -34,7 +36,9 @@ export function toIr(page: Page, ids?: ReadonlySet<string>): IrScene {
       return { kind: 'image', matrix: world, width: node.width, height: node.height, image: node.image, ...alpha };
     }
     const s = node.style.stroke;
-    const stroke = s && { color: s.color, width: s.scaleWithObject ? s.width * worldScale(world) : s.width, cap: s.cap, join: s.join };
+    const width = s ? (s.scaleWithObject ? s.width * worldScale(world) : s.width) : 0;
+    const dash = s?.dash ? { dash: s.dash.map((d) => d * width) } : {};
+    const stroke = s && { color: s.color, width, cap: s.cap, join: s.join, ...dash };
     const rule = node.type === 'path' && node.fillRule ? { fillRule: node.fillRule } : {};
     return { kind: 'path', matrix: world, subpaths, fill: node.style.fill, stroke, ...rule };
   });
@@ -67,7 +71,11 @@ export function fromIr(items: readonly IrItem[]): Node[] {
       const alpha = it.opacity !== undefined && it.opacity < 1 ? { opacity: it.opacity } : {};
       return { ...base, type: 'image', image: it.image, width: it.width, height: it.height, ...alpha };
     }
-    return { ...base, type: 'path', style: { fill: it.fill, stroke: it.stroke }, subpaths: it.subpaths, ...(it.fillRule ? { fillRule: it.fillRule } : {}) };
+    const s = it.stroke;
+    // Strichmuster im Modell als Vielfache der Breite (wächst mit ihr)
+    const dash = s?.dash && s.width > 0 ? { dash: s.dash.map((d) => d / s.width) } : {};
+    const stroke = s && { color: s.color, width: s.width, cap: s.cap, join: s.join, ...dash };
+    return { ...base, type: 'path', style: { fill: it.fill, stroke }, subpaths: it.subpaths, ...(it.fillRule ? { fillRule: it.fillRule } : {}) };
   });
 }
 

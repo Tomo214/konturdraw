@@ -68,6 +68,20 @@ export function setGradientLine(n: LeafNode, from: Point, to: Point, s: FillSpec
   return withFill(n, { kind: s.kind === 'radial' ? 'radial' : 'linear', from, to, stops: stops(s) });
 }
 
+/** Linienarten der Kontur: Strichmuster (Strich, Lücke, …) als Vielfache der Breite, wächst mit ihr. */
+export const DASHES: readonly { name: string; dash?: readonly number[] }[] = [
+  { name: 'durchgehend' },
+  { name: 'Striche', dash: [4, 2] },
+  { name: 'kurze Striche', dash: [2, 2] },
+  { name: 'Punkte', dash: [1, 2] },
+  { name: 'Strich-Punkt', dash: [4, 2, 1, 2] },
+];
+
+/** Vorgabe mit genau diesem Muster; -1 = eigenes (z. B. aus einer Importdatei). */
+export function dashIndex(dash: readonly number[] | undefined): number {
+  return DASHES.findIndex((d) => (d.dash ?? []).join() === (dash ?? []).join());
+}
+
 /** null entfernt die Kontur; sonst nur die genannten Eigenschaften ändern (fehlende Kontur → Vorgabe). */
 export function setStroke(n: LeafNode, patch: Partial<Stroke> | null): LeafNode {
   return { ...n, style: { ...n.style, stroke: patch && { ...(n.style.stroke ?? DEFAULT_STROKE), ...patch } } };

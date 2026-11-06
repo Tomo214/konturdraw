@@ -121,6 +121,16 @@ describe('.kwk-Dokument', () => {
     expect(bad((d) => (d.pages[0].layers[0].children.at(-1).opacity = 'x'))).toThrow(/Deckkraft/);
   });
 
+  it('Strichmuster: Rundreise, Unsinn → Fehler', () => {
+    const doc = sample();
+    expect(parseDocument(serialize(doc), new Set(['aa', 'bb']))).toEqual(doc);
+    const dashed = (d: any) => d.pages[0].layers[0].children.find((n: any) => n.style?.stroke?.dash).style.stroke;
+    expect(bad((d) => (dashed(d).dash = [1]))).toThrow(/Strichmuster/);
+    expect(bad((d) => (dashed(d).dash = [1, -1]))).toThrow(/Strichmuster/);
+    expect(bad((d) => (dashed(d).dash = [0, 0]))).toThrow(/Strichmuster/);
+    expect(bad((d) => (dashed(d).dash = 'x'))).toThrow(/Strichmuster/);
+  });
+
   it('Bild ohne Datei in der Ablage → Fehler', () => {
     expect(() => parseDocument(serialize(sample()), new Set(['aa']))).toThrow(/Bild bb fehlt/);
   });

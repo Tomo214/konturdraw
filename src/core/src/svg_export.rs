@@ -138,8 +138,12 @@ pub fn export(scene: &Scene, images: &Images, cms: &Cms) -> Result<String, Strin
                             Join::Round => "round",
                             Join::Bevel => "bevel",
                         };
+                        let dash = s.dash_pattern().map_or(String::new(), |d| {
+                            let list: Vec<String> = d.iter().map(|x| num(*x)).collect();
+                            format!(r#" stroke-dasharray="{}""#, list.join(" "))
+                        });
                         format!(
-                            r#" stroke="{}" stroke-width="{}" stroke-linecap="{cap}" stroke-linejoin="{join}" stroke-miterlimit="10""#,
+                            r#" stroke="{}" stroke-width="{}" stroke-linecap="{cap}" stroke-linejoin="{join}" stroke-miterlimit="10"{dash}"#,
                             hex(&s.color, cms),
                             num(s.width)
                         )
