@@ -1,7 +1,7 @@
 // Golden-Render (3c): Pixel-Proben + Vergleich mit tests/render/golden/<engine>.png.
 // Fehlt die Referenz (oder GOLDEN_UPDATE=1), wird sie angelegt – danach von Hand ansehen!
 // Voraussetzung: `npm run dev` läuft, Playwright erreichbar, z. B.
-//   NODE_PATH=~/.claude/skills/playwright-skill/node_modules node tests/render/run-golden.cjs
+//   NODE_PATH=/pfad/zu/playwright/node_modules node tests/render/run-golden.cjs
 const { chromium, webkit } = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');

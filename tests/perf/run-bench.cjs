@@ -1,6 +1,6 @@
 // Leistungs-Gate (architecture.md §6) in sichtbaren Fenstern: System-Chrome + Playwright-WebKit (Näherung für WKWebView).
 // Voraussetzung: `npm run dev` läuft, Playwright ist erreichbar, z. B.
-//   NODE_PATH=~/.claude/skills/playwright-skill/node_modules node tests/perf/run-bench.cjs
+//   NODE_PATH=/pfad/zu/playwright/node_modules node tests/perf/run-bench.cjs
 const { chromium, webkit } = require('playwright');
 
 const base = process.env.BENCH_URL ?? 'http://localhost:5173/tests/perf/bench.html';

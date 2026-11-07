@@ -1,6 +1,6 @@
 # Windows-Handtest (Phase 6d)
 
-Prüft, was nur an einem echten Windows geht. Dauer ca. 30 Minuten. Bei einem Fehler: Schritt-Nummer und Bildschirmfoto an Timon bzw. Claude.
+Prüft, was nur an einem echten Windows geht. Dauer ca. 30 Minuten. Bei einem Fehler: Schritt-Nummer und Bildschirmfoto an Timon.
 
 ## Vorbereitung
 
@@ -23,7 +23,7 @@ Prüft, was nur an einem echten Windows geht. Dauer ca. 30 Minuten. Bei einem Fe
 | ☐ | 5 | Text-Werkzeug (F8), auf die Seite klicken, mit deutscher Tastatur tippen: AltGr+8, AltGr+9, AltGr+Q, AltGr+E | Es erscheint `[ ] @ €`, kein Befehl wird ausgelöst |
 | ☐ | 6 | Alt kurz allein drücken, dann Pfeil ↓; danach Esc und F10 | Alt: KonturDraw-Menüleiste wird aktiv. F10: Form-Werkzeug ist gewählt (Belegung wie Vorbild). Nie das Windows-Fenstermenü (Wiederherstellen/Verschieben/Schließen) |
 | ☐ | 7 | Mausrad über der Zeichenfläche; am Laptop-Touchpad zwei Finger wischen und kneifen | Mausrad zoomt; Wischen verschiebt; Kneifen zoomt |
-| ☐ | 8 | Rechteck auf B = 100 mm, H = 100 mm setzen; Datei → Drucken; in der PDF-Anzeige „Tatsächliche Größe“ bzw. 100 % wählen und drucken | Gedrucktes Quadrat misst 100 mm ± 0,5 mm. In der VM: auf „Microsoft Print to PDF“ drucken, die PDF-Datei an Claude, er misst |
+| ☐ | 8 | Rechteck auf B = 100 mm, H = 100 mm setzen; Datei → Drucken; in der PDF-Anzeige „Tatsächliche Größe“ bzw. 100 % wählen und drucken | Gedrucktes Quadrat misst 100 mm ± 0,5 mm. In der VM: auf „Microsoft Print to PDF“ drucken und das Quadrat in der PDF nachmessen |
 | ☐ | 9 | Datei → Importieren: eine eigene CorelDRAW-Datei (.cdr), auch aus einem Ordner mit Umlaut im Namen | Zeichnung erscheint; sonst eine verständliche Meldung, kein Absturz |
 | ☐ | 10 | Speichern als .kwk in einen Ordner wie `Entwürfe Ä`, schließen, wieder öffnen; Export als PDF, SVG und PNG | Datei öffnet unverändert; Exporte öffnen in anderen Programmen |
 | ☐ | 11 | Foto importieren → Nachzeichnen (Andockfenster) → Anwenden | Vektor-Ergebnis erscheint, App bleibt bedienbar |
