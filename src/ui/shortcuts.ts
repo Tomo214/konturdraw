@@ -3,6 +3,7 @@ import type { AlignEdge, AlignTo, DistributeMode, DistributeTo, Field } from '..
 import type { ShapingName } from '../model/shaping';
 import type { Guide, Point } from '../model/types';
 import type { Unit } from '../model/units';
+import type { Lang } from '../i18n/i18n.svelte';
 
 export type DockerId = 'objects' | 'properties' | 'text' | 'trace' | 'color' | 'align';
 /** Ansicht-Schalter, nicht im Dokument gespeichert; wire = Drahtmodell. */
@@ -40,6 +41,7 @@ export type Command =
   | { name: 'grid'; x: number; y: number }
   | { name: 'show'; what: Shown }
   | { name: 'snap'; what: SnapMode }
+  | { name: 'lang'; lang: Lang }
   | { name: 'confirm' };
 
 export type PageOp =

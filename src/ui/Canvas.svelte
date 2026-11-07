@@ -12,6 +12,7 @@
   import { Snapper } from './snapper';
   import type { Pointer, Tool } from './tools/tool';
   import { pinchSteps, wheelHandler } from './wheel';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     renderer,
@@ -288,7 +289,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="corner"
-    data-tip="Nullpunkt: ziehen setzt, Doppelklick setzt zurück"
+    data-tip={tr('Nullpunkt: ziehen setzt, Doppelklick setzt zurück')}
     data-tip-side="right"
     onpointerdown={(e) => rulerDown(e, 'origin')}
     onpointermove={rulerMove}

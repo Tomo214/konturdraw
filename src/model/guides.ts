@@ -2,6 +2,7 @@
 // angezeigt wird wie im Vorbild ab dem Nullpunkt mit y nach oben. Alle Änderungen: neues Dokument oder null (nichts zu tun).
 import { newId } from './document';
 import type { Doc, Guide, Point } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
 /** Rasterabstand ohne Angabe im Dokument, mm. */
 export const DEFAULT_GRID = 10;
@@ -97,7 +98,7 @@ export function guideAt(guides: readonly Guide[], x: number, y: number, tol: num
 export const gridOf = (doc: Doc): { x: number; y: number } => doc.grid ?? { x: DEFAULT_GRID, y: DEFAULT_GRID };
 
 export function setGrid(doc: Doc, x: number, y: number): Doc | null {
-  if (!(x > 0 && y > 0 && Number.isFinite(x) && Number.isFinite(y))) throw new Error('Rasterabstand muss größer als 0 sein.');
+  if (!(x > 0 && y > 0 && Number.isFinite(x) && Number.isFinite(y))) throw new Error(tr('Rasterabstand muss größer als 0 sein.'));
   const g = gridOf(doc);
   return g.x === x && g.y === y ? null : { ...doc, grid: { x, y } };
 }

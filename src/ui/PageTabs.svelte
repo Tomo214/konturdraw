@@ -9,6 +9,7 @@
   import { pageCommand } from './commands';
   import type { PageState } from './page-state.svelte';
   import type { PageOp } from './shortcuts';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     doc,
@@ -38,7 +39,7 @@
   export function run(op: PageOp) {
     if (op === 'rename') return rename();
     const p = pageCommand(history.current, pages.index(history.current), { name: 'page', op });
-    if (!p) return op === 'delete' && onnotice('Die letzte Seite bleibt.');
+    if (!p) return op === 'delete' && onnotice(tr('Die letzte Seite bleibt.'));
     onleave();
     if (p.doc) history.push(p.doc);
     pages.go(history.current, p.page);
@@ -96,13 +97,13 @@
   }
 
   const menuItems = $derived<MenuItem[]>([
-    { label: 'Seite davor einfügen', run: () => run('insertBefore') },
-    { label: 'Seite danach einfügen', run: () => run('insertAfter') },
-    { label: 'Seite duplizieren', run: () => run('duplicate') },
-    { label: 'Nur Ebenen duplizieren', run: () => run('duplicateLayers') },
-    { label: 'Seite umbenennen', run: rename },
+    { label: tr('Seite davor einfügen'), run: () => run('insertBefore') },
+    { label: tr('Seite danach einfügen'), run: () => run('insertAfter') },
+    { label: tr('Seite duplizieren'), run: () => run('duplicate') },
+    { label: tr('Nur Ebenen duplizieren'), run: () => run('duplicateLayers') },
+    { label: tr('Seite umbenennen'), run: rename },
     null,
-    { label: 'Seite löschen', run: () => run('delete'), disabled: doc.pages.length < 2 },
+    { label: tr('Seite löschen'), run: () => run('delete'), disabled: doc.pages.length < 2 },
   ]);
 
   const select = (el: HTMLInputElement) => {
@@ -111,20 +112,20 @@
   };
 </script>
 
-<div class="bar" role="toolbar" aria-label="Seiten">
+<div class="bar" role="toolbar" aria-label={tr('Seitennavigation')}>
   <nav class="nav">
-    <button class="icon" aria-label="Seite davor einfügen" title="Seite davor einfügen" onclick={() => run('insertBefore')}><Icon name="plus" size={14} /></button>
-    <button class="icon" aria-label="Erste Seite" title="Erste Seite" disabled={cur === 0} onclick={() => run('first')}><Icon name="first" size={14} /></button>
-    <button class="icon" aria-label="Vorige Seite" title="Vorige Seite" disabled={cur === 0} onclick={() => run('prev')}><Icon name="chevronLeft" size={14} /></button>
-    <span class="count">{cur + 1} von {doc.pages.length}</span>
-    <button class="icon" aria-label="Nächste Seite" title="Nächste Seite" disabled={cur === doc.pages.length - 1} onclick={() => run('next')}><Icon name="chevronRight" size={14} /></button>
-    <button class="icon" aria-label="Letzte Seite" title="Letzte Seite" disabled={cur === doc.pages.length - 1} onclick={() => run('last')}><Icon name="last" size={14} /></button>
-    <button class="icon" aria-label="Seite danach einfügen" title="Seite danach einfügen" onclick={() => run('insertAfter')}><Icon name="plus" size={14} /></button>
+    <button class="icon" aria-label={tr('Seite davor einfügen')} title={tr('Seite davor einfügen')} onclick={() => run('insertBefore')}><Icon name="plus" size={14} /></button>
+    <button class="icon" aria-label={tr('Erste Seite')} title={tr('Erste Seite')} disabled={cur === 0} onclick={() => run('first')}><Icon name="first" size={14} /></button>
+    <button class="icon" aria-label={tr('Vorige Seite')} title={tr('Vorige Seite')} disabled={cur === 0} onclick={() => run('prev')}><Icon name="chevronLeft" size={14} /></button>
+    <span class="count">{tr('{n} von {count}', { n: cur + 1, count: doc.pages.length })}</span>
+    <button class="icon" aria-label={tr('Nächste Seite')} title={tr('Nächste Seite')} disabled={cur === doc.pages.length - 1} onclick={() => run('next')}><Icon name="chevronRight" size={14} /></button>
+    <button class="icon" aria-label={tr('Letzte Seite')} title={tr('Letzte Seite')} disabled={cur === doc.pages.length - 1} onclick={() => run('last')}><Icon name="last" size={14} /></button>
+    <button class="icon" aria-label={tr('Seite danach einfügen')} title={tr('Seite danach einfügen')} onclick={() => run('insertAfter')}><Icon name="plus" size={14} /></button>
   </nav>
-  <div class="tabs" role="tablist" aria-label="Seitenreiter" bind:this={strip}>
+  <div class="tabs" role="tablist" aria-label={tr('Seitenreiter')} bind:this={strip}>
     {#each doc.pages as p, i (p.id)}
       {#if editing === p.id}
-        <input class="tab edit" type="text" aria-label="Seitenname" value={p.name ?? ''} placeholder={pageLabel(doc, i)} use:select
+        <input class="tab edit" type="text" aria-label={tr('Seitenname')} value={p.name ?? ''} placeholder={pageLabel(doc, i)} use:select
           onkeydown={(e) => onkey(e, i)} onblur={(e) => editing === p.id && commit(i, e.currentTarget.value)} />
       {:else}
         <button

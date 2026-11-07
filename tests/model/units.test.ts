@@ -1,5 +1,6 @@
 import { describe, expect, it, test } from 'vitest';
 import { formatLength, formatNumber, pageFormat, parseLength, parseNumber } from '../../src/model/units';
+import { setLang } from '../../src/i18n/i18n.svelte';
 
 test('Anzeige in der Zeichnungseinheit: Komma, höchstens 3 Nachkommastellen, ohne Nullen am Ende', () => {
   expect(formatLength(105, 'mm')).toBe('105');
@@ -46,4 +47,16 @@ describe('Zahlen ohne Einheit (Prozent, Grad, Seiten)', () => {
     expect(parseNumber('-90°')).toBe(-90);
     for (const s of ['', 'abc', '5 mm', '1,2,3', '1e400']) expect(parseNumber(s), s).toBeNull();
   });
+});
+
+test('Englisch: Dezimalpunkt statt Komma; Eingabe nimmt weiter beides', () => {
+  setLang('en');
+  try {
+    expect(formatNumber(33.33333)).toBe('33.333');
+    expect(formatLength(12.5, 'mm')).toBe('12.5');
+    expect(parseNumber('2,5')).toBe(2.5);
+    expect(parseNumber('2.5')).toBe(2.5);
+  } finally {
+    setLang('de');
+  }
 });

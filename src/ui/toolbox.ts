@@ -1,5 +1,6 @@
 // Werkzeugkasten links wie Vorbild: Gruppen mit Ausklappmenü, erstes Werkzeug der Gruppe sichtbar. Texte eigen.
 import type { Tool } from './shortcuts';
+import { N_, tr } from '../i18n/i18n.svelte';
 
 export interface ToolInfo {
   tool: Tool;
@@ -11,29 +12,31 @@ export interface ToolInfo {
 }
 
 export const TOOLBOX: readonly (readonly ToolInfo[])[] = [
-  [{ tool: 'select', label: 'Auswahl', hint: 'Leertaste' }],
-  [{ tool: 'node', label: 'Knoten', key: 'F10' }],
+  [{ tool: 'select', label: N_('Auswahl'), hint: N_('Leertaste') }],
+  [{ tool: 'node', label: N_('Knoten'), key: 'F10' }],
   [
-    { tool: 'knife', label: 'Messer' },
-    { tool: 'eraser', label: 'Radierer', key: 'X' },
+    { tool: 'knife', label: N_('Messer') },
+    { tool: 'eraser', label: N_('Radierer'), key: 'X' },
   ],
   [
     { tool: 'zoom', label: 'Zoom', key: 'Z' },
     { tool: 'hand', label: 'Hand', key: 'H' },
   ],
   [
-    { tool: 'freehand', label: 'Freihand', key: 'F5' },
-    { tool: 'pen', label: 'Stift' },
+    { tool: 'freehand', label: N_('Freihand'), key: 'F5' },
+    { tool: 'pen', label: N_('Stift') },
   ],
-  [{ tool: 'rect', label: 'Rechteck', key: 'F6' }],
+  [{ tool: 'rect', label: N_('Rechteck'), key: 'F6' }],
   [{ tool: 'ellipse', label: 'Ellipse', key: 'F7' }],
-  [{ tool: 'polygon', label: 'Vieleck', key: 'Y' }],
+  [{ tool: 'polygon', label: N_('Vieleck'), key: 'Y' }],
   [{ tool: 'text', label: 'Text', key: 'F8' }],
-  [{ tool: 'eyedropper', label: 'Pipette' }],
-  [{ tool: 'gradient', label: 'Verlauf', key: 'G' }],
+  [{ tool: 'eyedropper', label: N_('Pipette') }],
+  [{ tool: 'gradient', label: N_('Verlauf'), key: 'G' }],
 ];
 
 export const toolInfo = (t: Tool): ToolInfo => TOOLBOX.flat().find((i) => i.tool === t)!;
+/** Anzeigename in der gewählten Sprache. */
+export const toolName = (t: Tool): string => tr(toolInfo(t).label);
 
 /** CSS-Klasse des Mauszeigers auf der Zeichenfläche; '' = Standardpfeil. */
 export const toolCursor = (t: Tool): string =>

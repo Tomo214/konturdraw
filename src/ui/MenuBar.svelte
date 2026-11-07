@@ -2,8 +2,9 @@
   // Menüleiste im Fenster (wie Vorbild unter Windows), auf beiden Plattformen gleich. Inhalt: menus.ts, Tastatur: menu-nav.ts.
   import Icon from './Icon.svelte';
   import { CLOSED, altMenu, navKey, openTop, type MenuNav } from './menu-nav';
-  import { MENUS, keyLabel, keysFor, type MenuEntry } from './menus';
+  import { MENUS, keyLabel, keysFor, menuKey, type MenuEntry } from './menus';
   import type { Command } from './shortcuts';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     isMac,
@@ -79,7 +80,7 @@
   onblur={() => ((armed = false), close())}
 />
 
-<nav class="menubar" class:keys={nav.keys} bind:this={bar} aria-label="Menü">
+<nav class="menubar" class:keys={nav.keys} bind:this={bar} aria-label={tr('Menü')}>
   {#each MENUS as m, i (m.label)}
     <div class="top">
       <button
@@ -89,7 +90,7 @@
         aria-expanded={nav.top === i && nav.path.length > 0}
         onpointerdown={(e) => toggle(e, i)}
         onpointerenter={() => nav.top !== null && nav.top !== i && (nav = { ...nav, top: i, path: nav.path.length ? [-1] : [] })}
-        >{@render mnemonic(m.label, m.key)}</button
+        >{@render mnemonic(tr(m.label), menuKey(m))}</button
       >
       {#if nav.top === i && nav.path.length}
         {@render list(m.items, 0)}
@@ -122,7 +123,7 @@
             onpointerenter={() => hover(depth, j, true)}
           >
             <span class="check"></span>
-            <span class="label">{@render mnemonic(e.label, e.label[0].toUpperCase())}</span>
+            <span class="label">{@render mnemonic(tr(e.label), tr(e.label)[0].toUpperCase())}</span>
             <Icon name="chevronRight" size={14} />
           </button>
           {#if expanded}
@@ -143,7 +144,7 @@
           onclick={() => pick(e.cmd)}
         >
           <span class="check">{#if e.toggle && checked(e.cmd)}<Icon name="check" size={14} />{/if}</span>
-          <span class="label">{@render mnemonic(e.label, e.label[0].toUpperCase())}</span>
+          <span class="label">{@render mnemonic(tr(e.label), tr(e.label)[0].toUpperCase())}</span>
           <kbd>{keys(e)}</kbd>
         </button>
       {/if}

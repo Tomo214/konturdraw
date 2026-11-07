@@ -5,6 +5,7 @@
   import NumField from './NumField.svelte';
   import type { Tool } from './shortcuts';
   import type { ShapeParams } from './tools/shape-tool';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     tool,
@@ -26,20 +27,20 @@
 
 {#if tool === 'rect'}
   <NumField
-    label="Ecken"
-    tip="Eckenradius"
+    label={tr('Ecken')}
+    tip={tr('Eckenradius')}
     text={formatLength(shape.radius, units)}
     suffix={UNITS[units].label}
     parse={(s) => parseLength(s, units)}
     onset={(r) => onradius(clamp(r, 0, 1000))}
   />
 {:else if tool === 'polygon'}
-  <NumField label="Seiten" tip="Anzahl der Seiten" text={String(shape.sides)} width={40} parse={parseNumber} onset={(n) => onpolygon(Math.round(clamp(n, 3, 100)), shape.inner)} />
-  <button aria-pressed={shape.inner !== null} onpointerdown={(e) => e.preventDefault()} onclick={() => onpolygon(shape.sides, shape.inner === null ? STAR : null)}>Stern</button>
+  <NumField label={tr('Seiten')} tip={tr('Anzahl der Seiten')} text={String(shape.sides)} width={40} parse={parseNumber} onset={(n) => onpolygon(Math.round(clamp(n, 3, 100)), shape.inner)} />
+  <button aria-pressed={shape.inner !== null} onpointerdown={(e) => e.preventDefault()} onclick={() => onpolygon(shape.sides, shape.inner === null ? STAR : null)}>{tr('Stern')}</button>
   {#if shape.inner !== null}
     <NumField
-      label="Innen"
-      tip="Innenradius"
+      label={tr('Innen')}
+      tip={tr('Innenradius')}
       text={formatNumber(shape.inner * 100)}
       suffix="%"
       width={40}

@@ -6,6 +6,7 @@ import * as bridge from './bridge';
 import { images } from './images';
 import { fromIr, placeImport, toIr, type IrItem, type IrScene } from './ir';
 import { parseDocument, serialize, usedImages } from './kwk';
+import { N_, tr } from '../i18n/i18n.svelte';
 
 export async function openFile(): Promise<{ doc: Doc; path: string } | null> {
   const r = await bridge.openKwk();
@@ -34,7 +35,7 @@ export const DEFAULT_EXPORT_OPTIONS: bridge.ExportOptions = {
   dpi: 300,
   bleed: 3,
   marks: true,
-  title: 'Unbenannt',
+  title: N_('Unbenannt'),
   plot: { unitsPerMm: 40, origin: 'lowerleft' },
 };
 
@@ -47,7 +48,7 @@ export async function exportPage(
   ids?: ReadonlySet<string>,
 ): Promise<string | null> {
   const scene = toIr(page, ids);
-  if (ids && !scene.items.length) throw new Error('Nichts gewählt.');
+  if (ids && !scene.items.length) throw new Error(tr('Nichts gewählt.'));
   return bridge.exportFile(format, scene, images.pick(hashes(scene)), options, color ?? DEFAULT_COLOR_SETTINGS);
 }
 

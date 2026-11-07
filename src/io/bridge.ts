@@ -6,6 +6,7 @@ import type { ShapeJob } from '../model/shaping';
 import type { TextLayout, textSpec } from '../model/text';
 import type { Color, ColorSettings, Subpath } from '../model/types';
 import type { IrScene } from './ir';
+import { tr } from '../i18n/i18n.svelte';
 
 /** Hash → PNG als Base64 */
 export type Wire = Record<string, string>;
@@ -36,13 +37,13 @@ export interface ExportOptions {
 }
 
 function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-  if (!isTauri()) return Promise.reject(new Error('Dateien gehen nur in der Desktop-App.'));
+  if (!isTauri()) return Promise.reject(new Error(tr('Dateien gehen nur in der Desktop-App.')));
   // Rust-Fehler kommen als Text an.
   return invoke<T>(cmd, args).catch((e: unknown) => Promise.reject(e instanceof Error ? e : new Error(String(e))));
 }
 
 export const openKwk = () => call<Opened | null>('open_kwk');
-export const saveKwk = (path: string | null, document: string, images: Wire) => call<string | null>('save_kwk', { path, document, images });
+export const saveKwk = (path: string | null, document: string, images: Wire) => call<string | null>('save_kwk', { path, document, images, name: `${tr('Unbenannt')}.kwk` });
 export const importFile = () => call<Imported | null>('import_file');
 export const exportFile = (format: ExportFormat, scene: IrScene, images: Wire, options: ExportOptions, color: ColorSettings) =>
   call<string | null>('export_file', { format, scene, images, options, color });

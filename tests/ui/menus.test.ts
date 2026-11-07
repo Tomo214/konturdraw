@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { MENUS, keyLabel, keysFor, parseKeys, type MenuEntry } from '../../src/ui/menus';
 import { commandFor } from '../../src/ui/shortcuts';
 import { TOOLBOX } from '../../src/ui/toolbox';
+import { setLang, tr } from '../../src/i18n/i18n.svelte';
 
 type Item = Extract<MenuEntry, { cmd: unknown }>;
 const items = (list: readonly MenuEntry[]): Item[] =>
@@ -117,4 +118,31 @@ test('Kontur in Objekt im Objekt-Menü: Windows Strg+Umschalt+Q, Mac ohne Kürze
   expect(keysFor(it!, true)).toBe('');
   const curves = all.find((e) => e.label === 'In Kurven umwandeln')!;
   expect([keysFor(curves, false), keysFor(curves, true)]).toEqual(['Mod+Q', 'Mod+Shift+O']);
+});
+
+test('Fenster › Sprache · Language: Deutsch und English als Umschalter, Namen in der eigenen Sprache', () => {
+  const win = MENUS.find((m) => m.label === 'Fenster')!.items;
+  const sub = win.find((e) => e && 'items' in e && e.label === 'Sprache · Language');
+  const langs = items(sub && 'items' in sub ? sub.items : []);
+  expect(langs.map((it) => [it.label, it.cmd, !!it.toggle])).toEqual([
+    ['Deutsch', { name: 'lang', lang: 'de' }, true],
+    ['English', { name: 'lang', lang: 'en' }, true],
+  ]);
+});
+
+test('Englisch: keine doppelten Beschriftungen innerhalb eines Menüs, jedes Wort übersetzt', () => {
+  setLang('en');
+  try {
+    const check = (label: string, list: readonly MenuEntry[]) => {
+      const labels = list.flatMap((e) => (e ? [tr(e.label)] : []));
+      expect(new Set(labels).size, tr(label)).toBe(labels.length);
+      for (const e of list) if (e && 'items' in e) check(e.label, e.items);
+    };
+    for (const m of MENUS) check(m.label, m.items);
+    expect(keyLabel('Mod+Shift+S', false)).toBe('Ctrl+Shift+S');
+    expect(keyLabel('Delete', false)).toBe('Del');
+    expect(keyLabel('Shift+PageUp', false)).toBe('Shift+PgUp');
+  } finally {
+    setLang('de');
+  }
 });

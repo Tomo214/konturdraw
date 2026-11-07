@@ -6,6 +6,7 @@ import { invert, type Mat } from './geometry';
 import type { ShapingResult } from './shaping';
 import { setStroke, toCurves } from './style';
 import type { Doc, LeafNode, Node, PathNode, Stroke, Subpath } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
 /** Auftrag an kw-core::boolean::outline, alles in Seitenkoordinaten (Breite in Seiten-mm). */
 export interface OutlineJob {
@@ -52,7 +53,7 @@ function targets(doc: Doc, selection: readonly string[]): Target[] {
 
 export function planOutline(doc: Doc, selection: readonly string[]): OutlinePlan {
   const list = targets(doc, selection);
-  if (!list.length) throw new Error('Kein gewähltes Objekt hat eine Kontur.');
+  if (!list.length) throw new Error(tr('Kein gewähltes Objekt hat eine Kontur.'));
   const jobs = list.map(({ node, stroke: s, world }): OutlineJob => {
     // wie renderer.ts: mitskalierende Konturen wachsen mit dem Weltmaßstab
     const width = s.scaleWithObject ? s.width * Math.sqrt(Math.abs(det(world))) : s.width;

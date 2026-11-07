@@ -12,6 +12,7 @@
   import type { Color, Doc, Palette, Stroke } from '../model/types';
   import Icon from './Icon.svelte';
   import PaletteEditor from './PaletteEditor.svelte';
+  import { N_, tr } from '../i18n/i18n.svelte';
 
   interface Props {
     history: History<Doc>;
@@ -52,18 +53,18 @@
     active = p.id;
   }
   const actions: [string, () => boolean, () => unknown][] = [
-    ['Neue Palette', () => true, () => create({ id: newId(), name: `Palette ${palettes.length + 1}`, colors: [] })],
-    ['Farbe hinzufügen', () => own, () => change((p) => addEntry(p, { name: 'Farbe', color: fill.a }))],
-    ['Bearbeiten', () => own, () => (editing = true)],
-    ['Laden …', () => true, async () => {
+    [N_('Neue Palette'), () => true, () => create({ id: newId(), name: tr('Palette {n}', { n: palettes.length + 1 }), colors: [] })],
+    [N_('Farbe hinzufügen'), () => own, () => change((p) => addEntry(p, { name: tr('Farbe'), color: fill.a }))],
+    [N_('Bearbeiten'), () => own, () => (editing = true)],
+    [N_('Laden …'), () => true, async () => {
       const text = await bridge.openPalette();
       if (text) create(parsePaletteFile(text, newId()));
     }],
-    ['Speichern …', () => true, async () => {
+    [N_('Speichern …'), () => true, async () => {
       const path = await bridge.savePalette(shown.name, paletteFile(shown));
-      if (path) onnotice(`Palette gespeichert: ${path}`);
+      if (path) onnotice(tr('Palette gespeichert: {path}', { path }));
     }],
-    ['Löschen', () => own, () => {
+    [N_('Löschen'), () => own, () => {
       push(removePalette(history.current, shown.id));
       active = STANDARD.id;
       editing = false;
@@ -89,33 +90,33 @@
     press = ghost = null;
     if (!g) return;
     dragged = true;
-    if (!ondrop(g.c, e.clientX, e.clientY)) onnotice('Farbe mit dem Verlaufswerkzeug auf die Verlaufslinie ziehen');
+    if (!ondrop(g.c, e.clientX, e.clientY)) onnotice(tr('Farbe mit dem Verlaufswerkzeug auf die Verlaufslinie ziehen'));
   }
   const click = (c: Color) => (dragged ? (dragged = false) : left(c));
 </script>
 
 <div class="bar">
-  <button class="menu" class:on={menu} aria-label="Paletten" data-tip={menu ? null : 'Paletten'} data-tip-side="left" onclick={() => (menu = !menu)}><Icon name="menu" size={16} /></button>
+  <button class="menu" class:on={menu} aria-label={tr('Paletten')} data-tip={menu ? null : tr('Paletten')} data-tip-side="left" onclick={() => (menu = !menu)}><Icon name="menu" size={16} /></button>
   {#if menu}
     <div class="pop">
-      <select title="Palette" value={active} onchange={(e) => ((active = (e.currentTarget as HTMLSelectElement).value), (menu = false))}>
+      <select title={tr('Palette')} value={active} onchange={(e) => ((active = (e.currentTarget as HTMLSelectElement).value), (menu = false))}>
         <option value={STANDARD.id}>{STANDARD.name}</option>
         {#each palettes as p (p.id)}
           <option value={p.id}>{p.name}</option>
         {/each}
       </select>
       {#each actions as [label, enabled, run] (label)}
-        <button disabled={!enabled()} onclick={() => act(run)}>{label}</button>
+        <button disabled={!enabled()} onclick={() => act(run)}>{tr(label)}</button>
       {/each}
     </div>
   {/if}
   <div class="list">
-  <button class="swatch none" title="Keine Füllung / Rechtsklick: keine Kontur" aria-label="Keine Farbe" onclick={() => left(null)} oncontextmenu={(e) => right(e, null)}></button>
+  <button class="swatch none" title={tr('Keine Füllung / Rechtsklick: keine Kontur')} aria-label={tr('Keine Farbe')} onclick={() => left(null)} oncontextmenu={(e) => right(e, null)}></button>
   {#each shown.colors as e (e.name)}
     <button
       class="swatch"
       class:spot={!!e.color.spot}
-      title={e.color.spot ? `${e.name} (Sonderfarbe)` : e.name}
+      title={e.color.spot ? tr('{name} (Sonderfarbe)', { name: tr(e.name) }) : tr(e.name)}
       style:background={display.css(e.color)}
       onclick={() => click(e.color)}
       oncontextmenu={(ev) => right(ev, e.color)}

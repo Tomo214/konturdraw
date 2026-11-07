@@ -7,6 +7,7 @@ import { HANDLES, handleAt, handleOnScreen, rotateFromDrag, scaleFromHandle, ske
 import { drawMarquee, drawSelectionBox } from '../overlay';
 import { choose, deeper } from '../selection';
 import type { Editor, Pointer, Tool } from './tool';
+import { N_, tr } from '../../i18n/i18n.svelte';
 
 type Drag =
   | { kind: 'move'; start: Pointer; doc: Doc; moved: boolean; toggle: boolean }
@@ -16,7 +17,7 @@ type Drag =
 
 /** Fangbreite einer Hilfslinie in Bildschirmpixeln. */
 const GUIDE_HIT = 4;
-const LOCKED = 'Hilfslinie ist gesperrt.';
+const LOCKED = N_('Hilfslinie ist gesperrt.');
 
 /** Auswahl: Klick, Shift-Klick, Rahmen; Strg-Klick (Mac ⌘) wählt in Gruppen eine Stufe tiefer.
  *  Griffe skalieren, nach erneutem Klick drehen/neigen.
@@ -97,7 +98,7 @@ export function selectTool(ed: Editor): Tool {
       drag = null;
       if (!d) return;
       if (d.kind === 'guide') {
-        if (d.moved && d.guide.locked) ed.notice = LOCKED;
+        if (d.moved && d.guide.locked) ed.notice = tr(LOCKED);
         if (!d.moved || d.guide.locked) return;
         const [w, h] = ed.viewSize;
         if (p.sx < 0 || p.sy < 0 || p.sx > w || p.sy > h) {
@@ -116,7 +117,7 @@ export function selectTool(ed: Editor): Tool {
     key(cmd) {
       if (cmd.name !== 'delete' || !ed.guide) return false;
       const next = removeGuides(ed.history.current, [ed.guide]);
-      if (!next) ed.notice = LOCKED;
+      if (!next) ed.notice = tr(LOCKED);
       else {
         ed.history.push(next);
         ed.guide = null;

@@ -7,6 +7,7 @@ import type { Color, Doc, Gradient, LeafNode, Point } from '../../model/types';
 import { styled, type StyledItem } from '../../render/scene';
 import { drawGradientLine } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
+import { tr } from '../../i18n/i18n.svelte';
 
 const GRAB_PX = 6;
 
@@ -67,7 +68,7 @@ export function gradientTool(ed: Editor): Tool {
     down(p) {
       const items = ed.renderer.leavesOf(ed.selected).filter(styled);
       if (!items.length) {
-        ed.notice = 'Verlauf: erst Objekt wählen';
+        ed.notice = tr('Verlauf: erst Objekt wählen');
         return;
       }
       const l = line();
@@ -131,7 +132,7 @@ export function gradientTool(ed: Editor): Tool {
       if (g) {
         put(l, g);
         sel = null;
-      } else ed.notice = 'Anfang und Ende des Verlaufs bleiben';
+      } else ed.notice = tr('Anfang und Ende des Verlaufs bleiben');
       return true;
     },
     paint(c) {

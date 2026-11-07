@@ -5,6 +5,7 @@
   import type { Doc, Node, Page } from '../model/types';
   import Icon from './Icon.svelte';
   import type { Command } from './shortcuts';
+  import { tm, tr } from '../i18n/i18n.svelte';
 
   // Datei-Befehle (3g-1, 3h). Dateiwahl stellt die Desktop-App; Export und Druck fragen vorher ihre Optionen ab.
   let {
@@ -37,7 +38,7 @@
   let exportDialog: HTMLDialogElement;
   let printDialog: HTMLDialogElement;
 
-  const fileName = (p: string) => p.split(/[\\/]/).pop();
+  const fileName = (p: string) => p.split(/[\\/]/).pop() ?? p;
 
   // Ein Ablauf zur Zeit; Fehler landen in der Statuszeile.
   async function run(fn: () => Promise<string | null | undefined>) {
@@ -64,7 +65,7 @@
       if (!r) return;
       path = r.path;
       onopen(r.doc);
-      return `Geöffnet: ${fileName(r.path)}`;
+      return tr('Geöffnet: {name}', { name: fileName(r.path) });
     });
 
   export const save = (as: boolean) =>
@@ -72,7 +73,7 @@
       const p = await saveFile(doc(), as ? null : path);
       if (!p) return;
       path = p;
-      return `Gespeichert: ${fileName(p)}`;
+      return tr('Gespeichert: {name}', { name: fileName(p) });
     });
 
   export const importIt = () =>
@@ -80,7 +81,7 @@
       const r = await importInto(page());
       if (!r) return;
       onimport(r.nodes);
-      return ['Importiert', ...r.warnings].join(' – ');
+      return [tr('Importiert'), ...r.warnings.map(tm)].join(' – ');
     });
 
   // Fokus auf den Hauptknopf: Eingabetaste bestätigt wie in Desktop-Dialogen üblich.
@@ -107,22 +108,22 @@
   const exportIt = () =>
     run(async () => {
       // Nur die Felder des gewählten Formats zählen; leere Zahlenfelder (null) hier abfangen.
-      const o: ExportOptions = { ...DEFAULT_EXPORT_OPTIONS, title: path ? fileName(path)!.replace(/\.kwk$/i, '') : 'Unbenannt' };
+      const o: ExportOptions = { ...DEFAULT_EXPORT_OPTIONS, title: path ? fileName(path)!.replace(/\.kwk$/i, '') : tr('Unbenannt') };
       if (format === 'png') {
-        if (!(dpi >= 1 && dpi <= 2400)) throw new Error('Auflösung: 1 bis 2400 dpi');
+        if (!(dpi >= 1 && dpi <= 2400)) throw new Error(tr('Auflösung: 1 bis 2400 dpi'));
         o.dpi = dpi;
       }
       if (format === 'pdfx') {
-        if (!(bleed >= 0 && bleed <= 25)) throw new Error('Beschnittzugabe: 0 bis 25 mm.');
+        if (!(bleed >= 0 && bleed <= 25)) throw new Error(tr('Beschnittzugabe: 0 bis 25 mm.'));
         Object.assign(o, { bleed, marks });
       }
       if (format === 'plt') {
-        if (!(unitsPerMm >= 1 && unitsPerMm <= 1000)) throw new Error('Plottereinheiten je mm: 1 bis 1000 (Standard 40).');
+        if (!(unitsPerMm >= 1 && unitsPerMm <= 1000)) throw new Error(tr('Plottereinheiten je mm: 1 bis 1000 (Standard 40).'));
         o.plot = { unitsPerMm, origin };
       }
       exportDialog.close();
       const p = await exportPage(page(), doc().color, format, o, onlySelection ? selected() : undefined);
-      return p && `Exportiert: ${fileName(p)}`;
+      return p && tr('Exportiert: {name}', { name: fileName(p) });
     });
 
   // Druckansicht des Systems: dort mit 100 % drucken, nicht „an Seite anpassen“.
@@ -130,65 +131,65 @@
     run(async () => {
       printDialog.close();
       await printPage(page(), doc().color, mirror);
-      return 'Druckansicht geöffnet – dort mit 100 % drucken';
+      return tr('Druckansicht geöffnet – dort mit 100 % drucken');
     });
 </script>
 
 {#snippet head(title: string, d: () => HTMLDialogElement)}
   <header>
     <h2>{title}</h2>
-    <button class="close" aria-label="Schließen" onclick={() => d().close()}><Icon name="close" size={16} /></button>
+    <button class="close" aria-label={tr('Schließen')} onclick={() => d().close()}><Icon name="close" size={16} /></button>
   </header>
 {/snippet}
 
-<dialog bind:this={exportDialog} aria-label="Exportieren">
-  {@render head('Exportieren', () => exportDialog)}
+<dialog bind:this={exportDialog} aria-label={tr('Exportieren')}>
+  {@render head(tr('Exportieren'), () => exportDialog)}
   <div class="fields">
     <label for="kw-format">Format</label>
     <select id="kw-format" bind:value={format}>
       <option value="pdf">PDF</option>
-      <option value="pdfx">PDF druckfertig (PDF/X-4)</option>
+      <option value="pdfx">{tr('PDF druckfertig (PDF/X-4)')}</option>
       <option value="svg">SVG</option>
       <option value="png">PNG</option>
-      <option value="dxf">DXF (Plotter/Laser)</option>
+      <option value="dxf">{tr('DXF (Plotter/Laser)')}</option>
       <option value="plt">HPGL (.plt)</option>
     </select>
     {#if format === 'png'}
-      <label for="kw-dpi">Auflösung</label>
+      <label for="kw-dpi">{tr('Auflösung')}</label>
       <span><input id="kw-dpi" type="number" min="1" max="2400" step="1" bind:value={dpi} /> dpi</span>
     {:else if format === 'pdfx'}
-      <label for="kw-bleed" title="Zugabe rund um die Seite, wird beim Schneiden entfernt">Beschnitt</label>
+      <label for="kw-bleed" title={tr('Zugabe rund um die Seite, wird beim Schneiden entfernt')}>{tr('Beschnitt')}</label>
       <span><input id="kw-bleed" type="number" min="0" max="25" step="0.5" bind:value={bleed} /> mm</span>
       <span></span>
-      <label class="check"><input type="checkbox" bind:checked={marks} /> Schnittmarken</label>
+      <label class="check"><input type="checkbox" bind:checked={marks} /> {tr('Schnittmarken')}</label>
     {:else if format === 'plt'}
-      <label for="kw-units" title="HPGL-Standard: 40 Einheiten je mm">Einheiten</label>
-      <span><input id="kw-units" type="number" min="1" max="1000" step="1" bind:value={unitsPerMm} /> je mm</span>
-      <label for="kw-origin">Ursprung</label>
+      <label for="kw-units" title={tr('HPGL-Standard: 40 Einheiten je mm')}>{tr('Einheiten')}</label>
+      <span><input id="kw-units" type="number" min="1" max="1000" step="1" bind:value={unitsPerMm} /> {tr('je mm')}</span>
+      <label for="kw-origin">{tr('Ursprung')}</label>
       <select id="kw-origin" bind:value={origin}>
-        <option value="lowerleft">unten links</option>
-        <option value="center">Mitte</option>
+        <option value="lowerleft">{tr('unten links')}</option>
+        <option value="center">{tr('Mitte')}</option>
       </select>
     {/if}
     <span></span>
-    <label class="check"><input type="checkbox" bind:checked={onlySelection} /> nur Auswahl</label>
+    <label class="check"><input type="checkbox" bind:checked={onlySelection} /> {tr('nur Auswahl')}</label>
   </div>
   <footer>
-    <button class="primary" disabled={busy} onclick={exportIt}>Exportieren …</button>
-    <button onclick={() => exportDialog.close()}>Abbrechen</button>
+    <button class="primary" disabled={busy} onclick={exportIt}>{tr('Exportieren …')}</button>
+    <button onclick={() => exportDialog.close()}>{tr('Abbrechen')}</button>
   </footer>
 </dialog>
 
-<dialog bind:this={printDialog} aria-label="Drucken">
-  {@render head('Drucken', () => printDialog)}
+<dialog bind:this={printDialog} aria-label={tr('Drucken')}>
+  {@render head(tr('Drucken'), () => printDialog)}
   <div class="fields">
     <span></span>
-    <label class="check" title="Für Transferpapier: links und rechts vertauscht"><input type="checkbox" bind:checked={mirror} /> gespiegelt (Transferpapier)</label>
+    <label class="check" title={tr('Für Transferpapier: links und rechts vertauscht')}><input type="checkbox" bind:checked={mirror} /> {tr('gespiegelt (Transferpapier)')}</label>
   </div>
-  <p>In der Druckansicht 100 % wählen, nicht „an Seite anpassen“ – sonst stimmen die Maße nicht.</p>
+  <p>{tr('In der Druckansicht 100 % wählen, nicht „an Seite anpassen“ – sonst stimmen die Maße nicht.')}</p>
   <footer>
-    <button class="primary" disabled={busy} onclick={print}>Drucken …</button>
-    <button onclick={() => printDialog.close()}>Abbrechen</button>
+    <button class="primary" disabled={busy} onclick={print}>{tr('Drucken …')}</button>
+    <button onclick={() => printDialog.close()}>{tr('Abbrechen')}</button>
   </footer>
 </dialog>
 

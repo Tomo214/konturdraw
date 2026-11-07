@@ -4,6 +4,7 @@
   import Icon from './Icon.svelte';
   import NumField from './NumField.svelte';
   import type { Command } from './shortcuts';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     page,
@@ -27,28 +28,28 @@
   const orient = (p: boolean) => p !== portrait && size(page.height, page.width);
 </script>
 
-<select class="format" aria-label="Seitenformat" value={pageFormat(page.width, page.height) ?? ''} onchange={(e) => pick(e.currentTarget.value)}>
+<select class="format" aria-label={tr('Seitenformat')} value={pageFormat(page.width, page.height) ?? ''} onchange={(e) => pick(e.currentTarget.value)}>
   {#each PAGE_FORMATS as f (f.name)}<option value={f.name}>{f.name}</option>{/each}
-  <option value="" disabled>Benutzerdefiniert</option>
+  <option value="" disabled>{tr('Benutzerdefiniert')}</option>
 </select>
 <div class="pair">
-  <NumField label="B" tip="Seitenbreite" text={len(page.width)} suffix={u} parse={parseLen} onset={(w) => size(w, page.height)} />
-  <NumField label="H" tip="Seitenhöhe" text={len(page.height)} suffix={u} parse={parseLen} onset={(h) => size(page.width, h)} />
+  <NumField label={tr('B')} tip={tr('Seitenbreite')} text={len(page.width)} suffix={u} parse={parseLen} onset={(w) => size(w, page.height)} />
+  <NumField label="H" tip={tr('Seitenhöhe')} text={len(page.height)} suffix={u} parse={parseLen} onset={(h) => size(page.width, h)} />
 </div>
-<button class="icon" aria-pressed={portrait} aria-label="Hochformat" data-tip="Hochformat" data-tip-side="below" onpointerdown={keep} onclick={() => orient(true)}
+<button class="icon" aria-pressed={portrait} aria-label={tr('Hochformat')} data-tip={tr('Hochformat')} data-tip-side="below" onpointerdown={keep} onclick={() => orient(true)}
   ><Icon name="portrait" size={16} /></button
 >
-<button class="icon" aria-pressed={!portrait} aria-label="Querformat" data-tip="Querformat" data-tip-side="below" onpointerdown={keep} onclick={() => orient(false)}
+<button class="icon" aria-pressed={!portrait} aria-label={tr('Querformat')} data-tip={tr('Querformat')} data-tip-side="below" onpointerdown={keep} onclick={() => orient(false)}
   ><Icon name="landscape" size={16} /></button
 >
 <span class="sep"></span>
-<label class="field" data-tip="Zeichnungseinheit" data-tip-side="below">
-  Einheit
+<label class="field" data-tip={tr('Zeichnungseinheit')} data-tip-side="below">
+  {tr('Einheit')}
   <select value={units} onchange={(e) => oncommand({ name: 'settings', units: e.currentTarget.value as Unit })}>
-    {#each Object.entries(UNITS) as [id, x] (id)}<option value={id}>{x.name}</option>{/each}
+    {#each Object.entries(UNITS) as [id, x] (id)}<option value={id}>{tr(x.name)}</option>{/each}
   </select>
 </label>
-<NumField icon="nudge" tip="Verschiebe-Schritt der Pfeiltasten" text={len(nudge)} suffix={u} parse={parseLen} onset={(n) => oncommand({ name: 'settings', nudge: n })} />
+<NumField icon="nudge" tip={tr('Verschiebe-Schritt der Pfeiltasten')} text={len(nudge)} suffix={u} parse={parseLen} onset={(n) => oncommand({ name: 'settings', nudge: n })} />
 
 <style>
   .format {

@@ -1,12 +1,14 @@
 // Zeichnungseinheit und Seitenformate. Das Modell rechnet immer in mm; Einheiten gibt es nur in Anzeige und Eingabe.
 
+import { N_, getLang } from '../i18n/i18n.svelte';
+
 export type Unit = 'mm' | 'cm' | 'in' | 'pt';
 
 export const UNITS: Record<Unit, { label: string; name: string; mm: number }> = {
-  mm: { label: 'mm', name: 'Millimeter', mm: 1 },
-  cm: { label: 'cm', name: 'Zentimeter', mm: 10 },
-  in: { label: 'in', name: 'Zoll', mm: 25.4 },
-  pt: { label: 'pt', name: 'Punkt', mm: 25.4 / 72 },
+  mm: { label: 'mm', name: N_('Millimeter'), mm: 1 },
+  cm: { label: 'cm', name: N_('Zentimeter'), mm: 10 },
+  in: { label: 'in', name: N_('Zoll'), mm: 25.4 },
+  pt: { label: 'pt', name: N_('Punkt'), mm: 25.4 / 72 },
 };
 
 export const DEFAULT_UNIT: Unit = 'mm';
@@ -18,7 +20,8 @@ const SUFFIX: Record<string, Unit> = { mm: 'mm', cm: 'cm', in: 'in', '"': 'in', 
 /** Komma, höchstens 3 Nachkommastellen, ohne Nullen am Ende. */
 export function formatNumber(v: number): string {
   const r = Math.round(v * 1000) / 1000;
-  return String(r === 0 ? 0 : r).replace('.', ',');
+  const s = String(r === 0 ? 0 : r);
+  return getLang() === 'en' ? s : s.replace('.', ',');
 }
 
 /** mm → Text in der Einheit. */

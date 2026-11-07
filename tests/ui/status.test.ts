@@ -4,6 +4,7 @@ import { IDENTITY } from '../../src/model/geometry';
 import { insertPage } from '../../src/model/pages';
 import type { Doc, Node } from '../../src/model/types';
 import { describeSelection, mm } from '../../src/ui/status';
+import { setLang } from '../../src/i18n/i18n.svelte';
 
 const shape = (id: string, kind: 'rect' | 'ellipse'): Node => ({
   type: 'shape',
@@ -57,5 +58,17 @@ describe('mm', () => {
   it('zwei Nachkommastellen mit Komma, Minus als echtes Minus', () => {
     expect(mm(12.346)).toBe('12,35');
     expect(mm(-0.5)).toBe('−0,50');
+  });
+});
+
+describe('mm auf Englisch', () => {
+  it('Dezimalpunkt und Tausender-Komma', () => {
+    setLang('en');
+    try {
+      expect(mm(1234.5)).toBe('1,234.50');
+      expect(mm(-0.5)).toBe('−0.50');
+    } finally {
+      setLang('de');
+    }
   });
 });

@@ -4,6 +4,7 @@
   import { mmField } from '../model/style';
   import type { TextState } from './text-state.svelte';
   import type { TextFields } from './tools/text-tool';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     text,
@@ -22,7 +23,7 @@
 {#if active || text.shown}
   <div class="form">
     <label class="row">
-      <span>Schrift</span>
+      <span>{tr('Schrift')}</span>
       <select value={text.fields.font.family} onchange={(e) => text.font({ family: value(e) })}>
         {#each text.list as f (f)}
           <option>{f}</option>
@@ -30,44 +31,44 @@
       </select>
     </label>
     <label class="row">
-      <span>Größe</span>
+      <span>{tr('Größe')}</span>
       <span class="unit"><input type="number" min="1" max="1000" step="1" value={text.fields.font.size} onchange={(e) => text.font({ size: num(e, 1, 1000) })} /> pt</span>
     </label>
-    <span>Stil</span>
+    <span>{tr('Stil')}</span>
     <span class="unit">
-      <label class="check"><input type="checkbox" checked={text.fields.font.weight >= 600} onchange={(e) => text.font({ weight: checked(e) ? 700 : 400 })} /> Fett</label>
-      <label class="check"><input type="checkbox" checked={text.fields.font.italic} onchange={(e) => text.font({ italic: checked(e) })} /> Kursiv</label>
+      <label class="check"><input type="checkbox" checked={text.fields.font.weight >= 600} onchange={(e) => text.font({ weight: checked(e) ? 700 : 400 })} /> {tr('Fett')}</label>
+      <label class="check"><input type="checkbox" checked={text.fields.font.italic} onchange={(e) => text.font({ italic: checked(e) })} /> {tr('Kursiv')}</label>
     </span>
     <label class="row">
-      <span>Ausrichtung</span>
+      <span>{tr('Ausrichtung')}</span>
       <select value={text.fields.align} onchange={(e) => text.set({ align: value(e) as TextFields['align'] })}>
-        <option value="left">Links</option>
-        <option value="center">Mitte</option>
-        <option value="right">Rechts</option>
+        <option value="left">{tr('Links')}</option>
+        <option value="center">{tr('Mitte')}</option>
+        <option value="right">{tr('Rechts')}</option>
       </select>
     </label>
     <label class="row">
-      <span>Laufweite</span>
+      <span>{tr('Laufweite')}</span>
       <span class="unit"><input type="number" min="-100" max="1000" step="5" value={text.fields.tracking} onchange={(e) => text.set({ tracking: num(e, -100, 1000) })} /> %</span>
     </label>
     <label class="row">
-      <span>Zeilenabstand</span>
+      <span>{tr('Zeilenabstand')}</span>
       <span class="unit"><input type="number" min="10" max="1000" step="5" value={text.fields.lineSpacing} onchange={(e) => text.set({ lineSpacing: num(e, 10, 1000) })} /> %</span>
     </label>
     {#if text.path}
       <hr />
-      <h3>Text auf Pfad</h3>
+      <h3>{tr('Text auf Pfad')}</h3>
       <label class="row">
-        <span>Versatz</span>
+        <span>{tr('Versatz')}</span>
         <span class="unit"><input type="number" min="-1000" max="1000" step="0.5" value={mmField(text.path.offset)} onchange={(e) => text.along({ offset: num(e, -1000, 1000) })} /> mm</span>
       </label>
       <label class="row">
-        <span>Abstand</span>
+        <span>{tr('Abstand')}</span>
         <span class="unit"><input type="number" min="-1000" max="1000" step="0.5" value={mmField(text.path.distance)} onchange={(e) => text.along({ distance: num(e, -1000, 1000) })} /> mm</span>
       </label>
-      <label class="check wide"><input type="checkbox" checked={text.path.side === 'below'} onchange={(e) => text.along({ side: checked(e) ? 'below' : 'above' })} /> Andere Seite</label>
+      <label class="check wide"><input type="checkbox" checked={text.path.side === 'below'} onchange={(e) => text.along({ side: checked(e) ? 'below' : 'above' })} /> {tr('Andere Seite')}</label>
     {/if}
   </div>
 {:else}
-  <p class="hint">Textobjekt wählen oder Text-Werkzeug (F8) nehmen.</p>
+  <p class="hint">{tr('Textobjekt wählen oder Text-Werkzeug (F8) nehmen.')}</p>
 {/if}

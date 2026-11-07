@@ -3,6 +3,7 @@
 import { deleteNodes, findNode, insertAbove, places, updateNodes, worldOf } from './document';
 import { invert, multiply } from './geometry';
 import type { Doc, Node, PathNode, ShapeNode } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
 export type FrameNode = PathNode | ShapeNode;
 
@@ -17,13 +18,13 @@ export const isFrame = (n: Node | undefined): n is FrameNode =>
 
 export function placeInFrame(doc: Doc, ids: readonly string[]): FrameResult {
   const frameId = ids.at(-1) ?? '';
-  if (!isFrame(findNode(doc, frameId))) throw new Error('Rahmen muss eine geschlossene Form sein.');
+  if (!isFrame(findNode(doc, frameId))) throw new Error(tr('Rahmen muss eine geschlossene Form sein.'));
   const chosen = new Set(ids.filter((id) => id !== frameId));
-  if (!chosen.size) throw new Error('Für den Rahmen mindestens ein weiteres Objekt wählen.');
+  if (!chosen.size) throw new Error(tr('Für den Rahmen mindestens ein weiteres Objekt wählen.'));
   const at = places(doc);
-  if (at.get(frameId)?.path.some((g) => chosen.has(g))) throw new Error('Rahmen liegt im Inhalt.');
+  if (at.get(frameId)?.path.some((g) => chosen.has(g))) throw new Error(tr('Rahmen liegt im Inhalt.'));
   const fw = worldOf(doc, frameId)!;
-  if (Math.abs(fw[0] * fw[3] - fw[1] * fw[2]) < 1e-12) throw new Error('Rahmen hat keine Fläche.');
+  if (Math.abs(fw[0] * fw[3] - fw[1] * fw[2]) < 1e-12) throw new Error(tr('Rahmen hat keine Fläche.'));
   // Stapelfolge von unten nach oben; gewählte Kinder gewählter Gruppen gehen mit der Gruppe.
   const order = [...at.keys()].filter((id) => chosen.has(id) && !at.get(id)!.path.some((g) => chosen.has(g)));
   const inv = invert(fw);
@@ -35,7 +36,7 @@ export function placeInFrame(doc: Doc, ids: readonly string[]): FrameResult {
 /** Inhalt direkt über den Rahmen in dessen Container; Deckkraft des Rahmens wird eingerechnet, damit das Aussehen bleibt. */
 export function extractContents(doc: Doc, ids: readonly string[]): FrameResult {
   const frames = ids.map((id) => findNode(doc, id)).filter((n): n is FrameNode => isFrame(n) && !!n.contents?.length);
-  if (!frames.length) throw new Error('Kein Rahmen mit Inhalt gewählt.');
+  if (!frames.length) throw new Error(tr('Kein Rahmen mit Inhalt gewählt.'));
   let next = doc;
   const selected: string[] = [];
   for (const f of frames) {

@@ -1,5 +1,6 @@
 import { IDENTITY, invert, multiply, translate, type Mat } from './geometry';
 import type { Doc, GroupNode, Layer, Node, Page } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
 type Children = readonly Node[];
 type LayerPatch = Partial<Pick<Layer, 'name' | 'visible' | 'locked' | 'printable'>>;
@@ -12,7 +13,7 @@ function newLayer(name: string): Layer {
 }
 
 export function createDocument(width = 210, height = 297): Doc {
-  return { schemaVersion: 1, pages: [{ id: newId(), width, height, layers: [newLayer('Ebene 1')] }] };
+  return { schemaVersion: 1, pages: [{ id: newId(), width, height, layers: [newLayer(tr('Ebene {n}', { n: 1 }))] }] };
 }
 
 // ---------- Ebenen ----------
@@ -25,7 +26,7 @@ function mapPageOfLayer(doc: Doc, layerId: string, fn: (p: Page, index: number) 
     found = true;
     return fn(p, i);
   });
-  if (!found) throw new Error(`Ebene ${layerId} nicht gefunden`);
+  if (!found) throw new Error(tr('Ebene {id} nicht gefunden', { id: layerId }));
   return { ...doc, pages };
 }
 
@@ -258,7 +259,7 @@ export function groupNodes(doc: Doc, ids: Iterable<string>, groupId = newId()): 
     return ch;
   });
   if (containers === 0) return doc;
-  if (containers > 1) throw new Error('Gruppieren geht nur innerhalb einer Ebene oder Gruppe');
+  if (containers > 1) throw new Error(tr('Gruppieren geht nur innerhalb einer Ebene oder Gruppe'));
   return mapContainers(doc, (ch) => {
     if (!ch.some((n) => set.has(n.id))) return ch;
     let top = -1;

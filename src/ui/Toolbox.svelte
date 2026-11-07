@@ -6,6 +6,7 @@
   import { keyLabel } from './menus';
   import type { Tool } from './shortcuts';
   import { TOOLBOX, type ToolInfo } from './toolbox';
+  import { tr } from '../i18n/i18n.svelte';
 
   let { tool, isMac, onpick }: { tool: Tool; isMac: boolean; onpick: (t: Tool) => void } = $props();
 
@@ -18,8 +19,8 @@
     if (i >= 0) front[i] = TOOLBOX[i].find((t) => t.tool === tool)!;
   });
 
-  const keyOf = (t: ToolInfo) => (t.key ? keyLabel(t.key, isMac) : t.hint ?? '');
-  const tip = (t: ToolInfo) => (keyOf(t) ? `${t.label} (${keyOf(t)})` : t.label);
+  const keyOf = (t: ToolInfo) => (t.key ? keyLabel(t.key, isMac) : t.hint ? tr(t.hint) : '');
+  const tip = (t: ToolInfo) => (keyOf(t) ? `${tr(t.label)} (${keyOf(t)})` : tr(t.label));
 
   function pick(t: Tool) {
     flyout = null;
@@ -33,14 +34,14 @@
 
 <svelte:window onpointerdown={(e) => flyout !== null && !box.contains(e.target as Node) && (flyout = null)} />
 
-<div class="toolbox" role="toolbar" aria-orientation="vertical" aria-label="Werkzeuge" bind:this={box}>
+<div class="toolbox" role="toolbar" aria-orientation="vertical" aria-label={tr('Werkzeuge')} bind:this={box}>
   {#each TOOLBOX as group, i (i)}
     {@const t = front[i]}
     <div class="slot">
       <button
         class="tool"
         class:on={group.some((g) => g.tool === tool)}
-        aria-label={t.label}
+        aria-label={tr(t.label)}
         aria-pressed={t.tool === tool}
         data-tip={flyout === i ? undefined : tip(t)}
         data-tip-side="right"
@@ -49,14 +50,14 @@
         oncontextmenu={(e) => group.length > 1 && unfold(e, i)}><Icon name={toolIcon(t.tool)} /></button
       >
       {#if group.length > 1}
-        <button class="corner" aria-label="{t.label}: weitere Werkzeuge" onpointerdown={(e) => unfold(e, i)}></button>
+        <button class="corner" aria-label={tr('{tool}: weitere Werkzeuge', { tool: tr(t.label) })} onpointerdown={(e) => unfold(e, i)}></button>
       {/if}
       {#if flyout === i}
         <div class="flyout" role="menu">
           {#each group as g (g.tool)}
             <button class="entry" class:on={g.tool === tool} role="menuitem" onpointerdown={(e) => e.preventDefault()} onclick={() => pick(g.tool)}>
               <Icon name={toolIcon(g.tool)} />
-              <span>{g.label}</span>
+              <span>{tr(g.label)}</span>
               <kbd>{keyOf(g)}</kbd>
             </button>
           {/each}

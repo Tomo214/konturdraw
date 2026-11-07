@@ -2,6 +2,8 @@
  * Bildablage: Hash → PNG (Base64, so wie es über die Brücke kommt und geht) + geladenes Bild zum Zeichnen.
  * Inhaltsadressiert und außerhalb des Dokuments: Rückgängig bleibt billig, gleiche Bilder liegen nur einmal hier.
  */
+import { tr } from '../i18n/i18n.svelte';
+
 export class ImageStore {
   private data = new Map<string, string>();
   private els = new Map<string, HTMLImageElement>();
@@ -17,7 +19,7 @@ export class ImageStore {
     const out: Record<string, string> = {};
     for (const h of hashes) {
       const b64 = this.data.get(h);
-      if (b64 === undefined) throw new Error(`Bild ${h} fehlt in der Ablage.`);
+      if (b64 === undefined) throw new Error(tr('Bild {image} fehlt in der Ablage.', { image: h }));
       out[h] = b64;
     }
     return out;

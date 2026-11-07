@@ -7,6 +7,7 @@ import { toScreen } from '../../render/viewport';
 import { dragBox } from '../handles';
 import { ACCENT, drawMarquee } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
+import { tr } from '../../i18n/i18n.svelte';
 
 /** Satz-Vorgaben des Bedienfelds für neuen Text. */
 export type TextFields = Pick<TextNode, 'font' | 'tracking' | 'lineSpacing' | 'align'>;
@@ -135,7 +136,7 @@ export function textTool(ed: Editor, redraw: () => void, defaults: () => TextFie
   function create(transform: Mat, place: Pick<TextNode, 'frame' | 'onPath'>) {
     const layer = activeLayer(ed.page(), ed.layer?.());
     if (!layer) {
-      ed.notice = 'Keine sichtbare, entsperrte Ebene';
+      ed.notice = tr('Keine sichtbare, entsperrte Ebene');
       return;
     }
     const n: TextNode = { ...createText(newId(), transform, place), ...defaults() };

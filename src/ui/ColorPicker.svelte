@@ -3,6 +3,7 @@
   import { convertColor, display } from '../io/colors';
   import { fromHex, toHex } from '../model/style';
   import type { Color } from '../model/types';
+  import { N_, tr } from '../i18n/i18n.svelte';
 
   interface Props {
     color: Color;
@@ -17,9 +18,9 @@
   const MODELS: [Color['model'], string][] = [
     ['cmyk', 'CMYK'],
     ['rgb', 'RGB'],
-    ['gray', 'Graustufen'],
+    ['gray', N_('Graustufen')],
   ];
-  const CHANNELS: Record<Color['model'], string[]> = { rgb: ['R', 'G', 'B'], cmyk: ['C', 'M', 'Y', 'K'], gray: ['Grau'] };
+  const CHANNELS: Record<Color['model'], string[]> = { rgb: ['R', 'G', 'B'], cmyk: ['C', 'M', 'Y', 'K'], gray: [N_('Grau')] };
   // CMYK in Prozent, RGB und Graustufen in Stufen 0–255.
   const SCALE: Record<Color['model'], number> = { rgb: 255, cmyk: 100, gray: 255 };
   const value = (e: Event) => (e.currentTarget as HTMLInputElement | HTMLSelectElement).value;
@@ -57,25 +58,25 @@
   bind:this={swatch}
   class="swatch"
   popovertarget={id}
-  title={color.spot ? `${title}: Sonderfarbe ${color.spot}` : title}
+  title={color.spot ? `${title}: ${tr('Sonderfarbe {name}', { name: color.spot })}` : title}
   style:background={display.css(color)}>{color.spot ? 'S' : ''}</button
 >
 <div {id} popover="auto" class="pop" style:width="{POP_WIDTH}px" onbeforetoggle={place}>
-  <select class="full" title="Farbmodell" value={color.model} onchange={(e) => setModel(value(e) as Color['model'])}>
+  <select class="full" title={tr('Farbmodell')} value={color.model} onchange={(e) => setModel(value(e) as Color['model'])}>
     {#each MODELS as [m, label] (m)}
-      <option value={m}>{label}</option>
+      <option value={m}>{tr(label)}</option>
     {/each}
   </select>
   {#each color.values as v, i (i)}
     <label>
-      <span>{CHANNELS[color.model][i]}</span>
+      <span>{tr(CHANNELS[color.model][i])}</span>
       <input type="number" min="0" max={SCALE[color.model]} step="1" value={Math.round(v * SCALE[color.model])} onchange={(e) => setChannel(i, value(e))} />
     </label>
   {/each}
   {#if color.model === 'rgb'}
     <label class="full"><span>Hex</span><input class="hex" value={toHex(color)} onchange={(e) => setHex(value(e))} /></label>
   {/if}
-  {#if color.spot}<span class="full hint">Sonderfarbe {color.spot}</span>{/if}
+  {#if color.spot}<span class="full hint">{tr('Sonderfarbe {name}', { name: color.spot })}</span>{/if}
   <button class="full" popovertarget={id} popovertargetaction="hide">OK</button>
 </div>
 

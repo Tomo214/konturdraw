@@ -5,6 +5,7 @@ import { BLACK, DEFAULT_STROKE } from '../model/style';
 import type { Doc, ImageNode, Node } from '../model/types';
 import * as bridge from './bridge';
 import { images } from './images';
+import { tr } from '../i18n/i18n.svelte';
 
 export interface TraceParams extends bridge.TraceCore {
   /** Mittellinie: Kontur in mm */
@@ -65,7 +66,7 @@ export function tracedNode(pieces: readonly bridge.TracePiece[], world: Mat, p: 
 
 /** Neue oberste Ebene „Nachzeichnung“ auf Seite pi mit dem Ergebnis; drop = Originalbild dabei löschen. */
 export function addTrace(doc: Doc, node: Node, pi = 0, drop?: string): Doc {
-  const next = addLayer(drop ? deleteNodes(doc, [drop]) : doc, pi, 'Nachzeichnung');
+  const next = addLayer(drop ? deleteNodes(doc, [drop]) : doc, pi, tr('Nachzeichnung'));
   const layers = next.pages[pi].layers;
   return addNodes(next, layers[layers.length - 1].id, [node]);
 }
@@ -75,6 +76,6 @@ export async function tracePieces(img: ImageNode, p: TraceParams): Promise<bridg
   const { lineWidth: _, ...core } = p;
   const pieces = await bridge.traceImage(images.pick([img.image])[img.image], core, img.width, img.height);
   if (!pieces.some((pc) => pc.subpaths.length))
-    throw new Error(p.mode === 'color' ? 'Nichts gefunden – Hintergrund behalten?' : 'Nichts gefunden – Schwellwert erhöhen?');
+    throw new Error(p.mode === 'color' ? tr('Nichts gefunden – Hintergrund behalten?') : tr('Nichts gefunden – Schwellwert erhöhen?'));
   return pieces;
 }

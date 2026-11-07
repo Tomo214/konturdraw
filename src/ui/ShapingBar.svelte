@@ -6,6 +6,7 @@
   import { planShaping, type ShapingName, type ShapingResult } from '../model/shaping';
   import type { Doc, Subpath } from '../model/types';
   import Icon from './Icon.svelte';
+  import { N_, tr } from '../i18n/i18n.svelte';
 
   let {
     history,
@@ -21,15 +22,15 @@
   } = $props();
 
   const LABELS: [ShapingName, string][] = [
-    ['weld', 'Verschmelzen'],
-    ['trim', 'Zuschneiden'],
-    ['intersect', 'Schnittmenge'],
-    ['simplify', 'Vereinfachen'],
-    ['frontMinusBack', 'Vorne minus hinten'],
-    ['backMinusFront', 'Hinten minus vorne'],
-    ['boundary', 'Umrandung'],
-    ['combine', 'Kombinieren'],
-    ['breakApart', 'Aufbrechen'],
+    ['weld', N_('Verschmelzen')],
+    ['trim', N_('Zuschneiden')],
+    ['intersect', N_('Schnittmenge')],
+    ['simplify', N_('Vereinfachen')],
+    ['frontMinusBack', N_('Vorne minus hinten')],
+    ['backMinusFront', N_('Hinten minus vorne')],
+    ['boundary', N_('Umrandung')],
+    ['combine', N_('Kombinieren')],
+    ['breakApart', N_('Aufbrechen')],
   ];
   let busy = $state(false);
 
@@ -47,7 +48,7 @@
       const plan = make(doc);
       const res = plan.jobs.length ? await call(plan.jobs) : [];
       // Währenddessen bearbeitet → Ergebnis passt nicht mehr zum Dokument.
-      if (history.current !== doc) return onnotice('Dokument wurde währenddessen geändert – Befehl verworfen.');
+      if (history.current !== doc) return onnotice(tr('Dokument wurde währenddessen geändert – Befehl verworfen.'));
       ondone(plan.finish(res));
       onnotice(plan.notice ?? '');
     } catch (err) {
@@ -58,11 +59,11 @@
   }
 </script>
 
-<nav aria-label="Formen">
+<nav aria-label={tr('Formen')}>
   <span class="sep"></span>
   {#each LABELS as [name, label], i (name)}
     {#if i === 7}<span class="sep"></span>{/if}
-    <button class="icon" disabled={busy} aria-label={label} data-tip={label} data-tip-side="below" onpointerdown={(e) => e.preventDefault()} onclick={() => run(name)}
+    <button class="icon" disabled={busy} aria-label={tr(label)} data-tip={tr(label)} data-tip-side="below" onpointerdown={(e) => e.preventDefault()} onclick={() => run(name)}
       ><Icon {name} size={18} /></button
     >
   {/each}

@@ -5,6 +5,7 @@
   import { display } from '../io/colors';
   import { UNITS, formatLength, type Unit } from '../model/units';
   import { mm } from './status';
+  import { N_, tm, tr } from '../i18n/i18n.svelte';
 
   let {
     cursor,
@@ -15,18 +16,18 @@
     stroke,
   }: { cursor: readonly [number, number] | null; units: Unit; info: string; notice: string; fill: FillSpec; stroke: Stroke | null } = $props();
 
-  const FILL: Record<FillSpec['kind'], string> = { none: 'Keine Füllung', solid: 'Vollton', linear: 'Verlauf linear', radial: 'Verlauf radial', pattern: 'Muster' };
+  const FILL: Record<FillSpec['kind'], string> = { none: N_('Keine Füllung'), solid: N_('Vollton'), linear: N_('Verlauf linear'), radial: N_('Verlauf radial'), pattern: N_('Muster') };
 </script>
 
 <footer>
   <span class="pos">{cursor ? `${formatLength(cursor[0], units)} ; ${formatLength(cursor[1], units)} ${UNITS[units].label}` : ''}</span>
   <span class="info">{info}</span>
-  <span class="notice" role="status">{notice}</span>
+  <span class="notice" role="status">{tm(notice)}</span>
   <span class="style">
     <span class="swatch" class:none={fill.kind === 'none'} style:background={fill.kind === 'none' ? null : display.css(fill.a)}></span>
-    {FILL[fill.kind]}
+    {tr(FILL[fill.kind])}
     <span class="swatch line" class:none={!stroke} style:border-color={stroke ? display.css(stroke.color) : null}></span>
-    {stroke ? `${mm(stroke.width)} mm` : 'Keine Kontur'}
+    {stroke ? `${mm(stroke.width)} mm` : tr('Keine Kontur')}
   </span>
 </footer>
 

@@ -4,6 +4,7 @@ import { pageLabel } from '../model/pages';
 import type { Doc, Layer, Node, Page } from '../model/types';
 import type { IconName } from './icons';
 import { kind } from './status';
+import { tr } from '../i18n/i18n.svelte';
 
 export interface Row {
   id: string;
@@ -138,8 +139,8 @@ export function layerMove(page: Page, id: string, above: string | null): number 
 /** „Ebene n“ mit n = Anzahl + 1, bei Doppel weiterzählen. */
 export function freshLayerName(page: Page): string {
   let n = page.layers.length + 1;
-  while (page.layers.some((l) => l.name === `Ebene ${n}`)) n++;
-  return `Ebene ${n}`;
+  while (page.layers.some((l) => l.name === tr('Ebene {n}', { n }))) n++;
+  return tr('Ebene {n}', { n });
 }
 
 export function rowIcon(r: Row): IconName {

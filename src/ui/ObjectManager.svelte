@@ -13,6 +13,7 @@
   import { docRows, dragIds, dropFor, dropMark, edgeScroll, freshLayerName, idsIn, layerMove, reveal, rowIcon, treeKey, type Drop, type Part, type Row } from './object-tree';
   import { choose } from './selection';
   import type { PageState } from './page-state.svelte';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     doc,
@@ -90,7 +91,7 @@
     goPage(r.page);
     pages.layer = r.layer.id;
     if (!r.node) return ondone();
-    if (blocked(r)) return onnotice(`Ebene „${r.layer.name}“ ist ${r.layer.locked ? 'gesperrt' : 'verborgen'}.`);
+    if (blocked(r)) return onnotice(r.layer.locked ? tr('Ebene „{name}“ ist gesperrt.', { name: r.layer.name }) : tr('Ebene „{name}“ ist verborgen.', { name: r.layer.name }));
     // Jede Zeile wählt sich selbst – auch Kinder in Gruppen, wie im Vorbild.
     onselect(choose(history.current, selected, r.id, additive));
   }
@@ -144,7 +145,7 @@
     drag = null;
     if (!d?.moving) return d?.keep && pick(d.row, false);
     const t = target(d);
-    if (!t) return onnotice('Gesperrte Ebenen nehmen keine Objekte an.');
+    if (!t) return onnotice(tr('Gesperrte Ebenen nehmen keine Objekte an.'));
     if ('layerAbove' in t) {
       const to = layerMove(now(), d.row.id, t.layerAbove);
       return to !== null && commit(moveLayer(history.current, d.row.id, to));
@@ -191,7 +192,7 @@
   function deleteLayer(l: Layer | undefined) {
     if (!l) return;
     const gone = idsIn(l.children);
-    if (!commit(removeLayer(history.current, l.id))) return onnotice('Die letzte Ebene einer Seite bleibt.');
+    if (!commit(removeLayer(history.current, l.id))) return onnotice(tr('Die letzte Ebene einer Seite bleibt.'));
     onselect(new Set([...selected].filter((id) => !gone.has(id))));
   }
 
@@ -216,17 +217,17 @@
   const menuItems = $derived.by<MenuItem[]>(() => {
     const r = menuRow;
     if (!r) return [];
-    const edit = { label: 'Umbenennen', run: () => (editing = r.id) };
+    const edit = { label: tr('Umbenennen'), run: () => (editing = r.id) };
     if (r.node) return [edit];
     const l = r.layer;
     return [
       edit,
-      { label: 'Neue Ebene', run: newLayer },
-      { label: 'Ebene löschen', run: () => deleteLayer(l), disabled: page.layers.length < 2 },
+      { label: tr('Neue Ebene'), run: newLayer },
+      { label: tr('Ebene löschen'), run: () => deleteLayer(l), disabled: page.layers.length < 2 },
       null,
-      { label: 'Sichtbar', checked: l.visible, run: () => toggle(l, 'visible') },
-      { label: 'Druckbar', checked: l.printable, run: () => toggle(l, 'printable') },
-      { label: 'Gesperrt', checked: l.locked, run: () => toggle(l, 'locked') },
+      { label: tr('Sichtbar'), checked: l.visible, run: () => toggle(l, 'visible') },
+      { label: tr('Druckbar'), checked: l.printable, run: () => toggle(l, 'printable') },
+      { label: tr('Gesperrt'), checked: l.locked, run: () => toggle(l, 'locked') },
     ];
   });
 
@@ -241,11 +242,11 @@
 <div class="om">
   <div class="head">
     <span class="crumb">{pageLabel(doc, pi)}<Icon name="chevronRight" size={12} /><b>{active?.name ?? '–'}</b></span>
-    <button class="icon" aria-label="Neue Ebene" title="Neue Ebene" onclick={newLayer}><Icon name="layerAdd" size={16} /></button>
-    <button class="icon" aria-label="Ebene löschen" title="Ebene löschen" disabled={page.layers.length < 2} onclick={() => deleteLayer(active)}><Icon name="trash" size={16} /></button>
+    <button class="icon" aria-label={tr('Neue Ebene')} title={tr('Neue Ebene')} onclick={newLayer}><Icon name="layerAdd" size={16} /></button>
+    <button class="icon" aria-label={tr('Ebene löschen')} title={tr('Ebene löschen')} disabled={page.layers.length < 2} onclick={() => deleteLayer(active)}><Icon name="trash" size={16} /></button>
   </div>
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <div class="list" role="tree" tabindex="0" aria-label="Seiten, Ebenen und Objekte" bind:this={list} bind:clientHeight={height} onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)} onkeydown={onlistkey}>
+  <div class="list" role="tree" tabindex="0" aria-label={tr('Seiten, Ebenen und Objekte')} bind:this={list} bind:clientHeight={height} onscroll={(e) => (scrollTop = e.currentTarget.scrollTop)} onkeydown={onlistkey}>
     <div class="spacer" style:height="{rows.length * ROW}px">
       {#each shown as r, k (r.id)}
         {#if r.layer === null}
@@ -262,7 +263,7 @@
             onpointerdown={(e) => e.button === 0 && ((cursor = r.id), goPage(r.page))}
           >
             {#if r.open !== null}
-              <button class="twisty" aria-label={r.open ? 'Zuklappen' : 'Aufklappen'} onpointerdown={stop} onclick={() => flipRow(r.id)}
+              <button class="twisty" aria-label={r.open ? tr('Zuklappen') : tr('Aufklappen')} onpointerdown={stop} onclick={() => flipRow(r.id)}
                 ><Icon name={r.open ? 'chevronDown' : 'chevronRight'} size={12} /></button
               >
             {:else}
@@ -294,7 +295,7 @@
           oncontextmenu={(e) => openMenu(e, r)}
         >
           {#if r.open !== null}
-            <button class="twisty" aria-label={r.open ? 'Zuklappen' : 'Aufklappen'} onpointerdown={stop} ondblclick={stop} onclick={() => flipRow(r.id)}
+            <button class="twisty" aria-label={r.open ? tr('Zuklappen') : tr('Aufklappen')} onpointerdown={stop} ondblclick={stop} onclick={() => flipRow(r.id)}
               ><Icon name={r.open ? 'chevronDown' : 'chevronRight'} size={12} /></button
             >
           {:else}
@@ -309,14 +310,14 @@
           {/if}
           {#if !r.node}
             {@const l = r.layer}
-            <span class="toggles" role="group" aria-label="Ebenenschalter">
-              <button class="tg" class:off={!l.visible} aria-label="Sichtbar" aria-pressed={l.visible} title="Sichtbar" onpointerdown={stop} ondblclick={stop} onclick={() => toggle(l, 'visible')}
+            <span class="toggles" role="group" aria-label={tr('Ebenenschalter')}>
+              <button class="tg" class:off={!l.visible} aria-label={tr('Sichtbar')} aria-pressed={l.visible} title={tr('Sichtbar')} onpointerdown={stop} ondblclick={stop} onclick={() => toggle(l, 'visible')}
                 ><Icon name={l.visible ? 'eye' : 'eyeOff'} size={14} /></button
               >
-              <button class="tg" class:off={!l.printable} aria-label="Druckbar" aria-pressed={l.printable} title="Druckbar" onpointerdown={stop} ondblclick={stop} onclick={() => toggle(l, 'printable')}
+              <button class="tg" class:off={!l.printable} aria-label={tr('Druckbar')} aria-pressed={l.printable} title={tr('Druckbar')} onpointerdown={stop} ondblclick={stop} onclick={() => toggle(l, 'printable')}
                 ><Icon name={l.printable ? 'printer' : 'printerOff'} size={14} /></button
               >
-              <button class="tg" class:off={!l.locked} aria-label="Gesperrt" aria-pressed={l.locked} title="Gesperrt" onpointerdown={stop} ondblclick={stop} onclick={() => toggle(l, 'locked')}
+              <button class="tg" class:off={!l.locked} aria-label={tr('Gesperrt')} aria-pressed={l.locked} title={tr('Gesperrt')} onpointerdown={stop} ondblclick={stop} onclick={() => toggle(l, 'locked')}
                 ><Icon name={l.locked ? 'lock' : 'unlock'} size={14} /></button
               >
             </span>

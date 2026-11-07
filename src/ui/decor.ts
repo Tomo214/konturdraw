@@ -6,6 +6,7 @@ import { gridStep, rulerMarks, rulerStep } from '../render/ruler';
 import type { Snap, SnapKind } from '../render/snap';
 import type { Viewport } from '../render/viewport';
 import { ACCENT } from './overlay';
+import { N_, tr } from '../i18n/i18n.svelte';
 
 /** Lineal-Breite in CSS-Pixeln. */
 export const RULER = 20;
@@ -64,7 +65,7 @@ export function drawGuides(ctx: CanvasRenderingContext2D, vp: Viewport, dpr: num
 }
 
 const SNAP_NAME: Record<SnapKind, string> = {
-  node: 'Knoten', midpoint: 'Mitte', center: 'Mittelpunkt', edge: 'Kante', guide: 'Hilfslinie', grid: 'Raster',
+  node: N_('Knoten'), midpoint: N_('Streckenmitte'), center: N_('Mittelpunkt'), edge: N_('Kante'), guide: N_('Hilfslinie'), grid: N_('Raster'),
 };
 
 /** Fangpunkt-Anzeige: Marke je Zielart in Akzentfarbe, weiß umrandet (auf hell und dunkel lesbar), Name daneben. */
@@ -84,7 +85,7 @@ export function drawSnap(ctx: CanvasRenderingContext2D, vp: Viewport, dpr: numbe
   [ctx.lineWidth, ctx.strokeStyle] = [2, ACCENT];
   ctx.stroke();
 
-  const name = SNAP_NAME[hit.kind];
+  const name = tr(SNAP_NAME[hit.kind]);
   ctx.font = `11px ${font}`;
   ctx.textBaseline = 'middle';
   const [bx, by, bw, bh] = [x + 10, y + 10, ctx.measureText(name).width + 12, 18];

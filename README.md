@@ -22,12 +22,12 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/hero.png" alt="KonturDraw with a cybersigilism sketch on the left, its traced vector version on the right and the tracing docker open">
+  <img src="docs/assets/hero.png" alt="KonturDraw with a cybersigilism sketch on the left, its traced vector version on the right and the Trace panel open">
 </p>
 
 ## Photo in, stencil out
 
-Drop in a photo or a sketch, open the tracing docker and get clean vector lines you can still edit point by point.
+Drop in a photo or a sketch, open the Trace panel and get clean vector lines you can still edit point by point.
 Outline mode keeps every line exactly as drawn; centerline mode turns them into single strokes.
 
 <p align="center">
@@ -36,7 +36,7 @@ Outline mode keeps every line exactly as drawn; centerline mode turns them into 
 
 ## Why KonturDraw
 
-- **No relearning.** Toolbox on the left, property bar on top, dockers on the right, color palette on the edge, and the keyboard shortcuts you already have in your fingers.
+- **No relearning.** Toolbox on the left, property bar on top, panels on the right, color palette on the edge, and the keyboard shortcuts you already have in your fingers.
 - **Your old files still open.** `.cdr` import through [libcdr](https://wiki.documentfoundation.org/DLP/Libraries/libcdr), so years of designs are not locked in a subscription.
 - **Made for the stencil job.** Trace, clean up, set the size in millimetres, print 1:1 or mirrored for transfer paper.
 - **Small and fast.** An installer under 7 MB. Geometry, tracing, text layout and export run in Rust.
@@ -66,6 +66,7 @@ Outline mode keeps every line exactly as drawn; centerline mode turns them into 
 - Multiple pages, layers you can hide, lock or exclude from printing
 - Rulers, guides, grid, snapping, wireframe view
 - Text with system fonts, text on a path, convert to curves
+- Interface in English and German, switch any time under Window › Language
 
 **Import and export**
 
@@ -98,7 +99,6 @@ xattr -dr com.apple.quarantine /Applications/KonturDraw.app
 KonturDraw is **early (0.1)**. Every feature above is built and covered by automated tests, but it has not been through months of daily studio use yet. Please [open an issue](https://github.com/Tomo214/konturdraw/issues) when something breaks or feels wrong.
 
 Known gaps:
-- The interface is **German only** for now. English is next on the list.
 - Builds are unsigned (see the install notes above). No Intel Mac and no Linux build yet.
 - `.cdr` files from CorelDRAW 2022 and newer only import partly (a libcdr limit).
 

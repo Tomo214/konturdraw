@@ -5,6 +5,7 @@ import { findNode, newId, removeNodes } from './document';
 import { IDENTITY, invert } from './geometry';
 import { DEFAULT_STROKE, toCurves } from './style';
 import type { Doc, Node, PathNode, Subpath } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
 export type ShapingName =
   | 'weld' | 'trim' | 'intersect' | 'simplify' | 'frontMinusBack' | 'backMinusFront' | 'boundary' | 'combine' | 'breakApart';
@@ -60,10 +61,10 @@ function collect(doc: Doc, selection: readonly string[]): Obj[] {
   for (const p of doc.pages) for (const l of p.layers) for (const node of l.children) z.set(node.id, { node, z: z.size });
   return selection.flatMap((id) => {
     const hit = z.get(id);
-    if (!hit && findNode(doc, id)) throw new Error('Formen-Befehle gehen nicht mit Objekten in einer Gruppe – Gruppe erst auflösen.');
+    if (!hit && findNode(doc, id)) throw new Error(tr('Formen-Befehle gehen nicht mit Objekten in einer Gruppe – Gruppe erst auflösen.'));
     if (!hit) return [];
     if (hit.node.type === 'group' || hit.node.type === 'image') {
-      throw new Error('Formen-Befehle gehen nur mit Kurven und Formen – Gruppen und Bilder erst auflösen.');
+      throw new Error(tr('Formen-Befehle gehen nur mit Kurven und Formen – Gruppen und Bilder erst auflösen.'));
     }
     return [{ node: toCurves(hit.node) as PathNode, z: hit.z }];
   });
@@ -74,7 +75,7 @@ export function planShaping(doc: Doc, selection: readonly string[], name: Shapin
   const byZ = [...objs].sort((a, b) => a.z - b.z);
   const plan = (jobs: ShapeJob[], finish: (r: Subpath[][]) => ShapingResult): ShapingPlan => {
     const open = jobs.length > 0 && objs.some((o) => o.node.subpaths.some((sp) => !sp.closed));
-    return { jobs, finish, ...(open ? { notice: 'Offene Pfade wurden als geschlossen behandelt.' } : {}) };
+    return { jobs, finish, ...(open ? { notice: tr('Offene Pfade wurden als geschlossen behandelt.') } : {}) };
   };
   const job = (op: ShapeJob['op'], list: Obj[]): ShapeJob => ({
     op,
@@ -88,7 +89,7 @@ export function planShaping(doc: Doc, selection: readonly string[], name: Shapin
 
   if (name === 'breakApart') {
     const parts = objs.filter((o) => o.node.subpaths.length > 1);
-    if (!parts.length) throw new Error('Nichts aufzubrechen – Objekt hat nur einen Teilpfad.');
+    if (!parts.length) throw new Error(tr('Nichts aufzubrechen – Objekt hat nur einen Teilpfad.'));
     return plan([], () => {
       let d = doc;
       const selected: string[] = [];
@@ -103,7 +104,7 @@ export function planShaping(doc: Doc, selection: readonly string[], name: Shapin
   }
 
   const min = name === 'boundary' ? 1 : 2;
-  if (objs.length < min) throw new Error(min === 1 ? 'Erst ein Objekt wählen.' : 'Mindestens zwei Objekte wählen.');
+  if (objs.length < min) throw new Error(min === 1 ? tr('Erst ein Objekt wählen.') : tr('Mindestens zwei Objekte wählen.'));
   const target = objs[objs.length - 1];
   const [back, front] = [byZ[0], byZ[byZ.length - 1]];
   const rest = (o: Obj) => objs.filter((x) => x !== o);
@@ -113,11 +114,11 @@ export function planShaping(doc: Doc, selection: readonly string[], name: Shapin
 
   switch (name) {
     case 'weld':
-      return plan([job('union', objs)], ([r]) => ({ doc: replace(drop(target), target, notEmpty(r, 'Ergebnis ist leer.')), selected: [target.node.id] }));
+      return plan([job('union', objs)], ([r]) => ({ doc: replace(drop(target), target, notEmpty(r, tr('Ergebnis ist leer.'))), selected: [target.node.id] }));
     case 'trim':
       return plan([job('difference', [target, ...rest(target)])], ([r]) => ({ doc: replace(doc, target, r), selected: r.length ? [target.node.id] : [] }));
     case 'intersect':
-      return plan([job('intersect', objs)], ([r]) => above(doc, { ...withPaths(target.node, notEmpty(r, 'Keine gemeinsame Fläche.')), id: newId() }));
+      return plan([job('intersect', objs)], ([r]) => above(doc, { ...withPaths(target.node, notEmpty(r, tr('Keine gemeinsame Fläche.'))), id: newId() }));
     case 'simplify': {
       const lower = byZ.slice(0, -1);
       return plan(lower.map((o, i) => job('difference', [o, ...byZ.slice(i + 1)])), (res) => {
@@ -128,12 +129,12 @@ export function planShaping(doc: Doc, selection: readonly string[], name: Shapin
     case 'frontMinusBack':
     case 'backMinusFront': {
       const base = name === 'frontMinusBack' ? front : back;
-      return plan([job('difference', [base, ...rest(base)])], ([r]) => ({ doc: replace(drop(base), base, notEmpty(r, 'Ergebnis ist leer.')), selected: [base.node.id] }));
+      return plan([job('difference', [base, ...rest(base)])], ([r]) => ({ doc: replace(drop(base), base, notEmpty(r, tr('Ergebnis ist leer.'))), selected: [base.node.id] }));
     }
     case 'boundary':
       return plan([job('union', objs)], ([r]) => {
         const style = { fill: null, stroke: DEFAULT_STROKE };
-        return above(doc, { type: 'path', id: newId(), transform: IDENTITY, style, subpaths: notEmpty(r, 'Ergebnis ist leer.') });
+        return above(doc, { type: 'path', id: newId(), transform: IDENTITY, style, subpaths: notEmpty(r, tr('Ergebnis ist leer.')) });
       });
     case 'combine':
       return plan([], () => {

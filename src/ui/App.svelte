@@ -47,6 +47,7 @@
   import type { Editor, Knot } from './tools/tool';
   // ?n=10000 lädt ein Zufallsdokument (Lasttest); ohne Parameter leere A4-Seite.
   import { randomDoc } from '../../tests/perf/random-doc';
+  import { tr } from '../i18n/i18n.svelte';
 
   const n = Number(new URLSearchParams(location.search).get('n') ?? 0);
   const history = new History<Doc>(n ? randomDoc(n) : createDocument());
@@ -204,7 +205,7 @@
   function onimport(nodes: Node[]) {
     guarded(() => {
       const layer = activeLayer(page(), pages.layer);
-      if (!layer) throw new Error('Keine sichtbare, entsperrte Ebene');
+      if (!layer) throw new Error(tr('Keine sichtbare, entsperrte Ebene'));
       history.push(addNodes(history.current, layer.id, nodes));
       selected = new Set(nodes.map((n) => n.id));
     }, true);

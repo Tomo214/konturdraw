@@ -23,6 +23,7 @@ import type { Doc, Node } from '../model/types';
 import { DEFAULT_NUDGE } from '../model/units';
 import { MM_TO_PX, fitBox, fitPage, zoomAt, zoomTo, type Viewport } from '../render/viewport';
 import type { Command, Tool } from './shortcuts';
+import { tr } from '../i18n/i18n.svelte';
 
 export interface EditResult {
   /** Fehlt, wenn das Dokument gleich bleibt (Kopieren). */
@@ -68,7 +69,7 @@ export function editCommand(
       // An gleicher Stelle auf die aktive Ebene.
       if (!clipboard.length) return null;
       const layer = activeLayer(doc.pages[at.page], at.layer);
-      if (!layer) throw new Error('Keine sichtbare, entsperrte Ebene');
+      if (!layer) throw new Error(tr('Keine sichtbare, entsperrte Ebene'));
       const clones = clipboard.map(cloneWithNewIds);
       return { doc: addNodes(doc, layer.id, clones), selected: new Set(clones.map((c) => c.id)) };
     }
@@ -104,14 +105,14 @@ export function editCommand(
     case 'mirror': return changed(mirror(doc, ids, cmd.axis));
     case 'field': return changed(setField(doc, ids, cmd.field, cmd.value, cmd.locked));
     case 'pageSize': {
-      if (!positive(cmd.width) || !positive(cmd.height)) throw new Error('Seitengröße muss größer als 0 sein.');
+      if (!positive(cmd.width) || !positive(cmd.height)) throw new Error(tr('Seitengröße muss größer als 0 sein.'));
       // Wie Vorbild-Standard: gilt für alle Seiten.
       const [w, h] = [cmd.width, cmd.height];
       if (doc.pages.every((p) => p.width === w && p.height === h)) return null;
       return { doc: { ...doc, pages: doc.pages.map((p) => ({ ...p, width: w, height: h })) } };
     }
     case 'settings': {
-      if (cmd.nudge !== undefined && !positive(cmd.nudge)) throw new Error('Verschiebe-Schritt muss größer als 0 sein.');
+      if (cmd.nudge !== undefined && !positive(cmd.nudge)) throw new Error(tr('Verschiebe-Schritt muss größer als 0 sein.'));
       const next = { ...doc, ...(cmd.units && { units: cmd.units }), ...(cmd.nudge !== undefined && { nudge: cmd.nudge }) };
       return next.units === doc.units && next.nudge === doc.nudge ? null : { doc: next };
     }

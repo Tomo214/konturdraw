@@ -83,13 +83,14 @@ pub async fn open_kwk(app: AppHandle) -> Result<Option<Opened>, String> {
     open_path(&local(p)?).map(Some)
 }
 
-/// path = None → „Speichern unter“. Liefert den Pfad, None bei Abbruch.
+/// path = None → „Speichern unter“ mit name als Vorschlag. Liefert den Pfad, None bei Abbruch.
 #[tauri::command]
 pub async fn save_kwk(
     app: AppHandle,
     path: Option<String>,
     document: String,
     images: Wire,
+    name: String,
 ) -> Result<Option<String>, String> {
     let path = match path {
         Some(p) => PathBuf::from(p),
@@ -97,7 +98,7 @@ pub async fn save_kwk(
             .dialog()
             .file()
             .add_filter("KonturDraw", &["kwk"])
-            .set_file_name("Unbenannt.kwk")
+            .set_file_name(&name)
             .blocking_save_file()
         {
             Some(p) => local(p)?,
@@ -243,7 +244,7 @@ pub async fn export_file(
         .dialog()
         .file()
         .add_filter(label, &[ext])
-        .set_file_name(format!("Unbenannt.{ext}"))
+        .set_file_name(format!("{}.{ext}", options.title))
         .blocking_save_file()
     else {
         return Ok(None);

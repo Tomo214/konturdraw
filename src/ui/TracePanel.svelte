@@ -8,6 +8,7 @@
   import type { ImageNode, Node } from '../model/types';
   import TraceColors from './TraceColors.svelte';
   import { pathData, previewKey, resultColors, traceStats } from './trace-preview';
+  import { N_, locale, tm, tr } from '../i18n/i18n.svelte';
 
   let {
     image,
@@ -26,9 +27,9 @@
 
   type View = 'split' | 'result' | 'wire';
   const VIEWS: [View, string, string][] = [
-    ['split', 'Vorher/Nachher', 'Bild und Ergebnis untereinander'],
-    ['result', 'Ergebnis', 'Nur das Ergebnis, groß'],
-    ['wire', 'Drahtmodell', 'Kurven über dem Bild'],
+    ['split', N_('Vorher/Nachher'), N_('Bild und Ergebnis untereinander')],
+    ['result', N_('Ergebnis'), N_('Nur das Ergebnis, groß')],
+    ['wire', N_('Drahtmodell'), N_('Kurven über dem Bild')],
   ];
   interface Preview {
     key: string;
@@ -107,15 +108,15 @@
   export async function run() {
     if (busy) return;
     const img = image;
-    if (!img) return onnotice('Erst ein Bild wählen.');
-    if (p.mode === 'centerline' && !(p.lineWidth > 0)) return onnotice('Linienstärke muss größer als 0 mm sein.');
+    if (!img) return onnotice(tr('Erst ein Bild wählen.'));
+    if (p.mode === 'centerline' && !(p.lineWidth > 0)) return onnotice(tr('Linienstärke muss größer als 0 mm sein.'));
     busy = true;
     try {
       const params = job;
       const cached = preview?.key === previewKey(img.node.image, params) ? preview.pieces : null;
       const t = performance.now();
       ondone(tracedNode(cached ?? (await tracePieces(img.node, params)), img.world, params), drop ? img.node.id : undefined);
-      onnotice(cached ? 'Nachzeichnung übernommen' : `Nachgezeichnet in ${secs(performance.now() - t)} s`);
+      onnotice(cached ? tr('Nachzeichnung übernommen') : tr('Nachgezeichnet in {secs} s', { secs: secs(performance.now() - t) }));
     } catch (err) {
       onnotice((err as Error).message);
     } finally {
@@ -123,8 +124,8 @@
     }
   }
 
-  const secs = (ms: number) => (ms / 1000).toFixed(1).replace('.', ',');
-  const count = (n: number, one: string, many: string) => `${n.toLocaleString('de-DE')} ${n === 1 ? one : many}`;
+  const secs = (ms: number) => (ms / 1000).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const count = (n: number, one: string, many: string) => (n === 1 ? tr(one) : tr(many, { n: n.toLocaleString(locale()) }));
   const keepFocus = (e: PointerEvent) => e.preventDefault();
   const checked = (e: Event) => (e.currentTarget as HTMLInputElement).checked;
 </script>
@@ -135,27 +136,27 @@
 
 <div class="form">
   <label class="row">
-    <span>Art</span>
+    <span>{tr('Art')}</span>
     <select bind:value={p.mode}>
-      <option value="centerline">Mittellinie</option>
-      <option value="outline">Umriss schwarz-weiß</option>
-      <option value="color">Umriss farbig</option>
+      <option value="centerline">{tr('Mittellinie')}</option>
+      <option value="outline">{tr('Umriss schwarz-weiß')}</option>
+      <option value="color">{tr('Umriss farbig')}</option>
     </select>
   </label>
-  <div class="wide views" role="group" aria-label="Vorschau">
+  <div class="wide views" role="group" aria-label={tr('Vorschau')}>
     {#each VIEWS as [id, label, tip] (id)}
-      <button aria-pressed={view === id} data-tip={tip} onpointerdown={keepFocus} onclick={() => (view = id)}>{label}</button>
+      <button aria-pressed={view === id} data-tip={tr(tip)} onpointerdown={keepFocus} onclick={() => (view = id)}>{tr(label)}</button>
     {/each}
   </div>
   <div class="wide stage" class:split={view === 'split'}>
     {#if !current}
-      <p class="hint">Erst ein Bild wählen.</p>
+      <p class="hint">{tr('Erst ein Bild wählen.')}</p>
     {:else if preview}
       {@const box = `0 0 ${preview.img.width} ${preview.img.height}`}
       {#if view === 'split'}
-        <svg class="pane" viewBox={box} role="img" aria-label="Vorher">{@render picture(false)}</svg>
+        <svg class="pane" viewBox={box} role="img" aria-label={tr('Vorher')}>{@render picture(false)}</svg>
       {/if}
-      <svg class="pane result" class:stale viewBox={box} role="img" aria-label={view === 'wire' ? 'Drahtmodell' : 'Nachher'}>
+      <svg class="pane result" class:stale viewBox={box} role="img" aria-label={view === 'wire' ? tr('Drahtmodell') : tr('Nachher')}>
         {#if view === 'wire'}{@render picture(true)}{/if}
         {#each drawn as d, i (i)}
           {#if view === 'wire'}
@@ -168,41 +169,41 @@
         {/each}
       </svg>
     {:else}
-      <p class="hint" role="status">{failed || 'Berechnet …'}</p>
+      <p class="hint" role="status">{failed ? tm(failed) : tr('Berechnet …')}</p>
     {/if}
   </div>
   {#if current && stats}
     <p class="wide hint stats" role="status">
-      {working ? 'Berechnet …' : `${count(stats.curves, 'Kurve', 'Kurven')} · ${count(stats.nodes, 'Knoten', 'Knoten')} · ${count(stats.colors, 'Farbe', 'Farben')} · ${secs(preview!.ms)} s`}
+      {working ? tr('Berechnet …') : `${count(stats.curves, N_('1 Kurve'), N_('{n} Kurven'))} · ${count(stats.nodes, N_('1 Knoten'), N_('{n} Knoten'))} · ${count(stats.colors, N_('1 Farbe'), N_('{n} Farben'))} · ${secs(preview!.ms)} s`}
     </p>
   {/if}
 
   {#if p.mode === 'color'}
-    <label class="row" title="Höchstens so viele Farben im Ergebnis">
-      <span>Farben</span>
+    <label class="row" title={tr('Höchstens so viele Farben im Ergebnis')}>
+      <span>{tr('Farben')}</span>
       <span class="unit"><input type="number" min="2" max="256" step="1" bind:value={p.colors} onchange={() => (p.colors = job.colors)} /></span>
     </label>
   {:else}
-    <label class="row" title="Dunkler als dieser Wert zählt als Linie">
-      <span>Schwelle</span>
+    <label class="row" title={tr('Dunkler als dieser Wert zählt als Linie')}>
+      <span>{tr('Schwelle')}</span>
       <span class="unit"><input type="range" min="1" max="254" bind:value={p.threshold} /> <output>{p.threshold}</output></span>
     </label>
   {/if}
-  <label class="row" title="Flecken mit weniger Pixeln fallen weg">
-    <span>Rauschen</span>
+  <label class="row" title={tr('Flecken mit weniger Pixeln fallen weg')}>
+    <span>{tr('Rauschen')}</span>
     <span class="unit"><input type="number" min="0" max="100000" step="1" bind:value={p.speckle} onchange={() => (p.speckle = job.speckle)} /> px</span>
   </label>
-  <label class="row" title="Wie stark Kurven geglättet werden">
-    <span>Glättung</span>
+  <label class="row" title={tr('Wie stark Kurven geglättet werden')}>
+    <span>{tr('Glättung')}</span>
     <span class="unit"><input type="range" min="0" max="1" step="0.1" bind:value={p.smooth} /> <output>{p.smooth}</output></span>
   </label>
-  <label class="row" title="Links bleiben Ecken spitz, rechts wird alles rund">
-    <span>Ecken</span>
+  <label class="row" title={tr('Links bleiben Ecken spitz, rechts wird alles rund')}>
+    <span>{tr('Ecken')}</span>
     <span class="unit"><input type="range" min="0" max="1" step="0.1" bind:value={p.corners} /> <output>{p.corners}</output></span>
   </label>
   {#if p.mode === 'centerline'}
     <label class="row">
-      <span>Linienstärke</span>
+      <span>{tr('Linienstärke')}</span>
       <span class="unit"><input type="number" min="0.05" max="10" step="0.05" bind:value={p.lineWidth} /> mm</span>
     </label>
   {/if}
@@ -217,25 +218,25 @@
           onreset={() => (p.recolor = [])}
         />
       {/key}
-      <label class="check" title="Die Fläche in der Randfarbe weglassen">
-        <input type="checkbox" checked={p.background !== 'keep'} onchange={(e) => (p.background = checked(e) ? 'edge' : 'keep')} /> Hintergrund entfernen
+      <label class="check" title={tr('Die Fläche in der Randfarbe weglassen')}>
+        <input type="checkbox" checked={p.background !== 'keep'} onchange={(e) => (p.background = checked(e) ? 'edge' : 'keep')} /> {tr('Hintergrund entfernen')}
       </label>
-      <label class="check sub" title="Auch eingeschlossene Flächen in der Hintergrundfarbe weglassen">
-        <input type="checkbox" checked={p.background === 'all'} disabled={p.background === 'keep'} onchange={(e) => (p.background = checked(e) ? 'all' : 'edge')} /> Farbe im ganzen Bild
+      <label class="check sub" title={tr('Auch eingeschlossene Flächen in der Hintergrundfarbe weglassen')}>
+        <input type="checkbox" checked={p.background === 'all'} disabled={p.background === 'keep'} onchange={(e) => (p.background = checked(e) ? 'all' : 'edge')} /> {tr('Farbe im ganzen Bild')}
       </label>
-      <label class="check" title="Je Farbe ein Objekt statt je Fläche">
-        <input type="checkbox" bind:checked={p.merge} /> Gleiche Farben zusammenführen
+      <label class="check" title={tr('Je Farbe ein Objekt statt je Fläche')}>
+        <input type="checkbox" bind:checked={p.merge} /> {tr('Gleiche Farben zusammenführen')}
       </label>
-      <label class="check" title="Untere Flächen unter den oberen ausschneiden">
-        <input type="checkbox" bind:checked={p.cutout} /> Überlappung entfernen
+      <label class="check" title={tr('Untere Flächen unter den oberen ausschneiden')}>
+        <input type="checkbox" bind:checked={p.cutout} /> {tr('Überlappung entfernen')}
       </label>
     </div>
   {/if}
-  <label class="check wide" title="Das Bild verschwindet mit dem Übernehmen; Rückgängig holt es zurück">
-    <input type="checkbox" bind:checked={drop} /> Originalbild löschen
+  <label class="check wide" title={tr('Das Bild verschwindet mit dem Übernehmen; Rückgängig holt es zurück')}>
+    <input type="checkbox" bind:checked={drop} /> {tr('Originalbild löschen')}
   </label>
-  <button class="wide" disabled={busy} onpointerdown={keepFocus} onclick={run}>{busy ? 'Zeichnet …' : 'Übernehmen'}</button>
-  <p class="hint wide">Wirkt auf das gewählte Bild. Das Ergebnis liegt gruppiert auf eigener Ebene{drop ? ', das Bild wird gelöscht' : ', das Bild bleibt'}.</p>
+  <button class="wide" disabled={busy} onpointerdown={keepFocus} onclick={run}>{busy ? tr('Zeichnet …') : tr('Übernehmen')}</button>
+  <p class="hint wide">{drop ? tr('Wirkt auf das gewählte Bild. Das Ergebnis liegt gruppiert auf eigener Ebene, das Bild wird gelöscht.') : tr('Wirkt auf das gewählte Bild. Das Ergebnis liegt gruppiert auf eigener Ebene, das Bild bleibt.')}</p>
 </div>
 
 <style>

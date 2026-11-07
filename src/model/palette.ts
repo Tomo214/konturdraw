@@ -3,6 +3,7 @@
 import { checkPalette } from '../io/kwk';
 import { cmyk } from './color';
 import type { Color, Doc, Palette, PaletteEntry } from './types';
+import { N_, tr } from '../i18n/i18n.svelte';
 
 const entry = (name: string, color: Color): PaletteEntry => ({ name, color });
 
@@ -11,30 +12,30 @@ export const STANDARD: Palette = {
   id: 'standard',
   name: 'Standard',
   colors: [
-    entry('Schwarz', cmyk(0, 0, 0, 1)),
-    entry('Tiefschwarz', cmyk(0.6, 0.5, 0.4, 1)),
-    entry('Dunkelgrau', cmyk(0, 0, 0, 0.7)),
-    entry('Mittelgrau', cmyk(0, 0, 0, 0.5)),
-    entry('Hellgrau', cmyk(0, 0, 0, 0.2)),
-    entry('Papierweiß', cmyk(0, 0, 0, 0)),
+    entry(N_('Schwarz'), cmyk(0, 0, 0, 1)),
+    entry(N_('Tiefschwarz'), cmyk(0.6, 0.5, 0.4, 1)),
+    entry(N_('Dunkelgrau'), cmyk(0, 0, 0, 0.7)),
+    entry(N_('Mittelgrau'), cmyk(0, 0, 0, 0.5)),
+    entry(N_('Hellgrau'), cmyk(0, 0, 0, 0.2)),
+    entry(N_('Papierweiß'), cmyk(0, 0, 0, 0)),
     entry('Cyan', cmyk(1, 0, 0, 0)),
     entry('Magenta', cmyk(0, 1, 0, 0)),
-    entry('Gelb', cmyk(0, 0, 1, 0)),
-    entry('Rot', cmyk(0, 1, 1, 0)),
-    entry('Weinrot', cmyk(0.2, 1, 0.8, 0.3)),
+    entry(N_('Gelb'), cmyk(0, 0, 1, 0)),
+    entry(N_('Rot'), cmyk(0, 1, 1, 0)),
+    entry(N_('Weinrot'), cmyk(0.2, 1, 0.8, 0.3)),
     entry('Orange', cmyk(0, 0.6, 1, 0)),
-    entry('Ocker', cmyk(0.1, 0.35, 0.9, 0.1)),
+    entry(N_('Ocker'), cmyk(0.1, 0.35, 0.9, 0.1)),
     entry('Gold', cmyk(0.15, 0.3, 0.9, 0.05)),
-    entry('Braun', cmyk(0.3, 0.6, 0.8, 0.4)),
-    entry('Grün', cmyk(1, 0, 1, 0)),
-    entry('Waldgrün', cmyk(0.85, 0.3, 0.9, 0.3)),
-    entry('Petrol', cmyk(0.9, 0.3, 0.4, 0.2)),
-    entry('Blau', cmyk(1, 1, 0, 0)),
-    entry('Marine', cmyk(1, 0.85, 0.3, 0.4)),
-    entry('Stencil-Violett', cmyk(0.6, 0.9, 0, 0)),
-    entry('Flieder', cmyk(0.35, 0.45, 0, 0)),
-    entry('Haut hell', cmyk(0, 0.15, 0.25, 0)),
-    entry('Haut dunkel', cmyk(0.2, 0.45, 0.6, 0.15)),
+    entry(N_('Braun'), cmyk(0.3, 0.6, 0.8, 0.4)),
+    entry(N_('Grün'), cmyk(1, 0, 1, 0)),
+    entry(N_('Waldgrün'), cmyk(0.85, 0.3, 0.9, 0.3)),
+    entry(N_('Petrol'), cmyk(0.9, 0.3, 0.4, 0.2)),
+    entry(N_('Blau'), cmyk(1, 1, 0, 0)),
+    entry(N_('Marine'), cmyk(1, 0.85, 0.3, 0.4)),
+    entry(N_('Stencil-Violett'), cmyk(0.6, 0.9, 0, 0)),
+    entry(N_('Flieder'), cmyk(0.35, 0.45, 0, 0)),
+    entry(N_('Haut hell'), cmyk(0, 0.15, 0.25, 0)),
+    entry(N_('Haut dunkel'), cmyk(0.2, 0.45, 0.6, 0.15)),
   ],
 };
 
@@ -95,10 +96,10 @@ export function parsePaletteFile(text: string, id: string): Palette {
   try {
     raw = JSON.parse(text);
   } catch {
-    throw new Error('Palette-Datei ist kein gültiges JSON.');
+    throw new Error(tr('Palette-Datei ist kein gültiges JSON.'));
   }
-  if (raw?.format !== FORMAT) throw new Error('Das ist keine KonturDraw-Palette.');
-  if (raw.version !== 1) throw new Error(`Palette stammt aus einer neueren KonturDraw-Version (${String(raw.version)}).`);
+  if (raw?.format !== FORMAT) throw new Error(tr('Das ist keine KonturDraw-Palette.'));
+  if (raw.version !== 1) throw new Error(tr('Palette stammt aus einer neueren KonturDraw-Version ({v}).', { v: String(raw.version) }));
   const p = { id, name: raw.name, colors: raw.colors };
   checkPalette(p);
   return p as Palette;

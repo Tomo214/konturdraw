@@ -4,6 +4,7 @@
   import type { Snippet } from 'svelte';
   import Icon from './Icon.svelte';
   import type { DockerId } from './shortcuts';
+  import { N_, tr } from '../i18n/i18n.svelte';
 
   let {
     open = $bindable(),
@@ -16,22 +17,22 @@
   }: { open: DockerId | null; objects: Snippet; properties: Snippet; align: Snippet; text: Snippet; trace: Snippet; color: Snippet } = $props();
 
   const TABS: readonly [DockerId, string][] = [
-    ['objects', 'Objekte'],
-    ['properties', 'Eigenschaften'],
-    ['align', 'Ausrichten'],
+    ['objects', N_('Objekte')],
+    ['properties', N_('Eigenschaften')],
+    ['align', N_('Ausrichten')],
     ['text', 'Text'],
-    ['trace', 'Nachzeichnen'],
-    ['color', 'Farbverwaltung'],
+    ['trace', N_('Nachzeichnen')],
+    ['color', N_('Farbverwaltung')],
   ];
   const body = $derived({ objects, properties, align, text, trace, color });
-  const title = $derived(open === 'align' ? 'Ausrichten und Verteilen' : TABS.find(([id]) => id === open)?.[1]);
+  const title = $derived(open === 'align' ? tr('Ausrichten und Verteilen') : tr(TABS.find(([id]) => id === open)?.[1] ?? ''));
 </script>
 
-<aside class="dock" aria-label="Andockfenster">
+<aside class="dock" aria-label={tr('Andockfenster')}>
   <div class="body" hidden={!open}>
     <header>
       <h2>{title}</h2>
-      <button class="close" aria-label="Andockfenster schließen" onpointerdown={(e) => e.preventDefault()} onclick={() => (open = null)}
+      <button class="close" aria-label={tr('Andockfenster schließen')} onpointerdown={(e) => e.preventDefault()} onclick={() => (open = null)}
         ><Icon name="close" size={16} /></button
       >
     </header>
@@ -46,7 +47,7 @@
         class:on={open === id}
         aria-selected={open === id}
         onpointerdown={(e) => e.preventDefault()}
-        onclick={() => (open = open === id ? null : id)}>{label}</button
+        onclick={() => (open = open === id ? null : id)}>{tr(label)}</button
       >
     {/each}
   </div>

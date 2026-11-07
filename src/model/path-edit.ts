@@ -1,5 +1,6 @@
 import { segmentAt, splitCubic } from './bezier';
 import type { NodeType, PathPoint, Point, Subpath } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
 // Knoten-Operationen auf den Teilpfaden eines Pfads (Pfad-Koordinaten). Alles rein funktional.
 
@@ -163,7 +164,7 @@ export function joinEnds(sps: Subs, a: NodeRef, b: NodeRef): Subs {
   const B = sps[b.sub];
   const isEnd = (sp: Subpath, i: number) => !sp.closed && (i === 0 || i === sp.nodes.length - 1);
   if (!isEnd(A, a.index) || !isEnd(B, b.index) || (a.sub === b.sub && a.index === b.index)) {
-    throw new Error('Verbinden geht nur mit zwei Endknoten offener Pfade');
+    throw new Error(tr('Verbinden geht nur mit zwei Endknoten offener Pfade'));
   }
   if (a.sub === b.sub) {
     const nodes = [...A.nodes];

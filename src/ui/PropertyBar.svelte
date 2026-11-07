@@ -16,10 +16,11 @@
   import type { TextState } from './text-state.svelte';
   import { toolIcon } from './icons';
   import type { Command, Tool } from './shortcuts';
-  import { toolInfo } from './toolbox';
+  import { toolName } from './toolbox';
   import type { CutParams } from './tools/cut-tools';
   import type { Knot } from './tools/tool';
   import type { ShapeParams } from './tools/shape-tool';
+  import { N_, tr } from '../i18n/i18n.svelte';
 
   let {
     tool,
@@ -64,16 +65,16 @@
   } = $props();
 
   const HINT: Partial<Record<Tool, string>> = {
-    zoom: 'Klick vergrößert, Alt+Klick verkleinert, Rahmen ziehen zeigt den Bereich',
-    hand: 'Ziehen verschiebt die Ansicht',
-    knife: 'Quer durch das Objekt ziehen – ohne Auswahl wird alles Gekreuzte geteilt',
-    eraser: 'Über das Objekt ziehen oder klicken – ohne Auswahl wirkt er auf alles Getroffene',
-    eyedropper: 'Klick nimmt auf, weitere Klicks übertragen · Shift neu aufnehmen · Esc zurücksetzen',
+    zoom: N_('Klick vergrößert, Alt+Klick verkleinert, Rahmen ziehen zeigt den Bereich'),
+    hand: N_('Ziehen verschiebt die Ansicht'),
+    knife: N_('Quer durch das Objekt ziehen – ohne Auswahl wird alles Gekreuzte geteilt'),
+    eraser: N_('Über das Objekt ziehen oder klicken – ohne Auswahl wirkt er auf alles Getroffene'),
+    eyedropper: N_('Klick nimmt auf, weitere Klicks übertragen · Shift neu aufnehmen · Esc zurücksetzen'),
   };
 </script>
 
-<div class="bar" role="toolbar" aria-label="Eigenschaften">
-  <span class="tool"><Icon name={toolIcon(tool)} size={16} />{toolInfo(tool).label}</span>
+<div class="bar" role="toolbar" aria-label={tr('Eigenschaften')}>
+  <span class="tool"><Icon name={toolIcon(tool)} size={16} />{toolName(tool)}</span>
   {#if tool === 'select' && guide}
     <GuideFields {guide} {origin} {units} {oncommand} />
   {:else if tool === 'select' && ms}
@@ -88,12 +89,12 @@
   {:else if tool === 'gradient'}
     <GradientFields {knot} {onknot} />
   {:else if tool === 'freehand'}
-    <label class="field">Glättung <input type="range" min="1" max="20" bind:value={smoothing} /> {smoothing} px</label>
+    <label class="field">{tr('Glättung')} <input type="range" min="1" max="20" bind:value={smoothing} /> {smoothing} px</label>
   {:else}
     <ShapeFields {tool} {shape} {units} {onradius} {onpolygon} />
   {/if}
   {@render children()}
-  {#if HINT[tool]}<span class="hint">{HINT[tool]}</span>{/if}
+  {#if HINT[tool]}<span class="hint">{tr(HINT[tool]!)}</span>{/if}
 </div>
 
 <style>

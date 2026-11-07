@@ -7,6 +7,7 @@ import { copyStyle } from '../../model/style';
 import type { Doc, LeafNode, Point, Subpath } from '../../model/types';
 import { ACCENT, drawPreview } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
+import { tr } from '../../i18n/i18n.svelte';
 
 /** Werte der Eigenschaftsleiste. */
 export interface CutParams {
@@ -41,7 +42,7 @@ async function run<J, R>(ed: Editor, plan: CutPlan<J, R>, call: Call<J, R>, none
   const doc = ed.history.current;
   try {
     const r = plan.jobs.length ? plan.finish(await call(plan.jobs)) : null;
-    if (ed.history.current !== doc) ed.notice = 'Dokument wurde währenddessen geändert – verworfen.';
+    if (ed.history.current !== doc) ed.notice = tr('Dokument wurde währenddessen geändert – verworfen.');
     else if (!r) ed.notice = none;
     else {
       ed.history.push(r.doc);
@@ -83,7 +84,7 @@ export function knifeTool(ed: Editor, params: () => CutParams, done: () => void,
       if (!cut) return;
       busy = true;
       const plan = planKnife(ed.history.current, targets(ed, boxOf(pts)), cut);
-      void run(ed, plan, call, 'Schnitt trennt nichts – ganz durch das Objekt ziehen.', () => ((busy = false), done()));
+      void run(ed, plan, call, tr('Schnitt trennt nichts – ganz durch das Objekt ziehen.'), () => ((busy = false), done()));
     },
     overlay(ctx, dpr) {
       if (trail) line() ? drawPreview(ctx, ed.vp, dpr, open(trail)) : drawPreview(ctx, ed.vp, dpr, null, trail);
@@ -123,7 +124,7 @@ export function eraserTool(ed: Editor, params: () => CutParams, done: () => void
     }
     if (mine !== seq) return;
     flying = false;
-    if (ed.history.current !== shown) return ((ed.notice = 'Dokument wurde währenddessen geändert – verworfen.'), finish(last));
+    if (ed.history.current !== shown) return ((ed.notice = tr('Dokument wurde währenddessen geändert – verworfen.')), finish(last));
     if (r) ed.history.preview((shown = r.doc));
     if (!last) {
       if (!error) upto = pts.length;
@@ -136,7 +137,7 @@ export function eraserTool(ed: Editor, params: () => CutParams, done: () => void
       ed.notice = '';
     } else {
       ed.history.cancel();
-      ed.notice = error || 'Nichts getroffen.';
+      ed.notice = error || tr('Nichts getroffen.');
     }
     finish(true);
   }
@@ -206,12 +207,12 @@ export function eyedropperTool(ed: Editor, params: () => CutParams): Tool {
       const hit = ed.renderer.hitTest(ed.vp, p.sx, p.sy);
       if (!hit) return;
       if (hit.node.type === 'image') {
-        ed.notice = 'Bilder haben keine Füllung oder Kontur.';
+        ed.notice = tr('Bilder haben keine Füllung oder Kontur.');
         return;
       }
       if (!sample || p.shift) {
         sample = hit.node;
-        ed.notice = 'Attribute aufgenommen – Zielobjekte anklicken (Shift: neu aufnehmen, Esc: zurücksetzen).';
+        ed.notice = tr('Attribute aufgenommen – Zielobjekte anklicken (Shift: neu aufnehmen, Esc: zurücksetzen).');
         return;
       }
       const ids = hit.chain.some((id) => ed.selected.has(id)) ? [...ed.selected] : [hit.topId];

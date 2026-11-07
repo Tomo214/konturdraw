@@ -5,6 +5,7 @@
   import { colorKey, type Rgb } from '../io/trace';
   import type { Color } from '../model/types';
   import ColorPicker from './ColorPicker.svelte';
+  import { tr } from '../i18n/i18n.svelte';
 
   let {
     colors,
@@ -37,18 +38,18 @@
 </script>
 
 <div class="colors">
-  <span class="head">Ergebnisfarben <output>{colors.length}</output></span>
-  <div class="list" role="group" aria-label="Farben des Ergebnisses">
+  <span class="head">{tr('Ergebnisfarben')} <output>{colors.length}</output></span>
+  <div class="list" role="group" aria-label={tr('Farben des Ergebnisses')}>
     {#each colors as c (colorKey(c))}
-      <button class="swatch" style:background={css(c)} aria-pressed={has(chosen, c)} aria-label="Farbe {css(c)}" title="Anklicken wählt, mehrere zum Zusammenführen" onclick={() => toggle(c)}></button>
+      <button class="swatch" style:background={css(c)} aria-pressed={has(chosen, c)} aria-label={tr('Farbe {css}', { css: css(c) })} title={tr('Anklicken wählt, mehrere zum Zusammenführen')} onclick={() => toggle(c)}></button>
     {/each}
   </div>
   <div class="acts">
-    <button disabled={chosen.length < 2} onclick={merge}>Zusammenführen</button>
+    <button disabled={chosen.length < 2} onclick={merge}>{tr('Zusammenführen')}</button>
     {#if chosen.length === 1 || editing}
-      <ColorPicker color={{ model: 'rgb', values: editing ?? chosen[0] }} title="Farbe ändern" onchange={recolor} />
+      <ColorPicker color={{ model: 'rgb', values: editing ?? chosen[0] }} title={tr('Farbe ändern')} onchange={recolor} />
     {/if}
-    <button disabled={!edited} onclick={() => ((picks = []), (editing = null), onreset())}>Zurücksetzen</button>
+    <button disabled={!edited} onclick={() => ((picks = []), (editing = null), onreset())}>{tr('Zurücksetzen')}</button>
   </div>
 </div>
 

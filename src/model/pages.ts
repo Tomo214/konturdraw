@@ -2,8 +2,9 @@
 // (Seitengröße gilt fürs ganze Dokument). Änderungen liefern ein neues Dokument oder null (nichts zu tun).
 import { cloneWithNewIds, newId } from './document';
 import type { Doc, Node, Page } from './types';
+import { tr } from '../i18n/i18n.svelte';
 
-export const pageLabel = (doc: Doc, i: number): string => doc.pages[i].name ?? `Seite ${i + 1}`;
+export const pageLabel = (doc: Doc, i: number): string => doc.pages[i].name ?? tr('Seite {n}', { n: i + 1 });
 
 function withPages(doc: Doc, pages: Page[]): Doc {
   return { ...doc, pages };

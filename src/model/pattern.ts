@@ -5,6 +5,7 @@ import { cloneWithNewIds, findNode, newId, places, updateNodes, worldOf } from '
 import { IDENTITY, invert, multiply, rotate, scale, translate, type Box, type Mat } from './geometry';
 import { shapeSubpaths } from './shapes';
 import type { Color, Doc, Fill, Node, Page, PathNode, Pattern, Point, Subpath } from './types';
+import { N_, tr } from '../i18n/i18n.svelte';
 
 export const isPattern = (f: Fill | null | undefined): f is Pattern => !!f && 'kind' in f && f.kind === 'pattern';
 
@@ -13,16 +14,16 @@ const box = (x0: number, y0: number, x1: number, y1: number) => poly([x0, y0], [
 
 /** Einfache geometrische Vorlagen in der Einheitszelle; was über den Rand liefe, ist auf die Zelle verteilt. */
 export const PATTERNS: readonly { name: string; cell: readonly Subpath[] }[] = [
-  { name: 'Punkte', cell: shapeSubpaths({ kind: 'ellipse', x: 0.25, y: 0.25, width: 0.5, height: 0.5 }) },
-  { name: 'Streifen', cell: [box(0, 0, 1, 0.5)] },
+  { name: N_('Punkte'), cell: shapeSubpaths({ kind: 'ellipse', x: 0.25, y: 0.25, width: 0.5, height: 0.5 }) },
+  { name: N_('Streifen'), cell: [box(0, 0, 1, 0.5)] },
   {
-    name: 'Schräg',
+    name: N_('Schräg'),
     cell: [poly([0, 0], [0.25, 0], [1, 0.75], [1, 1], [0.75, 1], [0, 0.25]), poly([0.75, 0], [1, 0], [1, 0.25]), poly([0, 0.75], [0, 1], [0.25, 1])],
   },
-  { name: 'Karo', cell: [box(0, 0, 0.5, 0.5), box(0.5, 0.5, 1, 1)] },
-  { name: 'Gitter', cell: [box(0, 0, 1, 0.2), box(0, 0.2, 0.2, 1)] },
-  { name: 'Rauten', cell: [poly([0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5])] },
-  { name: 'Ziegel', cell: [box(0.025, 0.05, 0.975, 0.45), box(0, 0.55, 0.475, 0.95), box(0.525, 0.55, 1, 0.95)] },
+  { name: N_('Karo'), cell: [box(0, 0, 0.5, 0.5), box(0.5, 0.5, 1, 1)] },
+  { name: N_('Gitter'), cell: [box(0, 0, 1, 0.2), box(0, 0.2, 0.2, 1)] },
+  { name: N_('Rauten'), cell: [poly([0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5])] },
+  { name: N_('Ziegel'), cell: [box(0.025, 0.05, 0.975, 0.45), box(0, 0.55, 0.475, 0.95), box(0.525, 0.55, 1, 0.95)] },
 ];
 
 const leaf = (fill: Color, subpaths: readonly Subpath[]): PathNode => ({ type: 'path', id: newId(), transform: IDENTITY, style: { fill, stroke: null }, subpaths });
@@ -76,14 +77,14 @@ const pad = (n: Node): number => (n.type === 'group' ? Math.max(0, ...n.children
 export function patternFromSelection(doc: Doc, ids: readonly string[]): { doc: Doc; selected: string[] } {
   const targetId = ids.at(-1) ?? '';
   const target = findNode(doc, targetId);
-  if (!target || target.type === 'group' || target.type === 'image') throw new Error('Ziel (zuletzt gewählt) muss eine Form, ein Pfad oder ein Text sein.');
+  if (!target || target.type === 'group' || target.type === 'image') throw new Error(tr('Ziel (zuletzt gewählt) muss eine Form, ein Pfad oder ein Text sein.'));
   const chosen = new Set(ids.filter((id) => id !== targetId));
-  if (!chosen.size) throw new Error('Für das Muster mindestens ein weiteres Objekt wählen.');
+  if (!chosen.size) throw new Error(tr('Für das Muster mindestens ein weiteres Objekt wählen.'));
   const at = places(doc);
-  if (at.get(targetId)?.path.some((g) => chosen.has(g))) throw new Error('Ziel liegt in der Auswahl für die Kachel.');
+  if (at.get(targetId)?.path.some((g) => chosen.has(g))) throw new Error(tr('Ziel liegt in der Auswahl für die Kachel.'));
   const order = [...at.keys()].filter((id) => chosen.has(id) && !at.get(id)!.path.some((g) => chosen.has(g)));
   const nodes = order.map((id) => findNode(doc, id)!);
-  if (nodes.some(hasPattern)) throw new Error('Ein Muster darf keine Muster enthalten.');
+  if (nodes.some(hasPattern)) throw new Error(tr('Ein Muster darf keine Muster enthalten.'));
   const boxes = nodes.flatMap((n): Box[] => {
     const nb = nodeBounds(n, at.get(n.id)!.world);
     const p = pad(n);
@@ -91,9 +92,9 @@ export function patternFromSelection(doc: Doc, ids: readonly string[]): { doc: D
   });
   const [minX, minY] = [Math.min(...boxes.map((b) => b.minX)), Math.min(...boxes.map((b) => b.minY))];
   const [maxX, maxY] = [Math.max(...boxes.map((b) => b.maxX)), Math.max(...boxes.map((b) => b.maxY))];
-  if (!(maxX - minX >= 1e-9 && maxY - minY >= 1e-9)) throw new Error('Kachel hat keine Fläche.');
+  if (!(maxX - minX >= 1e-9 && maxY - minY >= 1e-9)) throw new Error(tr('Kachel hat keine Fläche.'));
   const tw = worldOf(doc, targetId)!;
-  if (Math.abs(tw[0] * tw[3] - tw[1] * tw[2]) < 1e-12) throw new Error('Ziel hat keine Fläche.');
+  if (Math.abs(tw[0] * tw[3] - tw[1] * tw[2]) < 1e-12) throw new Error(tr('Ziel hat keine Fläche.'));
   const tile = nodes.map((n) => ({ ...cloneWithNewIds(n), transform: multiply(translate(-minX, -minY), worldOf(doc, n.id)!) }));
   const pattern: Pattern = { kind: 'pattern', width: maxX - minX, height: maxY - minY, matrix: multiply(invert(tw), translate(minX, minY)), tile };
   const next = updateNodes(doc, [targetId], (n) => (n.type === 'group' || n.type === 'image' ? n : { ...n, style: { ...n.style, fill: pattern } }));

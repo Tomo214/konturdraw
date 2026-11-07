@@ -1,6 +1,7 @@
 // Menüleiste per Tastatur wie unter Windows: Alt antippen oder Alt + Merkbuchstabe, Pfeile, Pos1/Ende,
 // Eingabe/Leertaste, Escape stufenweise, Buchstabe springt zum Eintrag. Reiner Zustand (menu-nav.test.ts).
-import { MENUS, type MenuEntry } from './menus';
+import { MENUS, menuKey, type MenuEntry } from './menus';
+import { tr } from '../i18n/i18n.svelte';
 import type { Command } from './shortcuts';
 
 /** top = aktives Hauptmenü (null = zu); path = markierter Eintrag je offener Ebene ([] = nur Titel markiert, -1 = keiner);
@@ -40,7 +41,7 @@ export function listAt(nav: MenuNav, depth: number): readonly MenuEntry[] {
 export function altMenu(e: { code?: string; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }): number {
   if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return -1;
   const letter = /^Key([A-Z])$/.exec(e.code ?? '')?.[1];
-  return letter ? MENUS.findIndex((m) => m.key === letter) : -1;
+  return letter ? MENUS.findIndex((m) => menuKey(m) === letter) : -1;
 }
 
 /** Eine Taste bei offener Leiste/offenem Menü; run = auszuführender Befehl (ausgegraute nie). */
@@ -56,7 +57,7 @@ export function navKey(nav: MenuNav, key: string, enabled: (c: Command) => boole
     if (key === 'ArrowLeft' || key === 'ArrowRight') return turn(key === 'ArrowLeft' ? -1 : 1);
     if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') return { nav: openTop(nav.top) };
     if (key === 'Escape') return { nav: CLOSED };
-    const t = letter ? MENUS.findIndex((m) => m.key.toLowerCase() === letter) : -1;
+    const t = letter ? MENUS.findIndex((m) => menuKey(m).toLowerCase() === letter) : -1;
     return t >= 0 ? { nav: openTop(t) } : { nav };
   }
   const d = nav.path.length - 1;
@@ -83,7 +84,7 @@ export function navKey(nav: MenuNav, key: string, enabled: (c: Command) => boole
     case 'Escape': return d > 0 ? go(nav.top, head) : nav.keys ? go(nav.top, []) : { nav: CLOSED };
   }
   // Merkbuchstabe der Einträge = erster Buchstabe: ein Treffer löst aus, mehrere werden der Reihe nach markiert.
-  const hits = letter ? items.flatMap((e, i) => (e && e.label[0].toLowerCase() === letter ? [i] : [])) : [];
+  const hits = letter ? items.flatMap((e, i) => (e && tr(e.label)[0].toLowerCase() === letter ? [i] : [])) : [];
   if (hits.length === 1) return activate(hits[0]);
   return hits.length ? mark(hits.find((i) => i > cur) ?? hits[0]) : { nav };
 }

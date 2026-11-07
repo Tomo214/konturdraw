@@ -4,6 +4,7 @@ import { findNode, updateNodes } from './document';
 import { PATTERNS, isPattern, makePattern, patternAngle, patternSize, recolorPattern, resizePattern } from './pattern';
 import { geometry, shapeSubpaths } from './shapes';
 import type { Color, Doc, Fill, Gradient, LeafNode, Node, Point, Stroke } from './types';
+import { N_ } from '../i18n/i18n.svelte';
 
 export const BLACK: Color = { model: 'rgb', values: [0, 0, 0] };
 export const DEFAULT_STROKE: Stroke = { color: BLACK, width: 0.5, cap: 'round', join: 'round' };
@@ -86,11 +87,11 @@ export function setGradientLine(n: LeafNode, from: Point, to: Point, s: FillSpec
 
 /** Linienarten der Kontur: Strichmuster (Strich, Lücke, …) als Vielfache der Breite, wächst mit ihr. */
 export const DASHES: readonly { name: string; dash?: readonly number[] }[] = [
-  { name: 'durchgehend' },
-  { name: 'Striche', dash: [4, 2] },
-  { name: 'kurze Striche', dash: [2, 2] },
-  { name: 'Punkte', dash: [1, 2] },
-  { name: 'Strich-Punkt', dash: [4, 2, 1, 2] },
+  { name: N_('durchgehend') },
+  { name: N_('Striche'), dash: [4, 2] },
+  { name: N_('kurze Striche'), dash: [2, 2] },
+  { name: N_('Punkte'), dash: [1, 2] },
+  { name: N_('Strich-Punkt'), dash: [4, 2, 1, 2] },
 ];
 
 /** Vorgabe mit genau diesem Muster; -1 = eigenes (z. B. aus einer Importdatei). */

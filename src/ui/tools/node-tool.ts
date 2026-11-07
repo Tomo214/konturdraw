@@ -20,6 +20,7 @@ import { worldScale } from '../../render/scene';
 import { hitPath, nodeKey } from '../node-hit';
 import { drawNodes } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
+import { tr } from '../../i18n/i18n.svelte';
 
 type Subs = readonly Subpath[];
 
@@ -39,8 +40,8 @@ export function nodeTool(ed: Editor): Tool {
   // Formen und Text haben keine eigenen Knoten; true = Hinweis gesetzt.
   function shapeHint(): boolean {
     const n = ed.selected.size === 1 ? findNode(ed.history.current, [...ed.selected][0]) : undefined;
-    const what = n?.type === 'shape' ? 'Form' : n?.type === 'text' ? 'Text' : null;
-    if (what) ed.notice = `${what}: erst in Kurven umwandeln (Mod+Shift+O)`;
+    const what = n?.type === 'shape' ? tr('Form') : n?.type === 'text' ? 'Text' : null;
+    if (what) ed.notice = tr('{what}: erst in Kurven umwandeln (Mod+Shift+O)', { what });
     return !!what;
   }
 
@@ -76,7 +77,7 @@ export function nodeTool(ed: Editor): Tool {
   function edit(fn: (t: PathNode) => Subs | null) {
     const t = sync();
     if (!t) {
-      if (!shapeHint()) ed.notice = 'Knoten: genau einen Pfad wählen';
+      if (!shapeHint()) ed.notice = tr('Knoten: genau einen Pfad wählen');
       return;
     }
     const subs = fn(t);
@@ -87,11 +88,11 @@ export function nodeTool(ed: Editor): Tool {
   }
 
   const needSeg = (fn: (t: PathNode, s: NonNullable<typeof seg>) => Subs) =>
-    edit((t) => (seg ? fn(t, seg) : ((ed.notice = 'Segment anklicken'), null)));
+    edit((t) => (seg ? fn(t, seg) : ((ed.notice = tr('Segment anklicken')), null)));
 
   function setType(type: NodeType) {
     const t = sync();
-    if (!t || !sel.size) return void (ed.notice = 'Knoten wählen');
+    if (!t || !sel.size) return void (ed.notice = tr('Knoten wählen'));
     commit(t, refs().reduce((s, r) => setNodeType(s, r, type), t.subpaths));
   }
 
@@ -102,13 +103,13 @@ export function nodeTool(ed: Editor): Tool {
   function reduce(v: number, done: boolean) {
     level = v;
     const t = reducing?.t ?? sync();
-    if (!t) return void (shapeHint() || (ed.notice = 'Knoten: genau einen Pfad wählen'));
+    if (!t) return void (shapeHint() || (ed.notice = tr('Knoten: genau einen Pfad wählen')));
     reducing ??= { t, doc: ed.history.current, refs: sel.size ? refs() : null };
     const subs = reduceNodes(t.subpaths, reducing.refs, ((level / 100) ** 2 * 2) / worldScale(world(t)));
     if (subs === t.subpaths) ed.history.preview(reducing.doc);
     else commit(t, subs, true, reducing.doc);
     known = subs;
-    ed.notice = `Knoten: ${count(t.subpaths)} → ${count(subs)}`;
+    ed.notice = tr('Knoten: {from} → {to}', { from: count(t.subpaths), to: count(subs) });
     if (!done) return;
     ed.history.commit();
     reducing = null;
@@ -117,25 +118,25 @@ export function nodeTool(ed: Editor): Tool {
   }
 
   const actions = [
-    { label: 'Ecke', run: () => setType('corner') },
-    { label: 'Glatt', run: () => setType('smooth') },
-    { label: 'Symmetrisch', run: () => setType('symmetric') },
-    { label: 'Gerade', run: () => needSeg((t, s) => toLine(t.subpaths, s.sub, s.seg)) },
-    { label: 'Kurve', run: () => needSeg((t, s) => toCurve(t.subpaths, s.sub, s.seg)) },
-    { label: 'Knoten +', run: () => needSeg((t, s) => insertNode(t.subpaths, s.sub, s.seg, s.t)) },
-    { label: 'Löschen', run: () => edit((t) => (sel.size ? deleteNodes(t.subpaths, refs()) : null)) },
-    { label: 'Knoten reduzieren', run: () => reduce(level, true) },
-    { label: 'Trennen', run: () => edit((t) => (sel.size === 1 ? breakAt(t.subpaths, refs()[0]) : ((ed.notice = 'Einen Knoten wählen'), null))) },
+    { label: tr('Ecke'), run: () => setType('corner') },
+    { label: tr('Glatt'), run: () => setType('smooth') },
+    { label: tr('Symmetrisch'), run: () => setType('symmetric') },
+    { label: tr('Gerade'), run: () => needSeg((t, s) => toLine(t.subpaths, s.sub, s.seg)) },
+    { label: tr('Kurve'), run: () => needSeg((t, s) => toCurve(t.subpaths, s.sub, s.seg)) },
+    { label: tr('Knoten +'), run: () => needSeg((t, s) => insertNode(t.subpaths, s.sub, s.seg, s.t)) },
+    { label: tr('Löschen'), run: () => edit((t) => (sel.size ? deleteNodes(t.subpaths, refs()) : null)) },
+    { label: tr('Knoten reduzieren'), run: () => reduce(level, true) },
+    { label: tr('Trennen'), run: () => edit((t) => (sel.size === 1 ? breakAt(t.subpaths, refs()[0]) : ((ed.notice = tr('Einen Knoten wählen')), null))) },
     {
-      label: 'Verbinden',
+      label: tr('Verbinden'),
       run: () =>
         edit((t) => {
           const r = refs();
-          return r.length === 2 ? joinEnds(t.subpaths, r[0], r[1]) : ((ed.notice = 'Zwei Endknoten wählen'), null);
+          return r.length === 2 ? joinEnds(t.subpaths, r[0], r[1]) : ((ed.notice = tr('Zwei Endknoten wählen')), null);
         }),
     },
     {
-      label: 'Schließen/Öffnen',
+      label: tr('Schließen/Öffnen'),
       run: () =>
         edit((t) => {
           const s = seg?.sub ?? refs()[0]?.sub;
@@ -146,7 +147,7 @@ export function nodeTool(ed: Editor): Tool {
 
   return {
     actions,
-    slider: { label: 'Glätte', value: () => level, set: reduce },
+    slider: { label: tr('Glätte'), value: () => level, set: reduce },
     down(p) {
       const t = sync();
       const hit = t && hitPath(t.subpaths, world(t), ed.vp, p.sx, p.sy, sel);

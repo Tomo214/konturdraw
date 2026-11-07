@@ -7,6 +7,7 @@ import type { Renderer } from '../../render/renderer';
 import type { SnapKind } from '../../render/snap';
 import type { Viewport } from '../../render/viewport';
 import type { Command } from '../shortcuts';
+import { tr } from '../../i18n/i18n.svelte';
 
 /** Zeiger in Bildschirm- (sx, sy, immer roh) und Seitenkoordinaten (x, y, ggf. gefangen). */
 export interface Pointer {
@@ -83,7 +84,7 @@ export interface Tool {
 export function addLeaf(ed: Editor, leaf: LeafNode): void {
   const layer = activeLayer(ed.page(), ed.layer?.());
   if (!layer) {
-    ed.notice = 'Keine sichtbare, entsperrte Ebene';
+    ed.notice = tr('Keine sichtbare, entsperrte Ebene');
     return;
   }
   const node = setFill({ ...leaf, style: { fill: null, stroke: ed.stroke } }, ed.fill);

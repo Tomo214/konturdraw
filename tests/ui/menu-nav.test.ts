@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
-import { MENUS, type MenuEntry } from '../../src/ui/menus';
+import { MENUS, menuKey, type MenuEntry } from '../../src/ui/menus';
+import { setLang, tr } from '../../src/i18n/i18n.svelte';
 import { CLOSED, altMenu, navKey, openTop, type MenuNav } from '../../src/ui/menu-nav';
 import type { Command } from '../../src/ui/shortcuts';
 
@@ -93,4 +94,34 @@ test('Alt + Merkbuchstabe per Tastencode (Mac-Option-Zeichen egal); nicht mit St
   const keys = MENUS.map((m) => m.key);
   expect(new Set(keys).size).toBe(MENUS.length);
   for (const m of MENUS) expect(m.label.toUpperCase()).toContain(m.key);
+});
+
+test('Englisch: eigene Merkbuchstaben (File F … Window W), eindeutig, im Wort enthalten, Fangen-Tasten frei', () => {
+  setLang('en');
+  try {
+    const alt = (code: string) => altMenu({ code, altKey: true, ctrlKey: false, metaKey: false, shiftKey: false });
+    expect(alt('KeyF')).toBe(top('Datei'));
+    expect(alt('KeyE')).toBe(top('Bearbeiten'));
+    expect(alt('KeyW')).toBe(top('Fenster'));
+    expect(alt('KeyB')).toBe(top('Bitmaps'));
+    expect(alt('KeyD')).toBe(-1);
+    const keys = MENUS.map(menuKey);
+    expect(new Set(keys).size).toBe(MENUS.length);
+    for (const k of keys) expect(['Z', 'Y', 'Q']).not.toContain(k);
+    for (const m of MENUS) expect(tr(m.label).toUpperCase()).toContain(menuKey(m));
+    expect(navKey({ top: 0, path: [], keys: true }, 'e', all).nav.top).toBe(top('Bearbeiten'));
+  } finally {
+    setLang('de');
+  }
+});
+
+test('Englisch: Buchstabe springt zum Eintrag nach seinem englischen Anfangsbuchstaben', () => {
+  setLang('en');
+  try {
+    // Datei: New, Open …, Save, Save as …, Import …, Export … → „o“ trifft nur Open.
+    const r = navKey(openTop(top('Datei')), 'o', all);
+    expect(r.run).toEqual({ name: 'open' });
+  } finally {
+    setLang('de');
+  }
 });

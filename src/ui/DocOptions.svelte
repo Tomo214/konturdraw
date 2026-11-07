@@ -6,6 +6,7 @@
   import { DEFAULT_UNIT, UNITS } from '../model/units';
   import Icon from './Icon.svelte';
   import type { Command } from './shortcuts';
+  import { tr } from '../i18n/i18n.svelte';
 
   let { doc, grid = $bindable(), oncommand }: { doc: () => Doc; grid: boolean; oncommand: (c: Command) => void } = $props();
 
@@ -31,7 +32,7 @@
 
   function apply(e: SubmitEvent) {
     e.preventDefault();
-    if (!(x > 0 && y > 0)) return void (error = 'Rasterabstand muss größer als 0 sein.');
+    if (!(x > 0 && y > 0)) return void (error = tr('Rasterabstand muss größer als 0 sein.'));
     const mm = (v: number, old: number, exact: number) => (v === old ? exact : v * unit.mm);
     oncommand({ name: 'grid', x: mm(x, before.x, before.mm.x), y: mm(y, before.y, before.mm.y) });
     grid = showGrid;
@@ -39,26 +40,26 @@
   }
 </script>
 
-<dialog bind:this={dialog} aria-label="Dokumentoptionen">
+<dialog bind:this={dialog} aria-label={tr('Dokumentoptionen')}>
   <header>
-    <h2>Dokumentoptionen</h2>
-    <button class="close" aria-label="Schließen" onclick={() => dialog.close()}><Icon name="close" size={16} /></button>
+    <h2>{tr('Dokumentoptionen')}</h2>
+    <button class="close" aria-label={tr('Schließen')} onclick={() => dialog.close()}><Icon name="close" size={16} /></button>
   </header>
   <form onsubmit={apply}>
     <div class="fields">
-      <span class="section">Raster</span>
+      <span class="section">{tr('Raster')}</span>
       <span></span>
-      <label for="kw-grid-x">Waagerecht</label>
+      <label for="kw-grid-x">{tr('Waagerecht')}</label>
       <span><input id="kw-grid-x" type="number" min="0" step="any" bind:value={x} /> {unit.label}</span>
-      <label for="kw-grid-y">Senkrecht</label>
+      <label for="kw-grid-y">{tr('Senkrecht')}</label>
       <span><input id="kw-grid-y" type="number" min="0" step="any" bind:value={y} /> {unit.label}</span>
       <span></span>
-      <label class="check"><input type="checkbox" bind:checked={showGrid} /> Raster anzeigen</label>
+      <label class="check"><input type="checkbox" bind:checked={showGrid} /> {tr('Raster anzeigen')}</label>
     </div>
     {#if error}<p role="alert">{error}</p>{/if}
     <footer>
       <button class="primary" type="submit">OK</button>
-      <button type="button" onclick={() => dialog.close()}>Abbrechen</button>
+      <button type="button" onclick={() => dialog.close()}>{tr('Abbrechen')}</button>
     </footer>
   </form>
 </dialog>

@@ -5,6 +5,7 @@
   import ColorPicker from './ColorPicker.svelte';
   import type { Stroke } from '../model/types';
   import type { ShapeParams } from './tools/shape-tool';
+  import { tr } from '../i18n/i18n.svelte';
 
   interface Props {
     fill: FillSpec;
@@ -34,111 +35,111 @@
 </script>
 
 <div class="form">
-  <h3>Füllung</h3>
+  <h3>{tr('Füllung')}</h3>
   <label class="row">
-    <span>Art</span>
+    <span>{tr('Art')}</span>
     <select value={fill.kind} onchange={(e) => onfill({ ...fill, kind: value(e) as FillSpec['kind'] })}>
-      <option value="none">keine</option>
-      <option value="solid">Vollton</option>
-      <option value="linear">Verlauf linear</option>
-      <option value="radial">Verlauf radial</option>
-      <option value="pattern">Muster</option>
+      <option value="none">{tr('keine')}</option>
+      <option value="solid">{tr('Vollton')}</option>
+      <option value="linear">{tr('Verlauf linear')}</option>
+      <option value="radial">{tr('Verlauf radial')}</option>
+      <option value="pattern">{tr('Muster')}</option>
     </select>
   </label>
   {#if fill.kind === 'pattern'}
     <label class="row">
-      <span>Vorlage</span>
+      <span>{tr('Vorlage')}</span>
       <select value={pat.preset} onchange={(e) => onpattern({ preset: value(e) })}>
-        {#each PATTERNS as p (p.name)}<option value={p.name}>{p.name}</option>{/each}
-        {#if !pat.preset}<option value="" disabled>eigene Kachel</option>{/if}
+        {#each PATTERNS as p (p.name)}<option value={p.name}>{tr(p.name)}</option>{/each}
+        {#if !pat.preset}<option value="" disabled>{tr('eigene Kachel')}</option>{/if}
       </select>
     </label>
     {#if pat.preset}
-      <span>Vordergrund</span>
-      <ColorPicker color={fill.a} title="Vordergrund" onchange={(c) => onfill({ ...fill, a: c, pattern: pat })} />
-      <span>Hintergrund</span>
-      <ColorPicker color={fill.b} title="Hintergrund" onchange={(c) => onfill({ ...fill, b: c, pattern: pat })} />
+      <span>{tr('Vordergrund')}</span>
+      <ColorPicker color={fill.a} title={tr('Vordergrund')} onchange={(c) => onfill({ ...fill, a: c, pattern: pat })} />
+      <span>{tr('Hintergrund')}</span>
+      <ColorPicker color={fill.b} title={tr('Hintergrund')} onchange={(c) => onfill({ ...fill, b: c, pattern: pat })} />
     {/if}
     <label class="row">
-      <span>Größe</span>
+      <span>{tr('Größe')}</span>
       <span class="unit"><input type="number" min="0.1" max="1000" step="0.5" value={mmField(pat.size)} onchange={(e) => onpattern({ size: num(e, 0.1, 1000) })} /> mm</span>
     </label>
     <label class="row">
-      <span>Winkel</span>
+      <span>{tr('Winkel')}</span>
       <span class="unit"><input type="number" min="-360" max="360" step="5" value={mmField(pat.angle)} onchange={(e) => onpattern({ angle: Math.min(360, Math.max(-360, Number(value(e)) || 0)) })} /> °</span>
     </label>
   {:else if fill.kind !== 'none'}
-    <span>Farbe</span>
-    <ColorPicker color={fill.a} title="Farbe" onchange={(c) => onfill({ ...fill, a: c })} />
+    <span>{tr('Farbe')}</span>
+    <ColorPicker color={fill.a} title={tr('Farbe')} onchange={(c) => onfill({ ...fill, a: c })} />
     {#if fill.kind === 'linear' || fill.kind === 'radial'}
-      <span>Endfarbe</span>
-      <ColorPicker color={fill.b} title="Endfarbe" onchange={(c) => onfill({ ...fill, b: c })} />
+      <span>{tr('Endfarbe')}</span>
+      <ColorPicker color={fill.b} title={tr('Endfarbe')} onchange={(c) => onfill({ ...fill, b: c })} />
     {/if}
   {/if}
 
   <hr />
-  <label class="check wide head"><input type="checkbox" checked={!!stroke} onchange={(e) => onstroke(checked(e) ? {} : null)} /> Kontur</label>
+  <label class="check wide head"><input type="checkbox" checked={!!stroke} onchange={(e) => onstroke(checked(e) ? {} : null)} /> {tr('Kontur')}</label>
   {#if stroke}
     <label class="row">
-      <span>Breite</span>
+      <span>{tr('Breite')}</span>
       <span class="unit"><input type="number" min="0.01" max="100" step="0.05" value={mmField(stroke.width)} onchange={(e) => onstroke({ width: num(e, 0.01, 100) })} /> mm</span>
     </label>
-    <span>Farbe</span>
-    <ColorPicker color={stroke.color} title="Konturfarbe" onchange={(c) => onstroke({ color: c })} />
+    <span>{tr('Farbe')}</span>
+    <ColorPicker color={stroke.color} title={tr('Konturfarbe')} onchange={(c) => onstroke({ color: c })} />
     <label class="row">
-      <span>Linienenden</span>
+      <span>{tr('Linienenden')}</span>
       <select value={stroke.cap} onchange={(e) => onstroke({ cap: value(e) as Stroke['cap'] })}>
-        <option value="butt">stumpf</option>
-        <option value="round">rund</option>
-        <option value="square">eckig</option>
+        <option value="butt">{tr('stumpf')}</option>
+        <option value="round">{tr('rund')}</option>
+        <option value="square">{tr('eckig')}</option>
       </select>
     </label>
     <label class="row">
-      <span>Ecken</span>
+      <span>{tr('Ecken')}</span>
       <select value={stroke.join} onchange={(e) => onstroke({ join: value(e) as Stroke['join'] })}>
-        <option value="miter">spitz</option>
-        <option value="round">rund</option>
-        <option value="bevel">abgeschrägt</option>
+        <option value="miter">{tr('spitz')}</option>
+        <option value="round">{tr('rund')}</option>
+        <option value="bevel">{tr('abgeschrägt')}</option>
       </select>
     </label>
     <label class="row">
-      <span>Linienart</span>
+      <span>{tr('Linienart')}</span>
       <select value={String(dashIndex(stroke.dash))} onchange={(e) => onstroke({ dash: DASHES[Number(value(e))].dash?.slice() })}>
-        {#each DASHES as d, i (d.name)}<option value={String(i)}>{d.name}</option>{/each}
-        {#if dashIndex(stroke.dash) < 0}<option value="-1" disabled>eigenes Muster</option>{/if}
+        {#each DASHES as d, i (d.name)}<option value={String(i)}>{tr(d.name)}</option>{/each}
+        {#if dashIndex(stroke.dash) < 0}<option value="-1" disabled>{tr('eigenes Muster')}</option>{/if}
       </select>
     </label>
     <label class="check wide">
       <input type="checkbox" checked={!!stroke.scaleWithObject} onchange={(e) => onstroke({ scaleWithObject: checked(e) })} />
-      Mit Objekt skalieren
+      {tr('Mit Objekt skalieren')}
     </label>
   {/if}
 
   {#if alpha !== null}
     <hr />
     <label class="row">
-      <span>Transparenz</span>
+      <span>{tr('Transparenz')}</span>
       <span class="unit">
-        <input type="range" min="0" max="100" step="1" aria-label="Transparenz Regler" value={Math.round((1 - alpha) * 100)} oninput={(e) => onalpha(transparency(e), false)} onchange={(e) => onalpha(transparency(e), true)} />
+        <input type="range" min="0" max="100" step="1" aria-label={tr('Transparenz Regler')} value={Math.round((1 - alpha) * 100)} oninput={(e) => onalpha(transparency(e), false)} onchange={(e) => onalpha(transparency(e), true)} />
         <input class="pct" type="number" min="0" max="100" step="1" value={Math.round((1 - alpha) * 100)} onchange={(e) => onalpha(transparency(e), true)} /> %
       </span>
     </label>
   {/if}
 
   <hr />
-  <h3>Form</h3>
+  <h3>{tr('Form')}</h3>
   <label class="row">
-    <span>Eckenradius</span>
+    <span>{tr('Eckenradius')}</span>
     <span class="unit"><input type="number" min="0" max="1000" step="0.5" value={mmField(shape.radius)} onchange={(e) => onradius(num(e, 0, 1000))} /> mm</span>
   </label>
   <label class="row">
-    <span>Seiten</span>
+    <span>{tr('Seiten')}</span>
     <input type="number" min="3" max="100" step="1" value={shape.sides} onchange={(e) => onpolygon(Math.round(num(e, 3, 100)), shape.inner)} />
   </label>
-  <label class="check wide"><input type="checkbox" checked={shape.inner !== null} onchange={(e) => onpolygon(shape.sides, checked(e) ? STAR : null)} /> Stern</label>
+  <label class="check wide"><input type="checkbox" checked={shape.inner !== null} onchange={(e) => onpolygon(shape.sides, checked(e) ? STAR : null)} /> {tr('Stern')}</label>
   {#if shape.inner !== null}
     <label class="row">
-      <span>Innenradius</span>
+      <span>{tr('Innenradius')}</span>
       <span class="unit"><input type="number" min="5" max="95" step="5" value={Math.round(shape.inner * 100)} onchange={(e) => onpolygon(shape.sides, num(e, 5, 95) / 100)} /> %</span>
     </label>
   {/if}
