@@ -18,6 +18,7 @@
   <a href="https://github.com/Tomo214/konturdraw/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Tomo214/konturdraw?label=release&color=ff6a3d"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-25252a">
   <img alt="Installer size" src="https://img.shields.io/badge/installer-under%207%20MB-25252a">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-25252a"></a>
 </p>
 
 <p align="center">
@@ -122,4 +123,8 @@ KonturDraw is an independent project with its own code, design and name. It is n
 
 `.cdr` import is based on libcdr and librevenge (MPL-2.0); the changes to libcdr are in [`src/cdr-import/patches`](src/cdr-import/patches).
 
-<!-- LIZENZ: vor dem Veröffentlichen Lizenz wählen, LICENSE-Datei anlegen und hier verlinken. -->
+## License
+
+KonturDraw is released under the [MIT License](LICENSE): use it, change it and share it, commercially too.
+
+Third-party files keep their own licenses: the libcdr patch in `src/cdr-import/patches` and the test file `tests/fixtures/cdr/fdo65220-2.cdr` (from LibreOffice) are MPL-2.0, the test font `tests/fixtures/fonts/Tuffy.ttf` is public domain. The KonturDraw name and logo are not covered by the license, so forks need a name of their own.
