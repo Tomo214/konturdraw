@@ -44,6 +44,7 @@ export const UI: Record<string, string> = {
   'Gerade': 'Straight',
   'Freihand schneiden': 'Cut freehand',
   'Freihand': 'Freehand',
+  'Freihand-Auswahl': 'Freehand selection',
   'Dicke': 'Thickness',
   'Radierer-Dicke': 'Eraser thickness',
   'Runde Spitze': 'Round tip',

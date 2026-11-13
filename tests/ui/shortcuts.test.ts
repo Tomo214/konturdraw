@@ -231,3 +231,8 @@ test('Kontextmenü des Browsers nur in Textfeldern', () => {
   expect(nativeMenu({ tagName: 'DIV', isContentEditable: true })).toBe(true);
   expect(nativeMenu(null)).toBe(false);
 });
+
+test('Ziffernblock + legt eine Kopie an Ort und Stelle ab (wie Vorbild); Strg + bleibt Zoom', () => {
+  expect(commandFor({ key: '+', code: 'NumpadAdd' } as Parameters<typeof commandFor>[0], false)).toEqual({ name: 'duplicateHere' });
+  expect(commandFor({ key: '+', code: 'NumpadAdd', metaKey: true } as Parameters<typeof commandFor>[0], true)).toEqual({ name: 'zoomIn' });
+});

@@ -49,9 +49,9 @@ test('Kürzel-Beschriftung: Windows ausgeschrieben, Mac mit Symbolen', () => {
 test('Werkzeugkasten: jedes Werkzeug genau einmal, Taste passt zum Kürzel', () => {
   const tools = TOOLBOX.flat();
   expect(tools.map((t) => t.tool).sort()).toEqual(
-    ['ellipse', 'eraser', 'eyedropper', 'freehand', 'gradient', 'hand', 'knife', 'node', 'pen', 'polygon', 'rect', 'select', 'text', 'zoom'],
+    ['ellipse', 'eraser', 'eyedropper', 'freehand', 'gradient', 'hand', 'knife', 'lasso', 'node', 'pen', 'polygon', 'rect', 'select', 'text', 'zoom'],
   );
-  expect(TOOLBOX[0].map((t) => t.tool)).toEqual(['select']);
+  expect(TOOLBOX[0].map((t) => t.tool)).toEqual(['select', 'lasso']);
   for (const t of tools) {
     expect(t.label).not.toBe('');
     if (t.key) expect(commandFor(parseKeys(t.key, false), false)).toEqual({ name: 'tool', tool: t.tool });

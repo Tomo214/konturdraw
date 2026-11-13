@@ -2,9 +2,10 @@ import RBush from 'rbush';
 import { display } from '../io/colors';
 import { segmentsOf, subpathBounds } from '../model/bezier';
 import { multiply, scale, type Box, type Mat } from '../model/geometry';
+import { outlineInPolygon, polygonBox } from '../model/lasso';
 import { tilePage } from '../model/pattern';
 import { isGradient, isPattern } from '../model/style';
-import type { Color, Gradient, Page, Pattern, Subpath } from '../model/types';
+import type { Color, Gradient, Page, Pattern, Point, Subpath } from '../model/types';
 import { canvasPattern } from './pattern';
 import { buildScene, paintOf, worldScale, type Clip, type SceneItem, type StyledItem } from './scene';
 import { screenToPage, snapshotTransform, toScreen, visibleBox, type Viewport } from './viewport';
@@ -146,10 +147,21 @@ export class Renderer {
    * Von oben nach unten: das unterste kommt zuletzt und ist damit Ziel der Formen-Befehle (wie im Vorbild).
    */
   inside(r: Box): string[] {
+    return this.whole(r, (b) => b.minX >= r.minX && b.minY >= r.minY && b.maxX <= r.maxX && b.maxY <= r.maxY);
+  }
+
+  /** Wie inside(), aber in einer frei gezogenen Spur (Freihand-Auswahl); geprüft wird der Umriss, nicht die Box. */
+  inPolygon(poly: readonly Point[]): string[] {
+    const r = polygonBox(poly);
+    return r ? this.whole(r, (_, it) => outlineInPolygon(it.subpaths, it.world, poly)) : [];
+  }
+
+  // Oberste Objekte, deren Blätter alle ok sind (Gruppen nur vollständig); von oben nach unten.
+  private whole(r: Box, ok: (b: Box, it: SceneItem) => boolean): string[] {
     const hits = new Map<string, { n: number; order: number }>();
     for (const it of this.tree.search(r)) {
       const b = subpathBounds(it.subpaths, it.world);
-      if (it.locked || it.clips || !b || b.minX < r.minX || b.minY < r.minY || b.maxX > r.maxX || b.maxY > r.maxY) continue;
+      if (it.locked || it.clips || !b || !ok(b, it)) continue;
       const h = hits.get(it.topId);
       hits.set(it.topId, { n: (h?.n ?? 0) + 1, order: Math.max(h?.order ?? -1, it.order) });
     }

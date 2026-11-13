@@ -40,7 +40,7 @@
   import { describeSelection } from './status';
   import { StyleState } from './style-state.svelte';
   import { TextState } from './text-state.svelte';
-  import { toolCursor } from './toolbox';
+  import { isPick, toolCursor } from './toolbox';
   import { createTools } from './tools';
   import { ViewState } from './view-state.svelte';
   import type { CutParams } from './tools/cut-tools';
@@ -274,7 +274,7 @@
       {#if tools[toolName].slider}{@const s = tools[toolName].slider!}
         <label class="field">{s.label} <input type="range" min="0" max="100" value={s.value()} oninput={(e) => guarded(() => s.set(+e.currentTarget.value, false))} onchange={(e) => guarded(() => s.set(+e.currentTarget.value, true))} /></label>
       {/if}
-      <div style:display={toolName === 'select' && count > 0 ? 'contents' : 'none'}>
+      <div style:display={isPick(toolName) && count > 0 ? 'contents' : 'none'}>
         <ShapingBar bind:this={shapingBar} {history} selected={() => selected} ondone={(r) => adopt(r.doc, r.selected)} {onnotice} />
       </div>
     </PropertyBar>

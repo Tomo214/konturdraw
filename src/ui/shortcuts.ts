@@ -14,7 +14,7 @@ export type SnapMode = 'objects' | 'grid' | 'guides' | 'off';
 export type Command =
   | {
       name:
-        | 'undo' | 'redo' | 'delete' | 'duplicate' | 'group' | 'ungroup'
+        | 'undo' | 'redo' | 'delete' | 'duplicate' | 'duplicateHere' | 'group' | 'ungroup'
         | 'forward' | 'backward' | 'front' | 'back' | 'cut' | 'copy' | 'paste' | 'deselect'
         | 'zoomFit' | 'zoom100' | 'zoomSelection' | 'zoomIn' | 'zoomOut' | 'toCurves' | 'outline' | 'trace' | 'print'
         | 'new' | 'open' | 'save' | 'saveAs' | 'import' | 'export' | 'pickToggle' | 'proof' | 'docOptions'
@@ -48,7 +48,7 @@ export type PageOp =
   | 'insertAfter' | 'insertBefore' | 'duplicate' | 'duplicateLayers' | 'delete' | 'rename' | 'first' | 'prev' | 'next' | 'last';
 
 export type Tool =
-  | 'select' | 'node' | 'pen' | 'freehand' | 'rect' | 'ellipse' | 'polygon' | 'gradient' | 'text' | 'hand' | 'zoom'
+  | 'select' | 'lasso' | 'node' | 'pen' | 'freehand' | 'rect' | 'ellipse' | 'polygon' | 'gradient' | 'text' | 'hand' | 'zoom'
   | 'knife' | 'eraser' | 'eyedropper';
 
 // Stift, Messer und Pipette haben im Vorbild keine Taste, Auswahl kommt über die Leertaste.
@@ -62,7 +62,7 @@ export interface KeyInput {
   ctrlKey: boolean;
   shiftKey: boolean;
   altKey: boolean;
-  /** Physische Taste; zählt bei Alt, weil Option auf dem Mac key verändert (¨ † ˆ). */
+  /** Physische Taste; zählt bei Alt (Option verändert key auf dem Mac: ¨ † ˆ) und für den Ziffernblock. */
   code?: string;
 }
 
@@ -100,6 +100,7 @@ export function commandFor(e: KeyInput, isMac: boolean): Command | null {
       return { name: 'nudge', dx: arrow[0] * step, dy: arrow[1] * step };
     }
     if (e.key === 'Delete' || e.key === 'Backspace') return { name: 'delete' };
+    if (e.code === 'NumpadAdd') return { name: 'duplicateHere' };
     if (e.key === 'Escape') return { name: 'deselect' };
     if (e.key === 'Enter') return e.altKey ? { name: 'docker', id: 'properties' } : { name: 'confirm' };
     if (e.key === ' ') return { name: 'pickToggle' };

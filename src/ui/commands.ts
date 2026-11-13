@@ -73,8 +73,9 @@ export function editCommand(
       const clones = clipboard.map(cloneWithNewIds);
       return { doc: addNodes(doc, layer.id, clones), selected: new Set(clones.map((c) => c.id)) };
     }
-    case 'duplicate': {
-      const r = duplicateNodes(doc, ids, DUPLICATE_OFFSET, DUPLICATE_OFFSET);
+    case 'duplicate': case 'duplicateHere': {
+      const d = cmd.name === 'duplicate' ? DUPLICATE_OFFSET : 0; // Ziffernblock + (wie Vorbild): Kopie an Ort und Stelle
+      const r = duplicateNodes(doc, ids, d, d);
       return { doc: r.doc, selected: new Set(r.ids) };
     }
     case 'group': {

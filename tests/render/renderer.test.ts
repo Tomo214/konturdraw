@@ -153,3 +153,17 @@ it('Inhalt wird am Rahmen beschnitten: Füllung unten, Inhalt im eigenen Zustand
   r.draw(ctx, { x: 0, y: 0, zoom: 4 }, 200, 200, 1, undefined, true);
   expect(calls).toEqual(['stroke', 'save', 'clip', 'stroke', 'restore']);
 });
+
+it('Freihand-Auswahl: nur Objekte ganz in der Spur, auch bei eingebuchteter Spur; Gruppe nur vollständig', () => {
+  vi.stubGlobal('document', { createElement: () => ({ getContext: () => null }) });
+  const doc = createDocument(200, 200);
+  // a links, c in der Einbuchtung, g = Gruppe mit y außerhalb (x 90…100).
+  const nodes = [square('a', 0, 20), square('c', 40, 20), group('g', [square('x', 0, 60), square('y', 90, 60)])];
+  const r = new Renderer();
+  r.setPage(addNodes(doc, doc.pages[0].layers[0].id, nodes).pages[0]);
+  // U-förmige Spur: umschließt a (0…10, 20…30) und x, lässt die Mitte oben (30…55) frei.
+  const u = [pt(-5, -5), pt(30, -5), pt(30, 50), pt(55, 50), pt(55, -5), pt(80, -5), pt(80, 100), pt(-5, 100)];
+  expect(r.inPolygon(u)).toEqual(['a']);
+  expect(r.inPolygon([pt(-5, -5), pt(120, -5), pt(120, 100), pt(-5, 100)])).toEqual(['g', 'c', 'a']);
+  expect(r.inPolygon([pt(0, 0), pt(10, 0)])).toEqual([]);
+});

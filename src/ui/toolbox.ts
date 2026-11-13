@@ -12,7 +12,10 @@ export interface ToolInfo {
 }
 
 export const TOOLBOX: readonly (readonly ToolInfo[])[] = [
-  [{ tool: 'select', label: N_('Auswahl'), hint: N_('Leertaste') }],
+  [
+    { tool: 'select', label: N_('Auswahl'), hint: N_('Leertaste') },
+    { tool: 'lasso', label: N_('Freihand-Auswahl') },
+  ],
   [{ tool: 'node', label: N_('Knoten'), key: 'F10' }],
   [
     { tool: 'knife', label: N_('Messer') },
@@ -38,6 +41,9 @@ export const toolInfo = (t: Tool): ToolInfo => TOOLBOX.flat().find((i) => i.tool
 /** Anzeigename in der gewählten Sprache. */
 export const toolName = (t: Tool): string => tr(toolInfo(t).label);
 
+/** Auswahl-Werkzeuge: gleiche Eigenschaftsleiste und Formen-Befehle. */
+export const isPick = (t: Tool): boolean => t === 'select' || t === 'lasso';
+
 /** CSS-Klasse des Mauszeigers auf der Zeichenfläche; '' = Standardpfeil. */
 export const toolCursor = (t: Tool): string =>
-  t === 'hand' || t === 'zoom' ? t : t === 'select' || t === 'node' ? '' : t === 'eyedropper' ? 'pick' : 'draw';
+  t === 'hand' || t === 'zoom' ? t : isPick(t) || t === 'node' ? '' : t === 'eyedropper' ? 'pick' : 'draw';

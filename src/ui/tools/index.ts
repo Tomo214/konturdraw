@@ -17,6 +17,7 @@ export function createTools(
 ): Record<ToolName, Tool> {
   return {
     select: selectTool(ed),
+    lasso: selectTool(ed, { freehand: true }),
     node: nodeTool(ed),
     pen: penTool(ed),
     freehand: freehandTool(ed, o.smoothing),

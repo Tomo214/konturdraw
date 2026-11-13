@@ -69,6 +69,8 @@
   let gestureTimer: ReturnType<typeof setTimeout> | undefined;
   let pan: { sx: number; sy: number; vp: Viewport } | null = null;
   let panning = $state(false);
+  // Zeiger, den das Werkzeug an dieser Stelle will (z. B. Größenpfeil am Griff); '' = Klasse des Werkzeugs.
+  let hover = $state('');
   // Hand, Zoom und Werkzeuge mit noSnap fangen nicht; die Seite kommt frisch an den Renderer (ein Bild kann noch ausstehen).
   const snapper = new Snapper(
     () => {
@@ -206,6 +208,11 @@
   }
   const hitKey = () => (snapper.hit ? `${snapper.hit.x},${snapper.hit.y},${snapper.hit.kind}` : '');
 
+  /** Rechtsklick beim Ziehen (wie Vorbild): Kopie ablegen statt verschieben. */
+  function stamp() {
+    guard(() => tool().stamp?.() && redraw());
+  }
+
   // Mittlere Taste schiebt die Ansicht mit jedem Werkzeug.
   function onDown(e: PointerEvent) {
     canvas.setPointerCapture(e.pointerId);
@@ -214,6 +221,7 @@
       panning = true;
       return;
     }
+    if (e.button === 2) return stamp();
     if (e.button !== 0) return;
     const p = pointer(e);
     guard(() => {
@@ -233,6 +241,9 @@
       return;
     }
     if (tool().move(p) || hitKey() !== before) redraw();
+    // Rechte Taste zur linken gedrückt meldet Pointer Events als pointermove (button 2).
+    if (e.button === 2) stamp();
+    hover = tool().cursor?.(p) ?? '';
   }
 
   function onUp(e: PointerEvent) {
@@ -318,6 +329,7 @@
   <canvas
     bind:this={canvas}
     class="main {panning ? 'hand' : cursor}"
+    style:cursor={panning ? null : hover || null}
     onpointerdown={onDown}
     onpointermove={onMove}
     onpointerup={onUp}

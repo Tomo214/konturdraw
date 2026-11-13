@@ -150,7 +150,7 @@ export function textTool(ed: Editor, redraw: () => void, defaults: () => TextFie
     },
     move(p) {
       if (!start) return false;
-      box = Math.hypot(p.sx - start.sx, p.sy - start.sy) > 2 ? dragBox(start, p, { square: p.shift, center: p.alt }) : null;
+      box = Math.hypot(p.sx - start.sx, p.sy - start.sy) > 2 ? dragBox(start, p, { square: !!p.mod, center: p.shift }) : null;
       return true;
     },
     up(p) {

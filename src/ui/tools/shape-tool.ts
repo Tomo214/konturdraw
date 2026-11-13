@@ -20,13 +20,13 @@ function shapeIn(kind: Shape['kind'], b: Box, s: ShapeParams): Shape {
   return { kind, ...box, sides: s.sides, inner: s.inner };
 }
 
-/** Rechteck / Ellipse / Vieleck aufziehen: Shift = Quadrat/Kreis, Alt = aus der Mitte (Spec §5). */
+/** Rechteck / Ellipse / Vieleck aufziehen: Strg (Mac ⌘) = Quadrat/Kreis, Shift = aus der Mitte (wie Vorbild). */
 export function shapeTool(ed: Editor, kind: Shape['kind'], params: () => ShapeParams): Tool {
   let start: Pointer | null = null;
   let box: Box | null = null;
   // Erst ab 2 px Weg: ein Klick legt nichts an.
   const track = (s: Pointer, p: Pointer) =>
-    (box = Math.hypot(p.sx - s.sx, p.sy - s.sy) > 2 ? dragBox(s, p, { square: p.shift, center: p.alt }) : null);
+    (box = Math.hypot(p.sx - s.sx, p.sy - s.sy) > 2 ? dragBox(s, p, { square: !!p.mod, center: p.shift }) : null);
   return {
     down(p) {
       start = p;

@@ -89,6 +89,20 @@ export function drawMarquee(ctx: CanvasRenderingContext2D, dpr: number, x0: numb
   ctx.setLineDash([]);
 }
 
+/** Spur der Freihand-Auswahl in Seitenkoordinaten, geschlossen gestrichelt wie der Rahmen. */
+export function drawLasso(ctx: CanvasRenderingContext2D, vp: Viewport, dpr: number, pts: readonly Point[]) {
+  if (pts.length < 2) return;
+  screen(ctx, dpr);
+  ctx.fillStyle = 'rgb(255 106 61 / 0.08)';
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (const p of pts) ctx.lineTo(...toS(vp, p));
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
 /** Pfad im Knoten-Werkzeug: Umriss, gewähltes Segment, Anfasser gewählter Knoten, alle Knoten. */
 export function drawNodes(
   ctx: CanvasRenderingContext2D,

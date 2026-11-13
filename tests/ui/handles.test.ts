@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { apply, type Mat } from '../../src/model/geometry';
-import { dragBox, handleAt, rotateFromDrag, scaleFromHandle, skewFromHandle } from '../../src/ui/handles';
+import { dragBox, handleAt, handleCursor, handleNear, rotateFromDrag, scaleFromHandle, skewFromHandle } from '../../src/ui/handles';
 
 const box = { minX: 0, minY: 0, maxX: 10, maxY: 20 };
 const at = (m: Mat, x: number, y: number) => apply(m, x, y).map((v) => Math.round(v * 1e9) / 1e9 + 0); // + 0: −0 → 0
@@ -59,4 +59,34 @@ test('dragBox: normalisiert, Shift = Quadrat, Alt = aus der Mitte', () => {
   expect(dragBox({ x: 10, y: 10 }, { x: 4, y: 30 }, { square: true, center: false })).toEqual({ minX: -10, minY: 10, maxX: 10, maxY: 30 });
   expect(dragBox({ x: 10, y: 10 }, { x: 13, y: 6 }, { square: false, center: true })).toEqual({ minX: 7, minY: 6, maxX: 13, maxY: 14 });
   expect(dragBox({ x: 0, y: 0 }, { x: 2, y: -5 }, { square: true, center: true })).toEqual({ minX: -5, minY: -5, maxX: 5, maxY: 5 });
+});
+
+test('Mauszeiger am Griff: Ecken schräg, Kanten gerade; im Drehmodus Drehpfeil an Ecken, Neigen an Kanten', () => {
+  expect(handleCursor('nw', 'scale')).toBe('nwse-resize');
+  expect(handleCursor('se', 'scale')).toBe('nwse-resize');
+  expect(handleCursor('ne', 'scale')).toBe('nesw-resize');
+  expect(handleCursor('sw', 'scale')).toBe('nesw-resize');
+  expect(handleCursor('n', 'scale')).toBe('ns-resize');
+  expect(handleCursor('w', 'scale')).toBe('ew-resize');
+  expect(handleCursor('n', 'rotate')).toBe('ew-resize'); // obere Kante neigt waagerecht
+  expect(handleCursor('e', 'rotate')).toBe('ns-resize');
+  expect(handleCursor('ne', 'rotate')).toMatch(/^url\(.+\) \d+ \d+, alias$/);
+});
+
+test('Griff unter dem Zeiger: der nächste im Fangradius, auch genau auf der Objektecke', () => {
+  const vp = { x: 0, y: 0, zoom: 2 };
+  const big = { minX: 0, minY: 0, maxX: 20, maxY: 20 }; // 0…40 px, Griff nw bei (−6, −6)
+  expect(handleNear(vp, big, -6, -6)).toBe('nw');
+  expect(handleNear(vp, big, 0, 0)).toBe('nw'); // Objektecke, 8,5 px vom Griff
+  expect(handleNear(vp, big, 20, 20)).toBeUndefined();
+  const small = { minX: 0, minY: 0, maxX: 4, maxY: 4 }; // 8 px: nw (−6, −6), n (4, −6)
+  expect(handleNear(vp, small, 0, -6)).toBe('n'); // näher an n, obwohl nw im Radius liegt
+});
+
+test('step (Strg): Faktor in ganzen 100-%-Schritten, nie 0; über die Gegenseite = gespiegelt', () => {
+  const step = { free: false, center: false, step: true };
+  expect(at(scaleFromHandle(box, 'e', { x: 16, y: 0 }, step), 10, 20)).toEqual([20, 20]); // 1,6 → 2
+  expect(at(scaleFromHandle(box, 'e', { x: 3, y: 0 }, step), 10, 20)).toEqual([10, 20]); // 0,3 → 1
+  expect(at(scaleFromHandle(box, 'e', { x: -8, y: 0 }, step), 10, 20)).toEqual([-10, 20]); // −0,8 → −1
+  expect(at(scaleFromHandle(box, 'se', { x: 23, y: 41 }, step), 10, 20)).toEqual([20, 40]); // Ecke bleibt proportional
 });

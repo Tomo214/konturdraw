@@ -16,7 +16,7 @@
   import type { TextState } from './text-state.svelte';
   import { toolIcon } from './icons';
   import type { Command, Tool } from './shortcuts';
-  import { toolName } from './toolbox';
+  import { isPick, toolName } from './toolbox';
   import type { CutParams } from './tools/cut-tools';
   import type { Knot } from './tools/tool';
   import type { ShapeParams } from './tools/shape-tool';
@@ -75,12 +75,12 @@
 
 <div class="bar" role="toolbar" aria-label={tr('Eigenschaften')}>
   <span class="tool"><Icon name={toolIcon(tool)} size={16} />{toolName(tool)}</span>
-  {#if tool === 'select' && guide}
+  {#if isPick(tool) && guide}
     <GuideFields {guide} {origin} {units} {oncommand} />
-  {:else if tool === 'select' && ms}
+  {:else if isPick(tool) && ms}
     <ObjectFields {ms} {origin} {units} {oncommand} />
     {#if text.shown}<span class="sep"></span><TextBar {text} />{/if}
-  {:else if tool === 'select'}
+  {:else if isPick(tool)}
     <PageFields {page} {units} {nudge} {oncommand} />
   {:else if tool === 'knife' || tool === 'eraser' || tool === 'eyedropper'}
     <CutFields {tool} {units} bind:cut />

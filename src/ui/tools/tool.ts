@@ -74,6 +74,10 @@ export interface Tool {
   readonly noSnap?: boolean;
   /** Beim Werkzeugwechsel: Angefangenes abschließen. */
   finish?(): void;
+  /** Rechte Maustaste oder Leertaste während des Ziehens (wie Vorbild): Original bleibt, gezogen wird eine Kopie. true = abgelegt. */
+  stamp?(): boolean;
+  /** CSS-Mauszeiger an dieser Stelle (z. B. Größenpfeil über einem Griff); '' = Zeiger des Werkzeugs. */
+  cursor?(p: Pointer): string;
   overlay(ctx: CanvasRenderingContext2D, dpr: number): void;
   readonly actions?: readonly { label: string; run(): void }[];
   /** Regler 0–100 in der Eigenschaftsleiste; done = losgelassen → ein Rückgängig-Schritt. */

@@ -43,7 +43,7 @@ export function enabledFor(cmd: Command, c: MenuContext): boolean {
     case 'redo': return c.canRedo;
     case 'paste': return c.clipboard > 0;
     case 'delete': case 'deselect': return n > 0 || c.guide;
-    case 'cut': case 'copy': case 'duplicate': case 'zoomSelection': case 'mirror': case 'align':
+    case 'cut': case 'copy': case 'duplicate': case 'duplicateHere': case 'zoomSelection': case 'mirror': case 'align':
     case 'front': case 'back': case 'forward': case 'backward':
       return n > 0;
     case 'group': return n > 1;

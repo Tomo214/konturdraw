@@ -75,8 +75,8 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 | Knoten | Knoten wählen/verschieben/hinzufügen/löschen; Typ Ecke/glatt/symmetrisch; Segment Gerade ↔ Kurve; Pfad öffnen/schließen; zwei Endknoten verbinden; Pfad an Knoten trennen | P0 |
 | Stift (Bézier) | Klick = Eckpunkt, Ziehen = Kurvenpunkt, Klick auf Start = schließen, Enter/Esc = beenden | P0 |
 | Freihand | Zeichnen mit einstellbarer Glättung (wichtig für Tattoo-Linien) | P0 |
-| Rechteck | Mit Eckenradius, Shift = Quadrat, Alt = aus Mitte | P0 |
-| Ellipse | Shift = Kreis, Alt = aus Mitte | P0 |
+| Rechteck | Mit Eckenradius, Strg (Mac ⌘) = Quadrat, Shift = aus Mitte | P0 |
+| Ellipse | Strg (Mac ⌘) = Kreis, Shift = aus Mitte | P0 |
 | Polygon/Stern | Eckenzahl, Stern-Spitzentiefe | P1 |
 | Text | Grafiktext per Klick, Fließtext per Rahmen, Klick auf Pfad = Text auf Pfad | P1 |
 | Messer | Objekt entlang gezogener Linie in zwei Objekte teilen | P1 |
