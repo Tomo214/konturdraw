@@ -7,6 +7,8 @@
   import type { Renderer } from '../render/renderer';
   import { fitPage, screenToPage, zoomAt, type Viewport } from '../render/viewport';
   import { RULER, drawCrosshair, drawGrid, drawGuides, drawRuler, drawSnap, type RulerLook } from './decor';
+  import { canvasMenu, selectForMenu } from './canvas-menu';
+  import ContextMenu, { type MenuItem } from './ContextMenu.svelte';
   import Icon from './Icon.svelte';
   import type { Command, Shown, SnapMode } from './shortcuts';
   import { Snapper } from './snapper';
@@ -28,6 +30,8 @@
     oncommand,
     guard,
     isMac,
+    sel,
+    enabled,
   }: {
     renderer: Renderer;
     tool: () => Tool;
@@ -48,6 +52,10 @@
     guard: (fn: () => void, keep?: boolean) => void;
     /** Strg-Klick heißt auf dem Mac ⌘-Klick. */
     isMac: boolean;
+    /** Auswahl, die ein Rechtsklick vor dem Kontextmenü setzt. */
+    sel: { selected: Set<string> };
+    /** Ausgegraut wie im Hauptmenü. */
+    enabled: (c: Command) => boolean;
   } = $props();
 
   const page = () => doc().pages[pi()];
@@ -208,13 +216,36 @@
   }
   const hitKey = () => (snapper.hit ? `${snapper.hit.x},${snapper.hit.y},${snapper.hit.kind}` : '');
 
+  let menuAt = $state<{ x: number; y: number } | null>(null);
+  let menuItems = $state.raw<MenuItem[]>([]);
+  let stamped = false; // dieser Rechtsklick hat eine Kopie abgelegt → kein Menü
+
   /** Rechtsklick beim Ziehen (wie Vorbild): Kopie ablegen statt verschieben. */
   function stamp() {
-    guard(() => tool().stamp?.() && redraw());
+    guard(() => tool().stamp?.() && ((stamped = true), redraw()));
+  }
+
+  /** Rechtsklick (Mac auch Ctrl-Klick): Objekt darunter wählen, dann dessen Menü; nicht beim Ziehen mit links. */
+  function onContext(e: MouseEvent) {
+    e.preventDefault();
+    const skip = stamped || (e.buttons & 1) !== 0 || pan !== null;
+    stamped = false;
+    if (skip) return;
+    guard(() => {
+      const hit = renderer.hitTest(vp, e.offsetX, e.offsetY);
+      const next = selectForMenu(sel.selected, hit);
+      if (next !== sel.selected) (sel.selected = next), redraw();
+      menuItems = canvasMenu(!!hit, enabled).map((it) => it && { label: tr(it.label), disabled: it.disabled, run: () => oncommand(it.cmd) });
+      menuAt = { x: e.clientX, y: e.clientY };
+    });
   }
 
   // Mittlere Taste schiebt die Ansicht mit jedem Werkzeug.
   function onDown(e: PointerEvent) {
+    // Klick neben das offene Menü schließt nur das Menü.
+    if (menuAt) return void (menuAt = null);
+    if (isMac && e.ctrlKey && e.button === 0) return; // Ctrl-Klick = Rechtsklick, das Menü kommt per contextmenu
+    if (e.button === 0) stamped = false;
     canvas.setPointerCapture(e.pointerId);
     if (e.button === 1) {
       pan = { sx: e.offsetX, sy: e.offsetY, vp };
@@ -335,8 +366,10 @@
     onpointerup={onUp}
     onpointerleave={() => ((mouse = null), (snapper.hit = null), oncursor(null), queueRulers(), redraw())}
     ondblclick={(e) => guard(() => tool().dblclick?.(pointer(e, false)))}
+    oncontextmenu={onContext}
   ></canvas>
 </div>
+<ContextMenu bind:at={menuAt} items={menuItems} />
 
 <style>
   .stage {

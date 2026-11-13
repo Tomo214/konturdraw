@@ -71,7 +71,7 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 
 | Werkzeug | Funktion | Prio |
 |---|---|---|
-| Auswahl | Klicken, Rahmen ziehen, Shift = hinzufügen; Griffe: verschieben, skalieren, drehen, scheren | P0 |
+| Auswahl | Klicken, Rahmen ziehen, Shift = hinzufügen; Griffe: verschieben, skalieren, drehen, scheren; Rechtsklick (Mac auch Ctrl-Klick) = Kontextmenü, wählt vorher das Objekt darunter (nicht beim Ziehen: dort legt er eine Kopie ab) | P0 |
 | Knoten | Knoten wählen/verschieben/hinzufügen/löschen; Typ Ecke/glatt/symmetrisch; Segment Gerade ↔ Kurve; Pfad öffnen/schließen; zwei Endknoten verbinden; Pfad an Knoten trennen | P0 |
 | Stift (Bézier) | Klick = Eckpunkt, Ziehen = Kurvenpunkt, Klick auf Start = schließen, Enter/Esc = beenden | P0 |
 | Freihand | Zeichnen mit einstellbarer Glättung (wichtig für Tattoo-Linien) | P0 |

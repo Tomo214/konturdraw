@@ -281,7 +281,7 @@
   </div>
   <div class="cell" style="grid-area: tools"><Toolbox tool={toolName} {isMac} onpick={(t) => guarded(() => setTool(t))} /></div>
   <div style="grid-area: stage; min-width: 0; min-height: 0; overflow: hidden">
-    <Canvas bind:this={surface} {isMac} {renderer} tool={() => tools[toolName]} cursor={cursorClass} doc={() => history.current} {pi} show={view.show} snap={view.snap} guide={() => ed.guide} onframe={frame} oncursor={(p) => (cursor = p && toUser(history.current, ...p))} oncommand={exec} guard={guarded} />
+    <Canvas bind:this={surface} {isMac} {renderer} tool={() => tools[toolName]} cursor={cursorClass} doc={() => history.current} {pi} show={view.show} snap={view.snap} guide={() => ed.guide} onframe={frame} oncursor={(p) => (cursor = p && toUser(history.current, ...p))} oncommand={exec} guard={guarded} sel={ed} {enabled} />
   </div>
   <div style="grid-area: pages; min-width: 0"><PageTabs bind:this={tabs} {doc} {history} {pages} onleave={leavePage} ondone={redraw} {onnotice} /></div>
   <div class="cell" style="grid-area: dock">
