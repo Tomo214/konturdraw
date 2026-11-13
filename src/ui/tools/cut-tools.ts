@@ -20,7 +20,7 @@ export interface CutParams {
   pick: { fill: boolean; stroke: boolean };
 }
 
-type Call<J, R> = (jobs: J[]) => Promise<(R | null)[]>;
+export type Call<J, R> = (jobs: J[]) => Promise<(R | null)[]>;
 
 const boxOf = (pts: readonly Point[], pad = 0): Box => ({
   minX: Math.min(...pts.map((p) => p.x)) - pad,
@@ -38,7 +38,7 @@ function smooth(ed: Editor, pts: readonly Point[]): Subpath | null {
 }
 
 /** Rechnet in kw-core und übernimmt; währenddessen Geändertes wird verworfen. */
-async function run<J, R>(ed: Editor, plan: CutPlan<J, R>, call: Call<J, R>, none: string, done: () => void) {
+export async function run<J, R>(ed: Editor, plan: CutPlan<J, R>, call: Call<J, R>, none: string, done: () => void) {
   const doc = ed.history.current;
   try {
     const r = plan.jobs.length ? plan.finish(await call(plan.jobs)) : null;

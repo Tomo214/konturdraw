@@ -41,6 +41,7 @@ fn main() {
             shape::knife_objects,
             shape::erase_objects,
             shape::outline_objects,
+            shape::contour_objects,
             text::layout_text,
             text::list_fonts,
             trace::trace_image

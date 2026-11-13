@@ -210,4 +210,8 @@ export const MESSAGES: Record<string, string> = {
   'Format {format} unbekannt.': 'Unknown format {format}.',
   'Druckansicht ließ sich nicht öffnen.': 'The print preview could not be opened.',
   'Bild fehlerhaft übertragen: {e}': 'Image transferred incorrectly: {e}',
+  'Keine Kontur entstanden – Abstand zu groß für das Objekt.': 'No contour created – the distance is too large for the object.',
+  'Kontur geht nur mit Kurven, Formen, Text und Gruppen.': 'Contour works only with curves, shapes, text and groups.',
+  'Der Konturabstand muss größer als 0 sein.': 'The contour distance must be greater than 0.',
+  'Die Schrittzahl muss zwischen 1 und {MAX_STEPS} liegen.': 'The number of steps must be between 1 and {MAX_STEPS}.',
 };

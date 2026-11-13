@@ -5,6 +5,7 @@
   import type { Measure } from '../model/arrange';
   import type { Color, Guide, Point } from '../model/types';
   import type { Unit } from '../model/units';
+  import ContourFields from './ContourFields.svelte';
   import CutFields from './CutFields.svelte';
   import GradientFields from './GradientFields.svelte';
   import GuideFields from './GuideFields.svelte';
@@ -69,6 +70,7 @@
     hand: N_('Ziehen verschiebt die Ansicht'),
     knife: N_('Quer durch das Objekt ziehen – ohne Auswahl wird alles Gekreuzte geteilt'),
     eraser: N_('Über das Objekt ziehen oder klicken – ohne Auswahl wirkt er auf alles Getroffene'),
+    contour: N_('Objekt anklicken und nach außen oder zur Mitte ziehen · Anwenden nimmt die Werte der Leiste'),
     eyedropper: N_('Klick nimmt auf, weitere Klicks übertragen · Shift neu aufnehmen · Esc zurücksetzen'),
   };
 </script>
@@ -84,6 +86,8 @@
     <PageFields {page} {units} {nudge} {oncommand} />
   {:else if tool === 'knife' || tool === 'eraser' || tool === 'eyedropper'}
     <CutFields {tool} {units} bind:cut />
+  {:else if tool === 'contour'}
+    <ContourFields {units} />
   {:else if tool === 'text'}
     <TextBar {text} />
   {:else if tool === 'gradient'}

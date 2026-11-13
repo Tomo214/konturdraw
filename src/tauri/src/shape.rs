@@ -1,4 +1,5 @@
 //! Formen-Befehle: Aufträge kommen fertig geplant aus der Oberfläche (model/shaping.ts), gerechnet wird in kw-core.
+use kw_core::boolean::contour::{contour, Direction};
 use kw_core::boolean::cut::{erase, knife};
 use kw_core::boolean::outline::outline_dashed;
 use kw_core::boolean::{apply, Op, Shape};
@@ -90,6 +91,29 @@ pub async fn outline_objects(jobs: Vec<OutlineJob>) -> Result<Vec<Vec<Subpath>>,
         .map_err(|e| e.to_string())?
 }
 
+/// Kontur-Werkzeug: Formen eines Objekts (Gruppe = alle Blätter) in Seiten-mm, Abstand in Seiten-mm.
+#[derive(Deserialize)]
+pub struct ContourJob {
+    shapes: Vec<Shape>,
+    offset: f64,
+    steps: usize,
+    direction: Direction,
+    join: Join,
+}
+
+fn run_contour(jobs: &[ContourJob]) -> Result<Vec<Vec<Vec<Subpath>>>, String> {
+    jobs.iter()
+        .map(|j| contour(&j.shapes, j.offset, j.steps, j.direction, j.join))
+        .collect()
+}
+
+#[tauri::command]
+pub async fn contour_objects(jobs: Vec<ContourJob>) -> Result<Vec<Vec<Vec<Subpath>>>, String> {
+    tauri::async_runtime::spawn_blocking(move || run_contour(&jobs))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -148,5 +172,17 @@ mod tests {
         ))
         .unwrap();
         assert!(run_outline(&[d]).unwrap()[0].len() > 2, "einzelne Striche");
+    }
+
+    // Gleiches Format wie ContourJob in model/contour.ts
+    #[test]
+    fn kontur_werkzeug_auftrag() {
+        let c: ContourJob = serde_json::from_str(&format!(
+            r#"{{"shapes":[{{"subpaths":[{SQ}],"evenOdd":false}}],"offset":1,"steps":2,"direction":"outside","join":"miter"}}"#
+        ))
+        .unwrap();
+        let r = run_contour(&[c]).unwrap();
+        assert_eq!(r[0].len(), 2, "zwei Schritte");
+        assert_eq!(r[0][1][0].nodes.len(), 4, "14 × 14 mit spitzen Ecken");
     }
 }

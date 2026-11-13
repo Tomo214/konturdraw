@@ -110,6 +110,14 @@ export function insertAbove(doc: Doc, id: string, nodes: readonly Node[]): Doc {
   });
 }
 
+/** Fügt Objekte direkt unter id in dessen Container (Ebene oder Gruppe) ein. */
+export function insertBelow(doc: Doc, id: string, nodes: readonly Node[]): Doc {
+  return mapContainers(doc, (ch) => {
+    const i = ch.findIndex((n) => n.id === id);
+    return i < 0 ? ch : [...ch.slice(0, i), ...nodes, ...ch.slice(i)];
+  });
+}
+
 export function findNode(doc: Doc, id: string): Node | undefined {
   const search = (children: Children): Node | undefined => {
     for (const n of children) {

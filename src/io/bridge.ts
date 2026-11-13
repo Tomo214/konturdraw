@@ -1,5 +1,6 @@
 // Brücke zur Desktop-App (src/tauri/src/files.rs). Dialoge laufen dort; null = abgebrochen.
 import { invoke, isTauri } from '@tauri-apps/api/core';
+import type { ContourJob } from '../model/contour';
 import type { EraseJob, KnifeJob } from '../model/cutting';
 import type { OutlineJob } from '../model/outline';
 import type { ShapeJob } from '../model/shaping';
@@ -106,6 +107,8 @@ export const traceImage = (png: string, params: TraceCore, width: number, height
 export const shapeObjects = (jobs: ShapeJob[]) => call<Subpath[][]>('shape_objects', { jobs });
 /** Kontur in Objekt: je Auftrag der Umriss der Kontur in Seitenkoordinaten. */
 export const outlineObjects = (jobs: OutlineJob[]) => call<Subpath[][]>('outline_objects', { jobs });
+/** Kontur-Werkzeug: je Auftrag die Schritte vom Original weg, je Schritt Teilpfade in Seitenkoordinaten. */
+export const contourObjects = (jobs: ContourJob[]) => call<Subpath[][][]>('contour_objects', { jobs });
 /** Messer: je Auftrag die Teilpfade je Seite des Schnitts; null = nicht geteilt. */
 export const knifeObjects = (jobs: KnifeJob[]) => call<(Subpath[][] | null)[]>('knife_objects', { jobs });
 /** Radierer: je Auftrag die verbleibenden Teilpfade; null = nicht getroffen, leer = ganz weg. */

@@ -33,6 +33,7 @@ export const TOOLBOX: readonly (readonly ToolInfo[])[] = [
   [{ tool: 'ellipse', label: 'Ellipse', key: 'F7' }],
   [{ tool: 'polygon', label: N_('Vieleck'), key: 'Y' }],
   [{ tool: 'text', label: 'Text', key: 'F8' }],
+  [{ tool: 'contour', label: N_('Kontureffekt') }],
   [{ tool: 'eyedropper', label: N_('Pipette') }],
   [{ tool: 'gradient', label: N_('Verlauf'), key: 'G' }],
 ];

@@ -1,6 +1,8 @@
 // Alle Werkzeuge des Werkzeugkastens an einem Editor.
 import type { Tool as ToolName } from '../shortcuts';
 import type { TextFields } from './text-tool';
+import { contourParams } from '../contour-params.svelte';
+import { contourTool } from './contour-tool';
 import { eraserTool, eyedropperTool, knifeTool, type CutParams } from './cut-tools';
 import { freehandTool, penTool } from './draw-tools';
 import { gradientTool } from './gradient-tool';
@@ -27,6 +29,7 @@ export function createTools(
     knife: knifeTool(ed, o.cut, o.redraw),
     eraser: eraserTool(ed, o.cut, o.redraw),
     eyedropper: eyedropperTool(ed, o.cut),
+    contour: contourTool(ed, contourParams, o.redraw),
     gradient: gradientTool(ed),
     text: textTool(ed, o.redraw, o.textDefaults),
     hand: handTool(ed),

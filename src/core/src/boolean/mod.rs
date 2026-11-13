@@ -1,5 +1,6 @@
 //! Boolesche Formen-Befehle (3d, spec.md §7): i_overlay rechnet ganzzahlig robust auf Polygonen,
 //! recover.rs führt die Ergebnis-Kanten auf Teilstücke der Original-Segmente zurück (Kurven bleiben Kurven).
+pub mod contour;
 pub mod cut;
 pub mod outline;
 mod recover;

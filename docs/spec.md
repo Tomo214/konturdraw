@@ -83,6 +83,7 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 | Radierer | Teile von Pfaden wegradieren (Stencil-Bereinigung) | P1 |
 | Pipette | Füllung/Kontur von einem Objekt auf andere übertragen | P1 |
 | Verlauf | Verlauf direkt auf dem Objekt anlegen und Anfasser ziehen | P1 |
+| Kontureffekt | Objekt anklicken, nach außen oder zur Mitte ziehen: Zugweg ÷ Abstand = Schritte. Leiste: Außen/Innen/Zur Mitte, Schritte (1–250), Abstand, Ecken; „Anwenden“ nimmt die Leistenwerte. **Statisch**: Schritte werden eigene Pfade im Stil des Originals (außen als Gruppe darunter, innen darüber), wachsen nicht mit. Gruppe = ein gemeinsamer Umriss; offene Linien nur nach außen. Rechnung in kw-core (nur Desktop-App) | P2 ✓ 13.11. |
 | Hand | Ansicht verschieben; Leertaste halten = temporär | P0 |
 | Zoom | Klick = rein, Alt-Klick = raus, Rahmen = auf Bereich | P0 |
 
@@ -279,6 +280,7 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 - Werkzeugkasten: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Toolbox.html
 - Farbmanagement: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Get-started-with-color-management.html
 - Farbgenau drucken: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Print-colors-accurately.html
+- Kontureffekt: https://product.corel.com/help/CorelDRAW/540111176/Documentation-Windows/CorelDRAW-en/CorelDRAW-Contour-objects.html
 - Standards: SVG 1.1/2 (W3C), PDF 1.7 / ISO 32000, ICC.1 (color.org), HP-GL/2, DXF-Referenz (Autodesk)
 
 ## 17. Abnahme Phase 1
