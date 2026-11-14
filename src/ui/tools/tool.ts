@@ -6,6 +6,7 @@ import type { Color, Doc, Guide, LeafNode, Page, Stroke, Subpath } from '../../m
 import type { Renderer } from '../../render/renderer';
 import type { SnapKind } from '../../render/snap';
 import type { Viewport } from '../../render/viewport';
+import type { IconName } from '../icons';
 import type { Command } from '../shortcuts';
 import { tr } from '../../i18n/i18n.svelte';
 
@@ -79,7 +80,8 @@ export interface Tool {
   /** CSS-Mauszeiger an dieser Stelle (z. B. Größenpfeil über einem Griff); '' = Zeiger des Werkzeugs. */
   cursor?(p: Pointer): string;
   overlay(ctx: CanvasRenderingContext2D, dpr: number): void;
-  readonly actions?: readonly { label: string; run(): void }[];
+  /** Leistenknöpfe; icon = Symbolknopf mit Kurzinfo, pressed = Modus an (gedrückt), null = Trennstrich zwischen Gruppen. */
+  readonly actions?: readonly ({ label: string; run(): void; icon?: IconName; pressed?(): boolean } | null)[];
   /** Rechtsklick (wie Vorbild): eigene Befehle an dieser Stelle, null = übliches Menü. disabled = passt gerade nicht (grau), checked = Modus an/aus (Haken). */
   menu?(p: Pointer): readonly ({ label: string; run(): void; disabled?: boolean; checked?: boolean } | null)[] | null;
   /** Regler 0–100 in der Eigenschaftsleiste; done = losgelassen → ein Rückgängig-Schritt. */

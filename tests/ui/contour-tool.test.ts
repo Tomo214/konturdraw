@@ -87,11 +87,11 @@ test('Klick ohne Ziehen wählt nur; Klick daneben hebt die Auswahl auf', () => {
 
 test('Anwenden: Werte der Leiste auf die Auswahl; ohne Auswahl ein Hinweis', async () => {
   const s = setup({ steps: 3 });
-  s.tool.actions![0].run();
+  s.tool.actions![0]!.run();
   expect(s.calls).toHaveLength(0);
   expect(s.ed.notice).not.toBe('');
   s.ed.selected = new Set(['a']);
-  s.tool.actions![0].run();
+  s.tool.actions![0]!.run();
   expect(s.calls[0][0]).toMatchObject({ direction: 'outside', steps: 3 });
   await settle();
   expect(kids(s.ed.history.current)).toHaveLength(2);

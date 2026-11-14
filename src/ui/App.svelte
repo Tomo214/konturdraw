@@ -21,6 +21,7 @@
   import DockPanel from './DockPanel.svelte';
   import DocOptions from './DocOptions.svelte';
   import FileDialogs from './FileDialogs.svelte';
+  import Icon from './Icon.svelte';
   import MenuBar from './MenuBar.svelte';
   import ObjectManager from './ObjectManager.svelte';
   import PageTabs from './PageTabs.svelte';
@@ -73,6 +74,7 @@
   let measured = $state.raw<ReadonlySet<string>>(selected);
   let ms = $state.raw<Measure | null>(null);
   let knot = $state.raw<Knot | null>(null); // gewählter Verlaufsknoten; neu nur bei Änderung (Feld mitten im Tippen)
+  let pressed = $state.raw<string[]>([]); // gedrückte Modusknöpfe der Werkzeugleiste
   /** gewähltes Bild fürs Nachzeichnen; wechselt mit Dokument oder Auswahl */
   let picked = $state.raw<ReturnType<typeof selectedImage>>();
   let guide = $state<string | null>(null); // gewählte Hilfslinie; zählt nur ohne Objekt-Auswahl
@@ -131,6 +133,8 @@
     count = selected.size;
     const k = tools[toolName].knot?.get() ?? null;
     if (JSON.stringify(k) !== JSON.stringify(knot)) knot = k;
+    const on = (tools[toolName].actions ?? []).flatMap((a) => (a?.pressed?.() ? [a.label] : []));
+    if (on.join() !== pressed.join()) pressed = on;
     info = describeSelection(history.current, [...selected]);
     if (doc !== history.current || measured !== selected) [doc, measured, ms, picked] = [history.current, selected, measure(history.current, [...selected]), img];
   }
@@ -271,8 +275,13 @@
   <div style="grid-area: property; min-width: 0">
     <PropertyBar tool={toolName} {ms} text={typo} guide={ms ? null : (guidesOf(doc, pages.index(doc)).find((g) => g.id === guide) ?? null)} origin={originOf(doc)} page={doc.pages[0]} units={doc.units ?? DEFAULT_UNIT} nudge={doc.nudge ?? DEFAULT_NUDGE} shape={style.shape}
       bind:smoothing bind:cut {knot} onknot={(k) => guarded(() => (tools[toolName].knot?.set(k), redraw()))} onradius={style.handlers.onradius} onpolygon={style.handlers.onpolygon} oncommand={exec}>
-      {#each tools[toolName].actions ?? [] as a (a.label)}
-        <button onpointerdown={(e) => e.preventDefault()} onclick={() => guarded(a.run)}>{a.label}</button>
+      {#each tools[toolName].actions ?? [] as a, i (a?.label ?? i)}
+        {#if !a}<span class="sep"></span>
+        {:else if a.icon}
+          <button class="icon" aria-label={a.label} data-tip={a.label} data-tip-side="below" aria-pressed={a.pressed ? pressed.includes(a.label) : undefined} onpointerdown={(e) => e.preventDefault()} onclick={() => guarded(a.run)}
+            ><Icon name={a.icon} size={18} /></button
+          >
+        {:else}<button onpointerdown={(e) => e.preventDefault()} onclick={() => guarded(a.run)}>{a.label}</button>{/if}
       {/each}
       {#if tools[toolName].slider}{@const s = tools[toolName].slider!}
         <label class="field">{s.label} <input type="range" min="0" max="100" value={s.value()} oninput={(e) => guarded(() => s.set(+e.currentTarget.value, false))} onchange={(e) => guarded(() => s.set(+e.currentTarget.value, true))} /></label>

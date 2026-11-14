@@ -27,12 +27,13 @@ import { worldScale } from '../../render/scene';
 import { screenToPage } from '../../render/viewport';
 import { hitPath, nodeKey, nodesWhere } from '../node-hit';
 import { handleAt, handleCursor, handleNear, rotateFromDrag, scaleFromHandle, skewFromHandle, type Handle } from '../handles';
+import type { IconName } from '../icons';
 import { drawLasso, drawMarquee, drawNodes, drawSelectionBox } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
 import { tr } from '../../i18n/i18n.svelte';
 
 type Subs = readonly Subpath[];
-type Act = { label: string; run(): void; on(): boolean; checked?(): boolean };
+type Act = { label: string; icon: IconName; run(): void; on(): boolean; checked?(): boolean };
 
 /** Knoten-Werkzeug: bearbeitet genau einen gewählten Pfad (oberste Ebene). */
 export function nodeTool(ed: Editor): Tool {
@@ -190,21 +191,23 @@ export function nodeTool(ed: Editor): Tool {
   const onSeg = () => !!seg;
   // on = passt zur Auswahl; das Rechtsklick-Menü zeigt den Rest grau, die Leiste meldet beim Klick, was fehlt.
   const A = {
-    corner: { label: tr('Ecke'), run: () => setType('corner'), on: nodes(1) },
-    smooth: { label: tr('Glatt'), run: () => setType('smooth'), on: nodes(1) },
-    symmetric: { label: tr('Symmetrisch'), run: () => setType('symmetric'), on: nodes(1) },
-    line: { label: tr('Gerade'), run: () => needSeg((t, s) => toLine(t.subpaths, s.sub, s.seg)), on: onSeg },
-    curve: { label: tr('Kurve'), run: () => needSeg((t, s) => toCurve(t.subpaths, s.sub, s.seg)), on: onSeg },
-    add: { label: tr('Knoten +'), run: () => needSeg((t, s) => insertNode(t.subpaths, s.sub, s.seg, s.t)), on: onSeg },
-    del: { label: tr('Löschen'), run: () => edit((t) => (sel.size ? deleteNodes(t.subpaths, refs()) : null)), on: nodes(1) },
-    reduce: { label: tr('Knoten reduzieren'), run: () => reduce(level, true), on: () => true },
+    corner: { label: tr('Ecke'), icon: 'nodeCorner', run: () => setType('corner'), on: nodes(1) },
+    smooth: { label: tr('Glatt'), icon: 'nodeSmooth', run: () => setType('smooth'), on: nodes(1) },
+    symmetric: { label: tr('Symmetrisch'), icon: 'nodeSymmetric', run: () => setType('symmetric'), on: nodes(1) },
+    line: { label: tr('Gerade'), icon: 'segLine', run: () => needSeg((t, s) => toLine(t.subpaths, s.sub, s.seg)), on: onSeg },
+    curve: { label: tr('Kurve'), icon: 'segCurve', run: () => needSeg((t, s) => toCurve(t.subpaths, s.sub, s.seg)), on: onSeg },
+    add: { label: tr('Knoten +'), icon: 'nodeAdd', run: () => needSeg((t, s) => insertNode(t.subpaths, s.sub, s.seg, s.t)), on: onSeg },
+    del: { label: tr('Löschen'), icon: 'nodeDelete', run: () => edit((t) => (sel.size ? deleteNodes(t.subpaths, refs()) : null)), on: nodes(1) },
+    reduce: { label: tr('Knoten reduzieren'), icon: 'nodesReduce', run: () => reduce(level, true), on: () => true },
     split: {
       label: tr('Trennen'),
+      icon: 'nodeBreak',
       run: () => edit((t) => (sel.size === 1 ? breakAt(t.subpaths, refs()[0]) : ((ed.notice = tr('Einen Knoten wählen')), null))),
       on: () => sel.size === 1,
     },
     join: {
       label: tr('Verbinden'),
+      icon: 'nodeJoin',
       run: () =>
         edit((t) => {
           const r = refs();
@@ -214,6 +217,7 @@ export function nodeTool(ed: Editor): Tool {
     },
     close: {
       label: tr('Schließen/Öffnen'),
+      icon: 'pathClose',
       run: () =>
         edit((t) => {
           const s = sub();
@@ -223,6 +227,7 @@ export function nodeTool(ed: Editor): Tool {
     },
     reverse: {
       label: tr('Richtung umkehren'),
+      icon: 'pathReverse',
       run: () =>
         edit((t) => {
           const s = sub();
@@ -230,15 +235,17 @@ export function nodeTool(ed: Editor): Tool {
         }),
       on: () => sub() !== undefined,
     },
-    extract: { label: tr('Teilpfad herauslösen'), run: extract, on: () => sub() !== undefined && (target()?.subpaths.length ?? 0) > 1 },
+    extract: { label: tr('Teilpfad herauslösen'), icon: 'subpathExtract', run: extract, on: () => sub() !== undefined && (target()?.subpaths.length ?? 0) > 1 },
     // Knoten auf eine waagerechte bzw. senkrechte Linie (Mittelachse ihres Rahmens)
-    alignH: { label: tr('Waagerecht ausrichten'), run: () => align('centerY'), on: nodes(2) },
-    alignV: { label: tr('Senkrecht ausrichten'), run: () => align('centerX'), on: nodes(2) },
-    stretch: { label: tr('Knoten strecken/skalieren'), run: toggle('scale'), on: nodes(2), checked: () => xf === 'scale' },
-    turn: { label: tr('Knoten drehen/neigen'), run: toggle('rotate'), on: nodes(2), checked: () => xf === 'rotate' },
-  };
-  const actions = [A.corner, A.smooth, A.symmetric, A.line, A.curve, A.add, A.del, A.reduce, A.split, A.join, A.close, A.reverse, A.extract];
+    alignH: { label: tr('Waagerecht ausrichten'), icon: 'nodesAlignH', run: () => align('centerY'), on: nodes(2) },
+    alignV: { label: tr('Senkrecht ausrichten'), icon: 'nodesAlignV', run: () => align('centerX'), on: nodes(2) },
+    stretch: { label: tr('Knoten strecken/skalieren'), icon: 'nodesStretch', run: toggle('scale'), on: nodes(2), checked: () => xf === 'scale' },
+    turn: { label: tr('Knoten drehen/neigen'), icon: 'nodesRotate', run: toggle('rotate'), on: nodes(2), checked: () => xf === 'rotate' },
+  } satisfies Record<string, Act>;
+  // Leiste und Rechtsklick-Menü in derselben Reihenfolge (wie Vorbild); die Leiste hat zusätzlich „Knoten reduzieren“ beim Glätte-Regler.
   const MENU: (Act | null)[] = [A.add, A.del, A.join, A.split, null, A.line, A.curve, null, A.corner, A.smooth, A.symmetric, null, A.reverse, A.close, A.extract, null, A.alignH, A.alignV, null, A.stretch, A.turn];
+  const BAR: (Act | null)[] = [...MENU, null, A.reduce];
+  const actions = BAR.map((a) => a && { label: a.label, icon: a.icon, run: a.run, pressed: a.checked });
 
   return {
     actions,

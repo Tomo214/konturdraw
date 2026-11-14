@@ -34,7 +34,7 @@ test('Glätte-Regler: live beim Ziehen, beim Loslassen genau ein Rückgängig-Sc
 
 test('Knopf „Knoten reduzieren“ nutzt die eingestellte Glätte; nichts zu holen → kein Schritt', () => {
   const { ed, tool } = setup();
-  const run = () => tool.actions!.find((a) => a.label === 'Knoten reduzieren')!.run();
+  const run = () => tool.actions!.find((a) => a?.label === 'Knoten reduzieren')!.run();
   tool.slider!.set(0, true);
   expect(ed.history.canUndo).toBe(false);
   tool.slider!.set(40, false);
@@ -132,7 +132,7 @@ test('Doppelklick auf einen Knoten löscht ihn; Mod+A wählt alle Knoten', () =>
 
 test('Richtung umkehren und Teilpfad herauslösen am angeklickten Teilpfad', () => {
   const { ed, tool } = line4([{ closed: false, nodes: [{ x: 0, y: 50, type: 'corner' }, { x: 10, y: 50, type: 'corner' }] }]);
-  const act = (label: string) => tool.actions!.find((a) => a.label === label)!.run();
+  const act = (label: string) => tool.actions!.find((a) => a?.label === label)!.run();
   tool.down(at(5, 0));
   tool.up(at(5, 0));
   act('Richtung umkehren');
@@ -254,4 +254,20 @@ test('Knoten am Rahmenrand bleibt greifbar: Klick genau auf den Knoten verschieb
   mode(tool, at(10, 5), 'Knoten strecken/skalieren').run();
   drag(tool, [20, -5], [22, -5]); // (20|-5) = Ecke oben rechts, Griff liegt 8,5 px daneben
   expect(xs(ed.history.current)).toEqual([0, 12, 22, 30]);
+});
+
+test('Leiste: alle Knotenbefehle als Icons, Gruppen und Reihenfolge wie im Rechtsklick-Menü, Modi zeigen gedrückt', () => {
+  const { tool } = zigzag();
+  const bar = tool.actions!;
+  expect(bar.filter((a) => a && !a.icon)).toEqual([]);
+  const labels = (xs: readonly ({ label: string } | null)[]) => xs.map((a) => a?.label ?? '|').join(',');
+  expect(labels(bar)).toBe(`${labels(tool.menu!(at(10, 5))!)},|,Knoten reduzieren`);
+  drag(tool, [5, -10], [25, 10]);
+  const stretch = bar.find((a) => a?.label === 'Knoten strecken/skalieren')!;
+  const turn = bar.find((a) => a?.label === 'Knoten drehen/neigen')!;
+  expect([stretch.pressed!(), turn.pressed!()]).toEqual([false, false]);
+  stretch.run();
+  expect([stretch.pressed!(), turn.pressed!()]).toEqual([true, false]);
+  turn.run();
+  expect([stretch.pressed!(), turn.pressed!()]).toEqual([false, true]);
 });

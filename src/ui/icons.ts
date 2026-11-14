@@ -46,6 +46,32 @@ export const ICONS = {
   size: 'M6.5 6.5h10v10h-10z M6.5 3.5h10 M6.5 2.5v2 M16.5 2.5v2 M3.5 6.5v10 M2.5 6.5h2 M2.5 16.5h2',
   // Lineal-Ecke: Nullpunkt
   origin: 'M10 2.5v15 M2.5 10h15 M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
+  // Knoten-Werkzeug (Quadrat = Knoten, Kreis = Anfasser; gedimmt = Ausgangslage)
+  nodeAdd: 'M3 16C3.5 9.5 7.5 5 15 4.5 M5.15 6.75h2.5v2.5h-2.5z M14.5 11.5v6 M11.5 14.5h6',
+  nodeDelete: 'M3 16C3.5 9.5 7.5 5 15 4.5 M5.15 6.75h2.5v2.5h-2.5z M11.5 14.5h6',
+  nodeJoin: 'M2.5 16.5C3.5 13 5.5 11 8.75 11 M17.5 16.5C16.5 13 14.5 11 11.25 11 M8.75 9.75h2.5v2.5h-2.5z M7 4l3 3 3-3',
+  nodeBreak: 'M2.5 16.5C3.5 13.5 5 11.5 7 11 M17.5 16.5C16.5 13.5 15 11.5 13 11 M5.75 9.75h2.5v2.5h-2.5z M11.75 9.75h2.5v2.5h-2.5z M10 3.5V6 M10 14v2.5',
+  segLine: 'M3 14.5h2.5V17H3z M14.5 3H17v2.5h-2.5z M5.5 14.5l9-9',
+  segCurve: 'M3 14.5h2.5V17H3z M14.5 3H17v2.5h-2.5z M5.5 14.5C5.5 8 8 5.5 14.5 5.5',
+  nodeCorner:
+    'M8.75 13.25h2.5v2.5h-2.5z M9.15 13.25L4.7 6.55 M10.85 13.25l4.45-6.7 M5.25 5.5a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z M17.25 5.5a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z',
+  // Glatt/Symmetrisch: Anfasser hell, Kurve gedimmt; Unterschied = ungleich vs. gleich lange Anfasser
+  nodeSmooth: [
+    'M8.75 8.75h2.5v2.5h-2.5z M8 10h.75 M11.25 10h5.25 M8 10a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z M19 10a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z',
+    'M2.5 16C4 12 6.5 10 10 10s6 2 7.5 6',
+  ],
+  nodeSymmetric: [
+    'M8.75 8.75h2.5v2.5h-2.5z M5 10h3.75 M11.25 10H15 M5 10a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z M17.5 10a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z',
+    'M2.5 16C4 12 6.5 10 10 10s6 2 7.5 6',
+  ],
+  pathReverse: 'M3.5 7h12 M12.5 4l3 3-3 3 M16.5 13h-12 M7.5 10l-3 3 3 3',
+  pathClose: 'M12.5 5.55A6 6 0 1 1 7.5 5.55 M11.25 4.3h2.5v2.5h-2.5z M6.25 4.3h2.5v2.5h-2.5z',
+  subpathExtract: ['M17.5 5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z M9 11l3.5-3.5 M9.5 7.5h3v3', 'M2.5 7.5h10v10h-10z M9.5 12.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'],
+  nodesAlignH: ['M3.25 8.75h2.5v2.5h-2.5z M8.75 8.75h2.5v2.5h-2.5z M14.25 8.75h2.5v2.5h-2.5z', 'M2 10h16 M3.25 3.75h2.5v2.5h-2.5z M14.25 13.75h2.5v2.5h-2.5z'],
+  nodesAlignV: ['M8.75 3.25h2.5v2.5h-2.5z M8.75 8.75h2.5v2.5h-2.5z M8.75 14.25h2.5v2.5h-2.5z', 'M10 2v16 M3.75 3.25h2.5v2.5h-2.5z M13.75 14.25h2.5v2.5h-2.5z'],
+  nodesStretch: ['M5.25 9.25h2.5v2.5h-2.5z M9.25 5.25h2.5v2.5h-2.5z M12 12l4 4 M16 12.5V16h-3.5', 'M2.5 2.5h15v15h-15z'],
+  nodesRotate: ['M5.25 9.25h2.5v2.5h-2.5z M9.25 5.25h2.5v2.5h-2.5z M15.5 10.5a4.5 4.5 0 0 1-4.5 4.5 M12.75 13.25L11 15l1.75 1.75', 'M2.5 2.5h15v15h-15z'],
+  nodesReduce: ['M3 15C5.5 7 11.5 4.5 17 5 M1.75 13.75h2.5v2.5h-2.5z M15.75 3.75h2.5v2.5h-2.5z', 'M5.25 7.5h2.5v2.5h-2.5z M10.25 4.35h2.5v2.5h-2.5z'],
   // Ausrichten (Linie = Bezug)
   // Text-Ausrichtung (Eigenschaftsleiste Text)
   textLeft: 'M3.5 5h13 M3.5 8.5h8 M3.5 12h13 M3.5 15.5h8',
