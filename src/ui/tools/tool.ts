@@ -22,6 +22,8 @@ export interface Pointer {
   mod?: boolean;
   /** Woran x, y gefangen wurden; fehlt = ungefangen. */
   snap?: SnapKind;
+  /** Stiftdruck 0–1; fehlt bei Maus und Finger. */
+  pressure?: number;
 }
 
 /** Was ein Werkzeug vom Editor sieht. */

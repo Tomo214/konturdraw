@@ -18,6 +18,8 @@ export const ICONS = {
   gradient: 'M3.5 3.5h13v13h-13z M7 13l6-6 M5.75 11.75h2.5v2.5h-2.5z M14.5 5.5a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0z',
   knife: 'M3 17l3-3 M6 14l9.5-9.5c1.3 2.6.6 5.2-1.8 7.6L11 14.8z',
   // Stück zwischen zwei Kreuzungen gedimmt = wird gelöscht
+  // Pinselkreis glättet, links der zackige Ausgang
+  smooth: ['M17.5 11.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0z M8.5 11.5c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0', 'M2 11.5l1.6-2 1.6 2 1.6-2 1.6 2'],
   piece: ['M6 3.5v13 M14 3.5v13 M2.5 11H6 M14 11h3.5', 'M6 11h8'],
   eraser: 'M3.75 12.6l7.9-7.9a1.5 1.5 0 0 1 2.1 0l2.55 2.55a1.5 1.5 0 0 1 0 2.1L9.4 16.25H6.6l-2.85-2.85a.57.57 0 0 1 0-.8z M7.6 8.75l4.65 4.65 M9.4 16.25h7.1',
   contour: 'M8 8h4v4H8z M5.5 5.5h9v9h-9z M5 3h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',

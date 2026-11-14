@@ -56,6 +56,7 @@ export const MENUS: Record<string, string> = {
   'Linienstück löschen': 'Delete line piece',
   'Kontureffekt': 'Contour',
   'Radierer': 'Eraser',
+  'Glätten': 'Smooth',
   'Stift': 'Pen',
   'Pipette': 'Eyedropper',
   'Transformationen': 'Transform',

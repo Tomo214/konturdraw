@@ -211,7 +211,8 @@
   /** Zeiger fürs Werkzeug, x/y gefangen (Doppelklick roh). */
   function pointer(e: MouseEvent, snapped = true): Pointer {
     const [x, y] = screenToPage(vp, e.offsetX, e.offsetY);
-    const p = { sx: e.offsetX, sy: e.offsetY, x, y, shift: e.shiftKey, alt: e.altKey, mod: isMac ? e.metaKey : e.ctrlKey };
+    const pen = (e as PointerEvent).pointerType === 'pen';
+    const p = { sx: e.offsetX, sy: e.offsetY, x, y, shift: e.shiftKey, alt: e.altKey, mod: isMac ? e.metaKey : e.ctrlKey, pressure: pen ? (e as PointerEvent).pressure : undefined };
     return snapped ? snapper.at(p, vp.zoom) : p;
   }
   const hitKey = () => (snapper.hit ? `${snapper.hit.x},${snapper.hit.y},${snapper.hit.kind}` : '');

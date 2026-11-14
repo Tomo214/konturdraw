@@ -81,6 +81,7 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 | Text | Grafiktext per Klick, Fließtext per Rahmen, Klick auf Pfad = Text auf Pfad | P1 |
 | Messer | Objekt entlang gezogener Linie in zwei Objekte teilen | P1 |
 | Linienstück löschen | Klick löscht das Stück einer Linie bis zu den nächsten Kreuzungen (mit Linien auf sichtbaren Ebenen – gesperrte zählen mit – oder mit sich selbst; ein Ende, das auf einer Linie liegt, zählt als Kreuzung); Überfahren hebt das Stück hervor; Rahmen ziehen = alle berührten Stücke; gesperrte Objekte bleiben; Formen werden zu Kurven, geschlossene Pfade öffnen sich an den Kreuzungen; ohne Kreuzung verschwindet das ganze Objekt. Offen: Alt-Linie (alle gekreuzten), Umschalt-Klick verbindet zwei Endpunkte, Schleife innerhalb eines Segments, deckungsgleiche Linien (nur die Enden der anderen zählen) | P1 ✓ 14.11. |
+| Glätten | Im Flyout am Knoten-Werkzeug. Über die Kanten gewählter Objekte streichen: rundet Ecken, glättet Zacken; Knoten außerhalb des Pinsels bleiben exakt, am Strich-Ende werden die Knoten im Strichbereich zusammengefasst. Leiste: Radius (mm), Tempo (%), Stiftdruck; Umschalt + Ziehen = Pinselgröße bis zur Maus, Alt + Ziehen = Tempo (Mitte 0 %, Rand 100 %); ein Strich = ein Rückgängig-Schritt; Formen werden zu Kurven, bei Gruppen wirkt es auf alle Pfade darin | P1 ✓ 14.11. |
 | Radierer | Teile von Pfaden wegradieren (Stencil-Bereinigung) | P1 |
 | Pipette | Füllung/Kontur von einem Objekt auf andere übertragen | P1 |
 | Verlauf | Verlauf direkt auf dem Objekt anlegen und Anfasser ziehen | P1 |
@@ -225,7 +226,7 @@ Allgemein: Export „nur Auswahl“ oder „ganze Seite“ (P0); nicht druckbare
 |---|---|
 | Knoten / Freihand / Rechteck / Ellipse / Vieleck / Text | F10 / F5 / F6 / F7 / Y / F8 |
 | Radierer / Interaktive Füllung (Verlauf) / Hand / Zoom | X / G / H / Z |
-| Stift, Messer, Linienstück löschen, Pipette | ohne Taste (wie Vorbild) |
+| Stift, Messer, Linienstück löschen, Glätten, Pipette | ohne Taste (wie Vorbild) |
 | Auswahl | Leertaste schaltet zwischen Auswahl und letztem Werkzeug (Mod+Leertaste auch beim Texteingeben) |
 | Rückgängig / Wiederholen | Mod+Z / Mod+Shift+Z |
 | Alles auswählen | Mod+A (Knoten-Werkzeug: alle Knoten des Pfads, sonst alle Objekte außer gesperrten Ebenen) |
@@ -290,6 +291,7 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 - Knoten-Werkzeug: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Select-and-move-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Add-remove-join-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Manipulate-segments.html, https://learn.corel.com/tutorials/coreldraw-edit-shape-tools/, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Align-distribute-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Transform-nodes.html; Biegeformel und Griffbelegung beim Knoten-Transformieren = eigene Festlegung
 - Linienstück löschen: https://product.corel.com/help/CorelDRAW/540111148/CorelDRAW-en/CorelDRAW-Crop-and-erase-objects.html; Kreuzungssuche, T-Stoß-Toleranz und Hervorheben = eigene Festlegung
 - Druck in Kacheln: https://product.corel.com/help/CorelDRAW/540227992/Main/EN/Documentation/CorelDRAW-Laying-out-print-jobs.html; Lage und Form der Passkreuze, Blattnamen und Dialogaufbau = eigene Festlegung
+- Glätten: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Smooth-objects.html; Taubin-Glättung mit Projektion, Teilung am Pinselrand, enge Anpassung je Tupfer und Knoten zusammenfassen am Strich-Ende = eigene Festlegung
 - Standards: SVG 1.1/2 (W3C), PDF 1.7 / ISO 32000, ICC.1 (color.org), HP-GL/2, DXF-Referenz (Autodesk)
 
 ## 18. Stencil-Lücken zum Vorbild (14.11.)
@@ -301,7 +303,7 @@ Timon 14.11.: gleiche Funktionen wie das Vorbild, so gut wie möglich auf Stenci
 | 1 | Virtuelles Segment löschen | Werkzeug: Klick löscht das Stück zwischen zwei Schnittpunkten; Rahmen = mehrere; Alt-Linie = alle gekreuzten; Umschalt-Klick verbindet zwei Endpunkte | Überstände an Linienkreuzungen nach Nachzeichnen/Zeichnen weg – häufigster Putzschritt | ✓ 14.11. als „Linienstück löschen“ (Klick, Rahmen); Alt-Linie und Umschalt-Verbinden offen |
 | 2 | Druck in Kacheln | Druckdialog: Seiten gekachelt, Überlappung, Passmarken | Rücken/Arm größer als A4 auf A4-Thermodrucker | ✓ 14.11. als „In Kacheln drucken“ (Überlappung, Rand, Passkreuze, Blattnamen); % der Seitenbreite und leere Blätter auslassen offen |
 | 3 | Kanten finden vor dem Nachzeichnen | Bitmap-Effekt „Kanten finden“ (weich/hart), Hilfe-Tipp: vor dem Nachzeichnen anwenden; dazu Helligkeit/Kontrast | Foto mit ungleichem Licht → saubere Linien statt Flecken (heute nur ein fester Schwellwert) | §14 Bitmap-Filter → nur als Vorstufe im Nachzeichnen-Fenster, OK nötig |
-| 4 | Glätten-Werkzeug | Pinsel über Kante: Radius, Stärke, Stiftdruck | Zackige Nachzeichen-Linien glätten, ohne Knoten einzeln zu ziehen | – |
+| 4 | Glätten-Werkzeug | Pinsel über Kante: Radius, Stärke, Stiftdruck | Zackige Nachzeichen-Linien glätten, ohne Knoten einzeln zu ziehen | ✓ 14.11. als „Glätten“ (Radius, Tempo, Stiftdruck, Umschalt/Alt-Ziehen); Restwölbung neben gerundeten Ecken ≤ 0,12 mm bei r = 10 nach sechs Strichen |
 | 5 | Symmetrie-Modus | Symmetriegruppe, bis 12 Spiegelachsen, live mitgezeichnet, Mitte verschiebbar | Mandala/Ornamentik | – |
 | 6 | Hülle | Werkzeug: Gerade/Ein-/Doppelbogen/Frei, Vorlagen, Hülle aus Form | Schriftzüge in Banner und Bögen | §14 → OK nötig |
 | 7 | Knoten verteilen | Knoten-Ausrichten-Fenster | klein | – |

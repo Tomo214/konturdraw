@@ -10,6 +10,8 @@ import { nodeTool } from './node-tool';
 import { pieceTool } from './piece-tool';
 import { selectTool } from './select-tool';
 import { shapeTool, type ShapeParams } from './shape-tool';
+import { smoothParams } from '../smooth-params.svelte';
+import { smoothTool } from './smooth-tool';
 import { textTool } from './text-tool';
 import type { Editor, Tool } from './tool';
 import { handTool, zoomTool } from './view-tools';
@@ -22,6 +24,7 @@ export function createTools(
     select: selectTool(ed),
     lasso: selectTool(ed, { freehand: true }),
     node: nodeTool(ed),
+    smooth: smoothTool(ed, smoothParams),
     pen: penTool(ed),
     freehand: freehandTool(ed, o.smoothing),
     rect: shapeTool(ed, 'rect', o.shape),

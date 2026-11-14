@@ -31,3 +31,11 @@ test('Auswahl und Freihand-Auswahl teilen Eigenschaftsleiste und Formen-Befehle'
   expect(isPick('lasso')).toBe(true);
   expect(isPick('node')).toBe(false);
 });
+
+test('Glätten liegt wie im Vorbild im Ausklappmenü des Knoten-Werkzeugs', () => {
+  expect(TOOLBOX[1].map((t) => t.tool)).toEqual(['node', 'smooth']);
+  expect(toolName('smooth')).toBe('Glätten');
+  setLang('en');
+  expect(toolName('smooth')).toBe('Smooth');
+  setLang('de');
+});

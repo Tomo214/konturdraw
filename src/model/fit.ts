@@ -169,6 +169,15 @@ export function fitOne(p: Samples, first: number, last: number, tol: number, t1?
   }
 }
 
+/** Kurvenfolge durch die Punkte first…last, Abweichung ≤ tol; t1/t2 wie bei fitOne. */
+export function fitSpan(p: Samples, first: number, last: number, tol: number, t1?: Point, t2?: Point): Cubic[] {
+  const a = t1 ? unit(t1.x, t1.y) : unit(p.x[first + 1] - p.x[first], p.y[first + 1] - p.y[first]);
+  const b = t2 ? unit(t2.x, t2.y) : unit(p.x[last - 1] - p.x[last], p.y[last - 1] - p.y[last]);
+  const out: Cubic[] = [];
+  fitRange(p, first, last, a, b, tol * tol, out);
+  return out;
+}
+
 /** Freihand-Strich → Pfad; liegt das Ende näher als closeTol am Anfang, wird geschlossen. */
 export function freehandPath(points: readonly Point[], tol: number, closeTol: number): Subpath | null {
   const end = points[points.length - 1];

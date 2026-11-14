@@ -16,7 +16,10 @@ export const TOOLBOX: readonly (readonly ToolInfo[])[] = [
     { tool: 'select', label: N_('Auswahl'), hint: N_('Leertaste') },
     { tool: 'lasso', label: N_('Freihand-Auswahl') },
   ],
-  [{ tool: 'node', label: N_('Knoten'), key: 'F10' }],
+  [
+    { tool: 'node', label: N_('Knoten'), key: 'F10' },
+    { tool: 'smooth', label: N_('Glätten') },
+  ],
   [
     { tool: 'knife', label: N_('Messer') },
     { tool: 'piece', label: N_('Linienstück löschen') },

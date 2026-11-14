@@ -13,6 +13,7 @@
   import ObjectFields from './ObjectFields.svelte';
   import PageFields from './PageFields.svelte';
   import ShapeFields from './ShapeFields.svelte';
+  import SmoothFields from './SmoothFields.svelte';
   import TextBar from './TextBar.svelte';
   import type { TextState } from './text-state.svelte';
   import { toolIcon } from './icons';
@@ -71,6 +72,7 @@
     knife: N_('Quer durch das Objekt ziehen – ohne Auswahl wird alles Gekreuzte geteilt'),
     piece: N_('Klick löscht das Linienstück bis zu den nächsten Kreuzungen · Rahmen ziehen löscht alle berührten Stücke'),
     eraser: N_('Über das Objekt ziehen oder klicken – ohne Auswahl wirkt er auf alles Getroffene'),
+    smooth: N_('Über die Kanten der gewählten Objekte streichen · Shift + Ziehen: Pinselgröße · Alt + Ziehen: Tempo'),
     contour: N_('Objekt anklicken und nach außen oder zur Mitte ziehen · Anwenden nimmt die Werte der Leiste'),
     eyedropper: N_('Klick nimmt auf, weitere Klicks übertragen · Shift neu aufnehmen · Esc zurücksetzen'),
   };
@@ -89,6 +91,8 @@
     <CutFields {tool} {units} bind:cut />
   {:else if tool === 'contour'}
     <ContourFields {units} />
+  {:else if tool === 'smooth'}
+    <SmoothFields {units} />
   {:else if tool === 'text'}
     <TextBar {text} />
   {:else if tool === 'gradient'}
