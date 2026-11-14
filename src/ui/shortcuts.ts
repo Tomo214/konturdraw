@@ -1,11 +1,12 @@
 // Tastenbelegung wie Vorbild (Spec §13, Quelle: öffentliche Kurzreferenz 2019). Mod = Cmd (macOS) / Strg (Windows).
 import type { AlignEdge, AlignTo, DistributeMode, DistributeTo, Field } from '../model/arrange';
 import type { ShapingName } from '../model/shaping';
+import type { Anchor, Transformation, TransformKind } from '../model/transform';
 import type { Guide, Point } from '../model/types';
 import type { Unit } from '../model/units';
 import type { Lang } from '../i18n/i18n.svelte';
 
-export type DockerId = 'objects' | 'properties' | 'text' | 'trace' | 'color' | 'align';
+export type DockerId = 'objects' | 'properties' | 'text' | 'trace' | 'color' | 'align' | 'transform';
 /** Ansicht-Schalter, nicht im Dokument gespeichert; wire = Drahtmodell. */
 export type Shown = 'rulers' | 'grid' | 'guides' | 'wire';
 /** Fang-Schalter wie Vorbild; off schaltet alles ab, ohne die Auswahl zu vergessen. */
@@ -31,7 +32,9 @@ export type Command =
   | { name: 'scroll'; dx: number; dy: number }
   | { name: 'tool'; tool: Tool }
   | { name: 'shaping'; op: ShapingName }
-  | { name: 'docker'; id: DockerId }
+  /** part wählt den Teil im Transformationen-Fenster (Alt+F7 … Alt+F10). */
+  | { name: 'docker'; id: DockerId; part?: TransformKind }
+  | { name: 'transform'; t: Transformation; anchor: Anchor; copies: number }
   /** Seiten wie Vorbild (Menü Layout, Seitenleiste, Bild↑/Bild↓); rename öffnet das Namensfeld im Reiter. */
   | { name: 'page'; op: PageOp }
   /** Hilfslinien, Nullpunkt, Raster in Seiten-mm; at: null = Nullpunkt zurück auf unten links. */
@@ -74,6 +77,9 @@ const OPTION: Record<string, string> = { 'Ω': 'z', '¥': 'y', 'œ': 'q', '«': 
 const altLetter = (e: KeyInput) =>
   /^[a-z]$/i.test(e.key) ? e.key.toLowerCase() : (OPTION[e.key] ?? e.code?.replace(/^Key/, '').toLowerCase() ?? '');
 
+// Transformationen-Fenster wie Vorbild; die F-Tasten ohne Alt bleiben Werkzeuge.
+const TRANSFORM: Record<string, TransformKind> = { F7: 'position', F8: 'rotate', F9: 'scale', F10: 'size' };
+
 // Ausrichten ohne Mod; mit Shift verteilen (P hat kein Verteilen).
 const ALIGN: Record<string, AlignEdge> = { l: 'left', r: 'right', t: 'top', b: 'bottom', c: 'centerX', e: 'centerY', p: 'page' };
 
@@ -108,6 +114,8 @@ export function commandFor(e: KeyInput, isMac: boolean): Command | null {
     if (e.shiftKey && e.key === 'PageDown') return { name: 'back' };
     if (!e.altKey && (e.key === 'PageUp' || e.key === 'PageDown')) return { name: 'page', op: e.key === 'PageUp' ? 'prev' : 'next' };
     if (e.shiftKey && e.key === 'F9') return { name: 'show', what: 'wire' };
+    const part = e.altKey && !e.shiftKey ? TRANSFORM[e.key] : undefined;
+    if (part) return { name: 'docker', id: 'transform', part };
     const snap = e.altKey && !e.shiftKey ? ALT_SNAP[altLetter(e)] : undefined;
     if (snap) return { name: 'snap', what: snap };
     const edge = e.altKey ? undefined : ALIGN[e.key.toLowerCase()];

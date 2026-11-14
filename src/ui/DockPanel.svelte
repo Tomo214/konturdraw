@@ -11,20 +11,22 @@
     objects,
     properties,
     align,
+    transform,
     text,
     trace,
     color,
-  }: { open: DockerId | null; objects: Snippet; properties: Snippet; align: Snippet; text: Snippet; trace: Snippet; color: Snippet } = $props();
+  }: { open: DockerId | null; objects: Snippet; properties: Snippet; align: Snippet; transform: Snippet; text: Snippet; trace: Snippet; color: Snippet } = $props();
 
   const TABS: readonly [DockerId, string][] = [
     ['objects', N_('Objekte')],
     ['properties', N_('Eigenschaften')],
     ['align', N_('Ausrichten')],
+    ['transform', N_('Transformationen')],
     ['text', 'Text'],
     ['trace', N_('Nachzeichnen')],
     ['color', N_('Farbverwaltung')],
   ];
-  const body = $derived({ objects, properties, align, text, trace, color });
+  const body = $derived({ objects, properties, align, transform, text, trace, color });
   const title = $derived(open === 'align' ? tr('Ausrichten und Verteilen') : tr(TABS.find(([id]) => id === open)?.[1] ?? ''));
 </script>
 
@@ -105,6 +107,8 @@
     flex-direction: column;
     gap: 2px;
     padding: 4px 2px;
+    /* sieben Reiter passen in kleine Fenster nicht immer ganz */
+    overflow-y: auto;
   }
   .tabs button {
     writing-mode: vertical-rl;

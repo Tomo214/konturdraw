@@ -56,4 +56,9 @@ export const MENUS: Record<string, string> = {
   'Radierer': 'Eraser',
   'Stift': 'Pen',
   'Pipette': 'Eyedropper',
+  'Transformationen': 'Transform',
+  'Position': 'Position',
+  'Drehen': 'Rotate',
+  'Skalieren und Spiegeln': 'Scale and mirror',
+  'Neigen': 'Skew',
 };

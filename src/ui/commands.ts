@@ -19,6 +19,7 @@ import { patternFromSelection } from '../model/pattern';
 import type { Box } from '../model/geometry';
 import { addGuide, lockGuides, moveGuide, setGrid, setOrigin } from '../model/guides';
 import { duplicatePage, insertPage, removePage } from '../model/pages';
+import { transformSelection } from '../model/transform';
 import type { Doc, Node } from '../model/types';
 import { DEFAULT_NUDGE } from '../model/units';
 import { MM_TO_PX, fitBox, fitPage, zoomAt, zoomTo, type Viewport } from '../render/viewport';
@@ -105,6 +106,10 @@ export function editCommand(
     case 'distribute': return changed(distribute(doc, ids, cmd.mode, cmd.to));
     case 'mirror': return changed(mirror(doc, ids, cmd.axis));
     case 'field': return changed(setField(doc, ids, cmd.field, cmd.value, cmd.locked));
+    case 'transform': {
+      const r = transformSelection(doc, ids, cmd.t, cmd.anchor, cmd.copies);
+      return r && { doc: r.doc, selected: new Set(r.selected) };
+    }
     case 'pageSize': {
       if (!positive(cmd.width) || !positive(cmd.height)) throw new Error(tr('Seitengröße muss größer als 0 sein.'));
       // Wie Vorbild-Standard: gilt für alle Seiten.

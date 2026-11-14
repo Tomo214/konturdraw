@@ -33,6 +33,7 @@
   import TextPanel from './TextPanel.svelte';
   import Toolbox from './Toolbox.svelte';
   import TracePanel from './TracePanel.svelte';
+  import TransformPanel from './TransformPanel.svelte';
   import { editCommand, pickToggle, viewCommand } from './commands';
   import { enabledFor } from './menu-enabled';
   import { PageState } from './page-state.svelte';
@@ -289,6 +290,7 @@
       {#snippet objects()}<ObjectManager {doc} {history} {pages} selected={measured} onselect={(s) => ((selected = s), redraw())} onpage={(i) => (leavePage(), pages.go(history.current, i), redraw())} ondone={redraw} {onnotice} />{/snippet}
       {#snippet properties()}<StylePanel fill={style.fill} stroke={style.stroke} shape={style.shape} {...style.handlers} {alpha} {onalpha} />{/snippet}
       {#snippet align()}<AlignPanel {count} oncommand={exec} />{/snippet}
+      {#snippet transform()}<TransformPanel {ms} origin={originOf(doc)} units={doc.units ?? DEFAULT_UNIT} bind:kind={view.transform} oncommand={exec} />{/snippet}
       {#snippet text()}<TextPanel text={typo} active={toolName === 'text'} />{/snippet}
       {#snippet trace()}<TracePanel bind:this={tracePanel} image={picked} active={view.docker === 'trace'} ondone={(node, drop) => adopt(addTrace(history.current, node, pi(), drop), [node.id])} {onnotice} />{/snippet}
       {#snippet color()}<ColorSettingsBar {history} bind:proof={view.proof} ondone={redraw} {onnotice} />{/snippet}

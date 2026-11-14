@@ -1,5 +1,6 @@
 // Menüleiste im Fenster, Aufbau wie Vorbild (Datei … Fenster), Texte eigen. Kürzel in neutraler Schreibweise:
 // Mod = Cmd/Strg, Tasten wie KeyboardEvent.key. menus.test.ts prüft, dass jedes Kürzel genau seinen Befehl auslöst.
+import type { TransformKind } from '../model/transform';
 import type { Command, KeyInput, PageOp } from './shortcuts';
 import { N_, getLang, tr } from '../i18n/i18n.svelte';
 
@@ -15,6 +16,7 @@ export const keysFor = (e: { keys?: string; macKeys?: string }, mac: boolean): s
 const shaping = (label: string, op: Extract<Command, { name: 'shaping' }>['op'], keys?: string) => item(label, { name: 'shaping', op }, keys);
 const page = (label: string, op: PageOp, keys?: string) => item(label, { name: 'page', op }, keys);
 const align = (label: string, edge: Extract<Command, { name: 'align' }>['edge'], keys: string) => item(label, { name: 'align', edge }, keys);
+const transform = (label: string, part: TransformKind, keys?: string) => item(label, { name: 'docker', id: 'transform', part }, keys);
 
 /** key/enKey = Merkbuchstabe für Alt + Buchstabe je Sprache (nicht Z/Y/Q: Fangen). */
 export const MENUS: readonly { label: string; key: string; enKey: string; items: readonly MenuEntry[] }[] = [
@@ -132,6 +134,16 @@ export const MENUS: readonly { label: string; key: string; enKey: string; items:
           item(N_('Ausrichten und Verteilen …'), { name: 'docker', id: 'align' }, 'Mod+Shift+A'),
         ],
       },
+      {
+        label: N_('Transformationen'),
+        items: [
+          transform(N_('Position'), 'position', 'Alt+F7'),
+          transform(N_('Drehen'), 'rotate', 'Alt+F8'),
+          transform(N_('Skalieren und Spiegeln'), 'scale', 'Alt+F9'),
+          transform(N_('Größe'), 'size', 'Alt+F10'),
+          transform(N_('Neigen'), 'skew'),
+        ],
+      },
       item(N_('Waagerecht spiegeln'), { name: 'mirror', axis: 'h' }),
       item(N_('Senkrecht spiegeln'), { name: 'mirror', axis: 'v' }),
       {
@@ -170,6 +182,7 @@ export const MENUS: readonly { label: string; key: string; enKey: string; items:
           item(N_('Nachzeichnen'), { name: 'docker', id: 'trace' }),
           item(N_('Farbeinstellungen'), { name: 'docker', id: 'color' }),
           item(N_('Ausrichten und Verteilen'), { name: 'docker', id: 'align' }, 'Mod+Shift+A'),
+          item(N_('Transformationen'), { name: 'docker', id: 'transform' }),
         ],
       },
       null,

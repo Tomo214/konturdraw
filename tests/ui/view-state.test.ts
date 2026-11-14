@@ -29,3 +29,12 @@ test('Sprache: Menü-Befehl schaltet um und setzt das Häkchen bei der aktiven S
     setLang('de');
   }
 });
+
+test('Transformationen-Befehl mit Teil wählt den Teil im Andockfenster', () => {
+  const v = new ViewState();
+  expect(v.transform).toBe('position');
+  v.run({ name: 'docker', id: 'transform', part: 'rotate' });
+  expect([v.docker, v.transform]).toEqual(['transform', 'rotate']);
+  v.run({ name: 'docker', id: 'transform' });
+  expect(v.transform).toBe('rotate');
+});

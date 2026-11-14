@@ -100,6 +100,7 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 | Kontur in Objekt umwandeln (Linie → Fläche, für Plotter/Logo) | P1 |
 | Linienstärke für Mehrfachauswahl auf einmal setzen | P0 |
 | Transformieren numerisch: Position, Größe (mm), Winkel, Schere | P0 |
+| Transformationen-Fenster (Alt+F7 Position, Alt+F8 Drehen, Alt+F9 Skalieren und Spiegeln, Alt+F10 Größe, Neigen): Werte, 9er-Bezugspunkt, „Relative Position“/„Relative Mitte“, **Kopien** – Auswahl bleibt, Kopie k bekommt den Schritt k-mal (Drehen 15° × 23 Kopien = Kranz), gewählt = letzte Kopie, ein Rückgängig-Schritt; Enter wendet an | P1 ✓ 14.11. |
 | Spiegeln horizontal/vertikal | P0 |
 | Proportional sperren | P0 |
 | Ausrichten (links/mitte/rechts, oben/mitte/unten) + Verteilen | P1 |
@@ -234,6 +235,7 @@ Allgemein: Export „nur Auswahl“ oder „ganze Seite“ (P0); nicht druckbare
 | Ausrichten links/rechts/oben/unten/Mitte waagrecht/Mitte senkrecht/Seitenmitte | L / R / T / B / C / E / P (bei Auswahl) |
 | Ausrichten und Verteilen / Objekteigenschaften / Text-Eigenschaften / Optionen | Mod+Shift+A / Alt+Enter / Mod+T / Mod+J |
 | Fangen Raster / Objekte / Fangen aus | Alt+Y / Alt+Z / Alt+Q |
+| Transformationen: Position / Drehen / Skalieren und Spiegeln / Größe | Alt+F7 / Alt+F8 / Alt+F9 / Alt+F10 (Quelle: CorelDRAW-Community-Kürzelliste) |
 | Verschieben fein / normal / grob, Ansicht rollen | Mod+Pfeil / Pfeil / Shift+Pfeil, Alt+Pfeil |
 | Verschmelzen / Zuschneiden / Schnittmenge | Mod+Alt+U / Mod+Alt+T / Mod+Alt+I (Vorbild ohne Standardkürzel) |
 | Duplizieren | Mod+D |
@@ -281,6 +283,7 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 - Farbmanagement: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Get-started-with-color-management.html
 - Farbgenau drucken: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Print-colors-accurately.html
 - Kontureffekt: https://product.corel.com/help/CorelDRAW/540111176/Documentation-Windows/CorelDRAW-en/CorelDRAW-Contour-objects.html
+- Transformieren: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Transform-objects.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Rotate-and-mirror-objects.html; Kürzel: https://community.coreldraw.com/collaborate/w/howto/8/complete-list-of-keyboard-shortcuts; Kopien schrittweise = eigene Festlegung
 - Standards: SVG 1.1/2 (W3C), PDF 1.7 / ISO 32000, ICC.1 (color.org), HP-GL/2, DXF-Referenz (Autodesk)
 
 ## 17. Abnahme Phase 1

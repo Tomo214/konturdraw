@@ -42,6 +42,8 @@ export const ICONS = {
   portrait: 'M5.5 2.5h9v15h-9z',
   landscape: 'M2.5 5.5h15v9h-15z',
   nudge: 'M10 3v14 M3 10h14 M8 5l2-2 2 2 M8 15l2 2 2-2 M5 8l-2 2 2 2 M15 8l2 2-2 2',
+  scale: 'M3.5 10.5h6v6h-6z M3.5 10.5v-7h13v13h-7 M9.5 10.5l6-6 M12 4.5h3.5V8',
+  size: 'M6.5 6.5h10v10h-10z M6.5 3.5h10 M6.5 2.5v2 M16.5 2.5v2 M3.5 6.5v10 M2.5 6.5h2 M2.5 16.5h2',
   // Lineal-Ecke: Nullpunkt
   origin: 'M10 2.5v15 M2.5 10h15 M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
   // Ausrichten (Linie = Bezug)

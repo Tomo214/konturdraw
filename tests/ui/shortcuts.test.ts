@@ -236,3 +236,12 @@ test('Ziffernblock + legt eine Kopie an Ort und Stelle ab (wie Vorbild); Strg + 
   expect(commandFor({ key: '+', code: 'NumpadAdd' } as Parameters<typeof commandFor>[0], false)).toEqual({ name: 'duplicateHere' });
   expect(commandFor({ key: '+', code: 'NumpadAdd', metaKey: true } as Parameters<typeof commandFor>[0], true)).toEqual({ name: 'zoomIn' });
 });
+
+test('Alt+F7 bis Alt+F10 öffnen die Transformationen beim passenden Teil; ohne Alt bleiben es Werkzeuge', () => {
+  expect(commandFor(key('F7', { altKey: true }), true)).toEqual({ name: 'docker', id: 'transform', part: 'position' });
+  expect(commandFor(key('F8', { altKey: true }), false)).toEqual({ name: 'docker', id: 'transform', part: 'rotate' });
+  expect(commandFor(key('F9', { altKey: true }), false)).toEqual({ name: 'docker', id: 'transform', part: 'scale' });
+  expect(commandFor(key('F10', { altKey: true }), true)).toEqual({ name: 'docker', id: 'transform', part: 'size' });
+  expect(commandFor(key('F7'), true)).toEqual({ name: 'tool', tool: 'ellipse' });
+  expect(commandFor(key('F10'), false)).toEqual({ name: 'tool', tool: 'node' });
+});

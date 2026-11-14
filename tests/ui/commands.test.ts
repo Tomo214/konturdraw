@@ -94,6 +94,15 @@ describe('editCommand', () => {
     expect(left(editCommand(doc, ['a'], { name: 'field', field: 'x', value: 50, locked: false }, [])!.doc!, 'a')).toBeCloseTo(45, 9);
   });
 
+  it('Transformieren mit Kopien: ein Schritt, gewählt = letzte Kopie; ohne Wirkung → null', () => {
+    const doc = docWith(rect('a'));
+    const t = { kind: 'position', x: 20, y: 0, relative: true } as const;
+    const r = editCommand(doc, ['a'], { name: 'transform', t, anchor: 'c', copies: 2 }, [])!;
+    expect(ids(r.doc!)).toHaveLength(3);
+    expect([...r.selected!]).toEqual([ids(r.doc!)[2]]);
+    expect(editCommand(doc, ['a'], { name: 'transform', t: { ...t, x: 0 }, anchor: 'c', copies: 0 }, [])).toBeNull();
+  });
+
   it('nichts zu tun (Bezug schon ausgerichtet, nichts gewählt) → kein Schritt', () => {
     const doc = docWith(rect('a'), rect('b'));
     expect(editCommand(doc, ['a', 'b'], { name: 'align', edge: 'left' }, [])).toBeNull();
