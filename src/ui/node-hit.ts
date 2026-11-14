@@ -46,3 +46,13 @@ export function hitPath(
   }
   return best;
 }
+
+/** Schlüssel aller Knoten, deren Lage auf der Seite inside erfüllt (Rahmen- und Freihand-Auswahl). */
+export function nodesWhere(subpaths: readonly Subpath[], world: Mat, inside: (p: Point) => boolean): string[] {
+  return subpaths.flatMap((sp, s) =>
+    sp.nodes.flatMap((n, index) => {
+      const [x, y] = apply(world, n.x, n.y);
+      return inside({ x, y }) ? [nodeKey({ sub: s, index })] : [];
+    }),
+  );
+}

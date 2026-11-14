@@ -156,6 +156,8 @@
       case 'undo': history.undo(); break;
       case 'redo': history.redo(); break;
       case 'deselect': [selected, guide] = [new Set(), null]; break;
+      // alle wählbaren Objekte der Seite (gesperrte Ebenen nicht); Knoten-Werkzeug fängt den Befehl vorher ab
+      case 'selectAll': selected = new Set(renderer.inside({ minX: -Infinity, minY: -Infinity, maxX: Infinity, maxY: Infinity })); break;
       case 'toCurves':
         if (renderer.leavesOf(selected).some((it) => it.node.type === 'shape' || it.node.type === 'text')) history.push(updateLeaves(history.current, selected, toCurves));
         break;

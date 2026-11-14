@@ -5,6 +5,7 @@ export const MENUS: Record<string, string> = {
   'Speichern unter …': 'Save As …',
   'Importieren …': 'Import …',
   'Duplizieren': 'Duplicate',
+  'Alles auswählen': 'Select all',
   'Auswahl aufheben': 'Deselect',
   'Ansicht': 'View',
   'Originalgröße 100 %': 'Actual Size 100%',

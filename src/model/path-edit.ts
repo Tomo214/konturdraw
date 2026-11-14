@@ -193,3 +193,25 @@ export function joinEnds(sps: Subs, a: NodeRef, b: NodeRef): Subs {
 export function setClosed(sps: Subs, s: number, closed: boolean): Subs {
   return replace(sps, s, [{ ...sps[s], closed }]);
 }
+
+/** Richtung umkehren (Start- und Endknoten tauschen); geschlossen bleibt der Startknoten vorn. */
+export function reverseSubpath(sps: Subs, s: number): Subs {
+  const sp = sps[s];
+  const r = reversed(sp.nodes);
+  return replace(sps, s, [{ ...sp, nodes: sp.closed ? [r[r.length - 1], ...r.slice(0, -1)] : r }]);
+}
+
+/**
+ * Segment ziehen: der Punkt bei t folgt um d, eine Gerade wird dabei zur Kurve. Beide Anfasser wandern mit,
+ * der nähere stärker (Gewichte (1−t)·k und t·k, k so gewählt, dass B(t) genau um d wandert). t bleibt in 0,1…0,9,
+ * sonst schießen die Anfasser am Knoten ins Unendliche. Glatte/symmetrische Endknoten richten die Gegenseite mit aus.
+ */
+export function bendSegment(sps: Subs, s: number, seg: number, t: number, d: Point): Subs {
+  const curved = toCurve(sps, s, seg);
+  const { a, b, c } = segmentAt(curved[s], seg);
+  const u = Math.min(0.9, Math.max(0.1, t));
+  const k = 1 / (3 * u * (1 - u) * ((1 - u) ** 2 + u ** 2));
+  const [w1, w2] = [(1 - u) * k, u * k];
+  const out = moveHandle(curved, { sub: s, index: a }, 'out', { x: c[1].x + d.x * w1, y: c[1].y + d.y * w1 });
+  return moveHandle(out, { sub: s, index: b }, 'in', { x: c[2].x + d.x * w2, y: c[2].y + d.y * w2 });
+}

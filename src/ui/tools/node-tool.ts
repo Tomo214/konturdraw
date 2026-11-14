@@ -1,12 +1,14 @@
 import { deleteNodes as deleteObjects, findNode, updateNodes, worldOf } from '../../model/document';
 import { apply, invert, type Mat } from '../../model/geometry';
 import {
+  bendSegment,
   breakAt,
   deleteNodes,
   insertNode,
   joinEnds,
   moveHandle,
   moveNodes,
+  reverseSubpath,
   setClosed,
   setNodeType,
   toCurve,
@@ -14,11 +16,14 @@ import {
   type NodeRef,
 } from '../../model/path-edit';
 import type { Doc, NodeType, PathNode, Point, Subpath } from '../../model/types';
+import { pointInPolygon } from '../../model/lasso';
 import { reduceNodes } from '../../model/reduce';
+import { extractSubpath } from '../../model/shaping';
 import { DEFAULT_NUDGE } from '../../model/units';
 import { worldScale } from '../../render/scene';
-import { hitPath, nodeKey } from '../node-hit';
-import { drawNodes } from '../overlay';
+import { screenToPage } from '../../render/viewport';
+import { hitPath, nodeKey, nodesWhere } from '../node-hit';
+import { drawLasso, drawMarquee, drawNodes } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
 import { tr } from '../../i18n/i18n.svelte';
 
@@ -29,7 +34,14 @@ export function nodeTool(ed: Editor): Tool {
   let sel = new Set<string>();
   let seg: { sub: number; seg: number; t: number } | null = null;
   let known: Subs | null = null; // Auswahl gilt nur für diese Geometrie; Undo & Co. setzen sie zurück.
-  let drag: { kind: 'nodes' | 'in' | 'out'; ref: NodeRef; start: Pointer; doc: Doc; subs: Subs; moved: boolean } | null = null;
+  // seg: ref.index = Segmentnummer, t = gegriffene Stelle
+  let drag: { kind: 'nodes' | 'in' | 'out' | 'seg'; ref: NodeRef; t?: number; start: Pointer; doc: Doc; subs: Subs; moved: boolean } | null = null;
+  // Rahmen auf leerer Fläche wählt Knoten (wie Vorbild); Alt = Freihand-Spur, Umschalt fügt hinzu. hit = Objekt unter dem Klick.
+  let band: { start: Pointer; cur: Pointer; pts: Pointer[] | null; add: boolean; hit: string | null; moved: boolean } | null = null;
+  const raw = (p: Pointer): Pointer => {
+    const [x, y] = screenToPage(ed.vp, p.sx, p.sy);
+    return { ...p, x, y };
+  };
 
   function target(): PathNode | null {
     if (ed.selected.size !== 1) return null;
@@ -117,6 +129,17 @@ export function nodeTool(ed: Editor): Tool {
     seg = null;
   }
 
+  function extract() {
+    const t = sync();
+    if (!t) return void (shapeHint() || (ed.notice = tr('Knoten: genau einen Pfad wählen')));
+    const s = seg?.sub ?? refs()[0]?.sub;
+    if (s === undefined) return void (ed.notice = tr('Segment oder Knoten anklicken'));
+    const r = extractSubpath(ed.history.current, t.id, s);
+    if (!r) return void (ed.notice = tr('Pfad hat nur einen Teilpfad'));
+    ed.history.push(r.doc);
+    ed.selected = new Set([r.id]);
+  }
+
   const actions = [
     { label: tr('Ecke'), run: () => setType('corner') },
     { label: tr('Glatt'), run: () => setType('smooth') },
@@ -143,6 +166,15 @@ export function nodeTool(ed: Editor): Tool {
           return s === undefined ? null : setClosed(t.subpaths, s, !t.subpaths[s].closed);
         }),
     },
+    {
+      label: tr('Richtung umkehren'),
+      run: () =>
+        edit((t) => {
+          const s = seg?.sub ?? refs()[0]?.sub;
+          return s === undefined ? ((ed.notice = tr('Segment oder Knoten anklicken')), null) : reverseSubpath(t.subpaths, s);
+        }),
+    },
+    { label: tr('Teilpfad herauslösen'), run: extract },
   ];
 
   return {
@@ -156,6 +188,7 @@ export function nodeTool(ed: Editor): Tool {
         if (hit.kind === 'seg') {
           if (!p.shift) sel = new Set();
           seg = hit;
+          drag = { kind: 'seg', ref: { sub: hit.sub, index: hit.seg }, t: hit.t, start: p, doc, subs: t.subpaths, moved: false };
           return;
         }
         seg = null;
@@ -171,11 +204,22 @@ export function nodeTool(ed: Editor): Tool {
       }
       // Anderen Pfad anklicken wählt ihn zum Bearbeiten – auch in einer Gruppe.
       const other = ed.renderer.hitTest(ed.vp, p.sx, p.sy);
+      if (t && (!other || other.id === t.id)) {
+        const q = raw(p);
+        band = { start: q, cur: q, pts: p.alt ? [q] : null, add: p.shift, hit: other?.id ?? null, moved: false };
+        return;
+      }
       ed.selected = other ? new Set([other.id]) : new Set();
       sync();
       shapeHint();
     },
     move(p) {
+      if (band) {
+        band.cur = raw(p);
+        band.pts?.push(band.cur);
+        band.moved ||= Math.hypot(p.sx - band.start.sx, p.sy - band.start.sy) > 2;
+        return band.moved;
+      }
       const t = target();
       if (!drag || !t) return false;
       drag.moved ||= Math.hypot(p.sx - drag.start.sx, p.sy - drag.start.sy) > 2;
@@ -184,10 +228,24 @@ export function nodeTool(ed: Editor): Tool {
       if (drag.kind === 'nodes') {
         const s = local(t, drag.start);
         commit(t, moveNodes(drag.subs, refs(), q.x - s.x, q.y - s.y), true, drag.doc);
+      } else if (drag.kind === 'seg') {
+        const s = local(t, drag.start);
+        commit(t, bendSegment(drag.subs, drag.ref.sub, drag.ref.index, drag.t!, { x: q.x - s.x, y: q.y - s.y }), true, drag.doc);
       } else commit(t, moveHandle(drag.subs, drag.ref, drag.kind, q), true, drag.doc);
       return true;
     },
     up() {
+      if (band) {
+        const b = band;
+        band = null;
+        [sel, seg] = [b.add ? sel : new Set(), null];
+        if (!b.moved) return void ((ed.selected = b.hit ? new Set([b.hit]) : new Set()), sync());
+        const t = sync();
+        const [x0, x1, y0, y1] = [Math.min(b.start.x, b.cur.x), Math.max(b.start.x, b.cur.x), Math.min(b.start.y, b.cur.y), Math.max(b.start.y, b.cur.y)];
+        const inside = b.pts ? (q: Point) => pointInPolygon(q.x, q.y, b.pts!) : (q: Point) => q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1;
+        if (t) sel = new Set([...sel, ...nodesWhere(t.subpaths, world(t), inside)]);
+        return;
+      }
       if (drag?.moved) ed.history.commit();
       drag = null;
     },
@@ -195,9 +253,11 @@ export function nodeTool(ed: Editor): Tool {
       const t = sync();
       const hit = t && hitPath(t.subpaths, world(t), ed.vp, p.sx, p.sy, sel);
       if (t && hit?.kind === 'seg') edit(() => insertNode(t.subpaths, hit.sub, hit.seg, hit.t));
+      else if (t && hit?.kind === 'node') edit(() => deleteNodes(t.subpaths, [hit.ref])); // wie Vorbild
     },
     key(cmd) {
       const t = sync();
+      if (t && cmd.name === 'selectAll') return ([sel, seg] = [new Set(nodesWhere(t.subpaths, world(t), () => true)), null]), true;
       if (!t || !sel.size) return false;
       if (cmd.name === 'delete') edit(() => deleteNodes(t.subpaths, refs()));
       else if (cmd.name === 'deselect') sel = new Set();
@@ -211,6 +271,8 @@ export function nodeTool(ed: Editor): Tool {
     overlay(ctx, dpr) {
       const t = sync();
       if (t) drawNodes(ctx, ed.vp, dpr, world(t), t.subpaths, sel, seg);
+      if (band?.moved && band.pts) drawLasso(ctx, ed.vp, dpr, band.pts);
+      else if (band?.moved) drawMarquee(ctx, dpr, band.start.sx, band.start.sy, band.cur.sx, band.cur.sy);
     },
   };
 }

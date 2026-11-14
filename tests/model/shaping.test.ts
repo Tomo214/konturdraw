@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { addNodes, createDocument } from '../../src/model/document';
 import { IDENTITY, scale, translate } from '../../src/model/geometry';
 import { insertPage } from '../../src/model/pages';
-import { planShaping } from '../../src/model/shaping';
+import { extractSubpath, planShaping } from '../../src/model/shaping';
 import { DEFAULT_STROKE } from '../../src/model/style';
 import type { Doc, Node, PathNode, Subpath } from '../../src/model/types';
 import { group, pt, square, sub } from './fixtures';
@@ -137,5 +137,24 @@ describe('planShaping', () => {
     expect(() => planShaping(doc, ['a', 'x'], 'weld')).toThrow('in einer Gruppe');
     expect(() => planShaping(doc, ['a'], 'weld')).toThrow('zwei Objekte');
     expect(() => planShaping(doc, [], 'boundary')).toThrow('Objekt wählen');
+  });
+});
+
+describe('extractSubpath (Teilpfad herauslösen)', () => {
+  it('Teilpfad wird eigenes Objekt direkt darüber, gleicher Stil und Lage, ohne Füllregel; Rest bleibt', () => {
+    const p: PathNode = { ...square('p', 5, 5), style: red, fillRule: 'evenodd', subpaths: [box(0, 0, 10, 10), box(2, 2, 4, 4)] };
+    const r = extractSubpath(docWith(square('a'), p), 'p', 1)!;
+    expect(ids(r.doc)).toEqual(['a', 'p', r.id]);
+    expect(get(r.doc, 'p').subpaths).toEqual([box(0, 0, 10, 10)]);
+    const n = get(r.doc, r.id);
+    expect(n.subpaths).toEqual([box(2, 2, 4, 4)]);
+    expect([n.style, n.transform, n.fillRule]).toEqual([red, p.transform, undefined]);
+  });
+
+  it('auch in Gruppen; nur ein Teilpfad → null', () => {
+    const p: PathNode = { ...square('p'), subpaths: [box(0, 0, 10, 10), box(2, 2, 4, 4)] };
+    const r = extractSubpath(docWith(group('g', [p])), 'p', 0)!;
+    expect((kids(r.doc)[0] as { children: readonly Node[] }).children.map((n) => n.id)).toEqual(['p', r.id]);
+    expect(extractSubpath(docWith(square('a')), 'a', 0)).toBeNull();
   });
 });

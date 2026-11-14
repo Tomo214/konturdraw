@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { translate } from '../../src/model/geometry';
-import { hitPath } from '../../src/ui/node-hit';
+import { hitPath, nodesWhere } from '../../src/ui/node-hit';
 import { pt, sub } from '../model/fixtures';
 
 // Quadrat 10 × 10 bei (10, 10), Zoom 2 → Bildschirm (20..40, 20..40). Knoten 0 hat einen Ausgangsanfasser nach oben.
@@ -27,4 +27,10 @@ test('Anfasser nur bei gewähltem Knoten', () => {
 
 test('daneben → null', () => {
   expect(hitPath(sps, world, vp, 100, 100, none)).toBeNull();
+});
+
+test('nodesWhere: Knoten nach Lage auf der Seite (für Rahmen- und Freihand-Auswahl)', () => {
+  // Welt: Quadrat-Ecken bei (10|10), (20|10), (20|20), (10|20)
+  expect(nodesWhere(sps, world, (p) => p.x > 15)).toEqual(['0:1', '0:2']);
+  expect(nodesWhere(sps, world, () => false)).toEqual([]);
 });

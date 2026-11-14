@@ -47,6 +47,7 @@ export const MENUS: readonly { label: string; key: string; enKey: string; items:
       item(N_('Löschen'), { name: 'delete' }, 'Delete'),
       null,
       item(N_('Duplizieren'), { name: 'duplicate' }, 'Mod+D'),
+      item(N_('Alles auswählen'), { name: 'selectAll' }, 'Mod+A'),
       item(N_('Auswahl aufheben'), { name: 'deselect' }, 'Escape'),
     ],
   },

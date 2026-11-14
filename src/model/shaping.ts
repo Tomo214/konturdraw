@@ -1,7 +1,7 @@
 // Formen-Befehle wie im Vorbild (Spec §7). Ziel = zuletzt gewähltes Objekt; die Rahmenauswahl fügt von oben
 // nach unten ein, dort ist das Ziel also das unterste. Planen und Übernehmen sind rein, rechnen tut kw-core.
 import { transformSubpath } from './bezier';
-import { findNode, newId, removeNodes } from './document';
+import { findNode, insertAbove, newId, removeNodes, updateNodes } from './document';
 import { IDENTITY, invert } from './geometry';
 import { DEFAULT_STROKE, toCurves } from './style';
 import type { Doc, Node, PathNode, Subpath } from './types';
@@ -54,6 +54,16 @@ export function splice(doc: Doc, id: string, nodes: (n: Node) => Node[]): Doc {
     }),
   }));
   return { ...doc, pages };
+}
+
+/** Teilpfad s als eigenes Objekt direkt darüber (Knoten-Werkzeug, wie Vorbild); null = nur ein Teilpfad. */
+export function extractSubpath(doc: Doc, id: string, s: number): { doc: Doc; id: string } | null {
+  const n = findNode(doc, id);
+  if (n?.type !== 'path' || n.subpaths.length < 2 || !n.subpaths[s]) return null;
+  const { fillRule: _, ...rest } = n;
+  const piece: PathNode = { ...rest, id: newId(), subpaths: [n.subpaths[s]] };
+  const left = updateNodes(doc, [id], () => ({ ...n, subpaths: n.subpaths.filter((_, i) => i !== s) }));
+  return { doc: insertAbove(left, id, [piece]), id: piece.id };
 }
 
 function collect(doc: Doc, selection: readonly string[]): Obj[] {

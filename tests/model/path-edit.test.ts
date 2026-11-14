@@ -1,12 +1,14 @@
 import { expect, test } from 'vitest';
 import { pointAt, segmentAt } from '../../src/model/bezier';
 import {
+  bendSegment,
   breakAt,
   deleteNodes,
   insertNode,
   joinEnds,
   moveHandle,
   moveNodes,
+  reverseSubpath,
   setClosed,
   setNodeType,
   toCurve,
@@ -138,4 +140,46 @@ test('joinEnds verbindet zwei Teilpfade: erster endet bei a, zweiter beginnt bei
 
 test('setClosed', () => {
   expect(setClosed(line3, 0, true)[0].closed).toBe(true);
+});
+
+test('reverseSubpath offen: Reihenfolge umgedreht, Anfasser getauscht, Nachbar-Teilpfad bleibt geteilt', () => {
+  const sps = [sub(false, pt(0, 0, { handleOut: { x: 1, y: 1 } }), pt(10, 0, { handleIn: { x: 9, y: 1 } })), ...line3];
+  const r = reverseSubpath(sps, 0);
+  expect(r[0]).toEqual(sub(false, pt(10, 0, { handleOut: { x: 9, y: 1 } }), pt(0, 0, { handleIn: { x: 1, y: 1 } })));
+  expect(r[1]).toBe(sps[1]);
+});
+
+test('reverseSubpath geschlossen: Startknoten bleibt vorn, Lauf andersherum', () => {
+  const r = reverseSubpath([sub(true, pt(0, 0), pt(10, 0), pt(10, 10), pt(0, 10))], 0);
+  expect(r[0].nodes.map((n) => [n.x, n.y])).toEqual([[0, 0], [0, 10], [10, 10], [10, 0]]);
+  expect(r[0].closed).toBe(true);
+});
+
+const at = (sp: Parameters<typeof segmentAt>[0], seg: number, t: number) => pointAt(segmentAt(sp, seg).c, t);
+
+test('bendSegment: Gerade wird Kurve, der gegriffene Punkt folgt genau, Endknoten bleiben', () => {
+  const r = bendSegment(line3, 0, 0, 0.5, { x: 0, y: 4 });
+  const p = at(r[0], 0, 0.5);
+  expect([p.x, p.y].map((v) => +v.toFixed(9))).toEqual([5, 4]);
+  expect(segmentAt(r[0], 0).line).toBe(false);
+  expect([r[0].nodes[0].x, r[0].nodes[0].y, r[0].nodes[1].x, r[0].nodes[1].y]).toEqual([0, 0, 10, 0]);
+  expect(r[0].nodes[2]).toBe(line3[0].nodes[2]);
+});
+
+test('bendSegment auf Kurve bei t = 0,3; glatter Endknoten hält die Gegenseite in Linie', () => {
+  const sps = smoothMid('smooth');
+  const before = at(sps[0], 1, 0.3);
+  const r = bendSegment(sps, 0, 1, 0.3, { x: 1, y: -2 });
+  const p = at(r[0], 1, 0.3);
+  expect(p.x).toBeCloseTo(before.x + 1, 9);
+  expect(p.y).toBeCloseTo(before.y - 2, 9);
+  const m = r[0].nodes[1];
+  const cross = (m.handleIn!.x - m.x) * (m.handleOut!.y - m.y) - (m.handleIn!.y - m.y) * (m.handleOut!.x - m.x);
+  expect(cross).toBeCloseTo(0, 9);
+});
+
+test('bendSegment nahe am Knoten: Anfasser bleiben endlich und maßvoll', () => {
+  const r = bendSegment(line3, 0, 0, 0.01, { x: 0, y: 1 });
+  const h = [r[0].nodes[0].handleOut!, r[0].nodes[1].handleIn!];
+  expect(h.every((q) => Number.isFinite(q.x) && Number.isFinite(q.y) && Math.abs(q.y) < 10)).toBe(true);
 });

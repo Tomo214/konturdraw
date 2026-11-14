@@ -245,3 +245,9 @@ test('Alt+F7 bis Alt+F10 öffnen die Transformationen beim passenden Teil; ohne 
   expect(commandFor(key('F7'), true)).toEqual({ name: 'tool', tool: 'ellipse' });
   expect(commandFor(key('F10'), false)).toEqual({ name: 'tool', tool: 'node' });
 });
+
+test('Mod+A = Alles auswählen (im Knoten-Werkzeug alle Knoten); Mod+Shift+A bleibt Ausrichten', () => {
+  expect(commandFor(key('a', { metaKey: true }), true)).toEqual({ name: 'selectAll' });
+  expect(commandFor(key('a', { ctrlKey: true }), false)).toEqual({ name: 'selectAll' });
+  expect(commandFor(key('A', { metaKey: true, shiftKey: true }), true)).toEqual({ name: 'docker', id: 'align' });
+});

@@ -16,7 +16,7 @@ export type Command =
   | {
       name:
         | 'undo' | 'redo' | 'delete' | 'duplicate' | 'duplicateHere' | 'group' | 'ungroup'
-        | 'forward' | 'backward' | 'front' | 'back' | 'cut' | 'copy' | 'paste' | 'deselect'
+        | 'forward' | 'backward' | 'front' | 'back' | 'cut' | 'copy' | 'paste' | 'deselect' | 'selectAll'
         | 'zoomFit' | 'zoom100' | 'zoomSelection' | 'zoomIn' | 'zoomOut' | 'toCurves' | 'outline' | 'trace' | 'print'
         | 'new' | 'open' | 'save' | 'saveAs' | 'import' | 'export' | 'pickToggle' | 'proof' | 'docOptions'
         | 'frameInsert' | 'frameExtract' | 'patternFromSelection';
@@ -151,7 +151,7 @@ export function commandFor(e: KeyInput, isMac: boolean): Command | null {
     case 'n': return { name: 'new' };
     case 's': return { name: e.shiftKey ? 'saveAs' : 'save' };
     case 'i': return { name: 'import' };
-    case 'a': return e.shiftKey ? { name: 'docker', id: 'align' } : null;
+    case 'a': return e.shiftKey ? { name: 'docker', id: 'align' } : { name: 'selectAll' };
     case 'e': return { name: 'export' };
     case 'p': return { name: 'print' };
     case 't': return { name: 'docker', id: 'text' };
