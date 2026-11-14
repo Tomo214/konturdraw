@@ -288,6 +288,20 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 - Knoten-Werkzeug: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Select-and-move-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Add-remove-join-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Manipulate-segments.html, https://learn.corel.com/tutorials/coreldraw-edit-shape-tools/, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Align-distribute-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Transform-nodes.html; Biegeformel und Griffbelegung beim Knoten-Transformieren = eigene Festlegung
 - Standards: SVG 1.1/2 (W3C), PDF 1.7 / ISO 32000, ICC.1 (color.org), HP-GL/2, DXF-Referenz (Autodesk)
 
+## 18. Stencil-Lücken zum Vorbild (14.11.)
+
+Timon 14.11.: gleiche Funktionen wie das Vorbild, so gut wie möglich auf Stencils ausgelegt. Reihenfolge = Nutzen für W1 (Foto → Stencil → Druck). Alles nach öffentlicher Hilfe (§16), Umsetzung eigen.
+
+| # | Lücke | Vorbild-Funktion | Stencil-Nutzen | Konflikt |
+|---|---|---|---|---|
+| 1 | Virtuelles Segment löschen | Werkzeug: Klick löscht das Stück zwischen zwei Schnittpunkten; Rahmen = mehrere; Alt-Linie = alle gekreuzten; Umschalt-Klick verbindet zwei Endpunkte | Überstände an Linienkreuzungen nach Nachzeichnen/Zeichnen weg – häufigster Putzschritt | – |
+| 2 | Druck in Kacheln | Druckdialog: Seiten gekachelt, Überlappung, Passmarken | Rücken/Arm größer als A4 auf A4-Thermodrucker | – |
+| 3 | Kanten finden vor dem Nachzeichnen | Bitmap-Effekt „Kanten finden“ (weich/hart), Hilfe-Tipp: vor dem Nachzeichnen anwenden; dazu Helligkeit/Kontrast | Foto mit ungleichem Licht → saubere Linien statt Flecken (heute nur ein fester Schwellwert) | §14 Bitmap-Filter → nur als Vorstufe im Nachzeichnen-Fenster, OK nötig |
+| 4 | Glätten-Werkzeug | Pinsel über Kante: Radius, Stärke, Stiftdruck | Zackige Nachzeichen-Linien glätten, ohne Knoten einzeln zu ziehen | – |
+| 5 | Symmetrie-Modus | Symmetriegruppe, bis 12 Spiegelachsen, live mitgezeichnet, Mitte verschiebbar | Mandala/Ornamentik | – |
+| 6 | Hülle | Werkzeug: Gerade/Ein-/Doppelbogen/Frei, Vorlagen, Hülle aus Form | Schriftzüge in Banner und Bögen | §14 → OK nötig |
+| 7 | Knoten verteilen | Knoten-Ausrichten-Fenster | klein | – |
+
 ## 17. Abnahme Phase 1
 
 - [ ] Use Cases + Reihenfolge stimmen (§0, §15.1)
