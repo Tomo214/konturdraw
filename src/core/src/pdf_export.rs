@@ -16,6 +16,8 @@ use pdf_writer::{Content, Filter, Finish, Name, Pdf, Rect, Ref};
 use std::collections::BTreeMap;
 
 mod res;
+mod sheets;
+pub use sheets::{tiled, Sheet, Sheets};
 use res::{alpha_state, shading, xobject, Res, Tile};
 
 const PT: f64 = 72.0 / 25.4; // pt je mm
@@ -257,15 +259,7 @@ pub(crate) fn write(
         page.bleed_box(Rect::new(b, b, wf - b, hf - b));
     }
     if !res.alphas.is_empty() {
-        // Transparenz braucht eine Mischgruppe der Seite; Farbraum = Ausgabe (PDF/X-4 verlangt ihn).
-        let mut g = page.group();
-        g.transparency();
-        let cs = g.color_space();
-        if out.cmyk {
-            cs.device_cmyk();
-        } else {
-            cs.device_rgb();
-        }
+        res::blend_group(&mut page, out.cmyk);
     }
     res.write(page.resources());
     page.finish();

@@ -4,6 +4,7 @@ import type { ContourJob } from '../model/contour';
 import type { EraseJob, KnifeJob } from '../model/cutting';
 import type { OutlineJob } from '../model/outline';
 import type { ShapeJob } from '../model/shaping';
+import type { Sheets } from '../model/tiles';
 import type { TextLayout, textSpec } from '../model/text';
 import type { Color, ColorSettings, Subpath } from '../model/types';
 import type { IrScene } from './ir';
@@ -49,8 +50,9 @@ export const importFile = () => call<Imported | null>('import_file');
 export const exportFile = (format: ExportFormat, scene: IrScene, images: Wire, options: ExportOptions, color: ColorSettings) =>
   call<string | null>('export_file', { format, scene, images, options, color });
 
-/** Seite als PDF in die Druckansicht des Systems; liefert den Pfad. */
-export const printFile = (scene: IrScene, images: Wire, color: ColorSettings) => call<string>('print_page', { scene, images, color });
+/** Seite als PDF in die Druckansicht des Systems, mit `tiles` ein Blatt je Seite; liefert den Pfad. */
+export const printFile = (scene: IrScene, images: Wire, color: ColorSettings, tiles?: Sheets) =>
+  call<string>('print_page', { scene, images, color, tiles: tiles ?? null });
 
 /** Bildschirmfarben (sRGB-Bytes) über das Dokumentprofil; proof = wie im Druck. */
 export const displayColors = (color: ColorSettings, colors: Color[], proof: boolean) =>

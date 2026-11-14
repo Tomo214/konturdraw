@@ -5,6 +5,7 @@ import { toIr } from '../../src/io/ir';
 import { images } from '../../src/io/images';
 import { serialize } from '../../src/io/kwk';
 import { DEFAULT_COLOR_SETTINGS } from '../../src/model/color';
+import { PAPERS, tileLayout, toSheets } from '../../src/model/tiles';
 import { addNodes, createDocument } from '../../src/model/document';
 import { translate } from '../../src/model/geometry';
 import type { ColorSettings, Doc, Node } from '../../src/model/types';
@@ -30,10 +31,18 @@ describe('Dateiabläufe', () => {
     const page = d.pages[0];
     vi.mocked(bridge.printFile).mockResolvedValue('/tmp/druck.pdf');
     expect(await printPage(page, undefined, false)).toBe('/tmp/druck.pdf');
-    expect(bridge.printFile).toHaveBeenLastCalledWith(toIr(page), { h1: 'AAAA' }, DEFAULT_COLOR_SETTINGS);
+    expect(bridge.printFile).toHaveBeenLastCalledWith(toIr(page), { h1: 'AAAA' }, DEFAULT_COLOR_SETTINGS, undefined);
     await printPage(page, undefined, true);
     const [scene] = vi.mocked(bridge.printFile).mock.lastCall!;
     expect(scene).toEqual({ width: 100, height: 50, items: [{ kind: 'group', matrix: [-1, 0, 0, 1, 100, 0], children: toIr(page).items }] });
+  });
+
+  it('Drucken in Kacheln: Blätter gehen mit an die Druckansicht', async () => {
+    const page = doc([square('s')]).pages[0];
+    const o = { paper: PAPERS.A5, margin: 5, overlap: 10 };
+    const sheets = toSheets(tileLayout(100, 50, o)!, o, true);
+    await printPage(page, undefined, true, sheets);
+    expect(vi.mocked(bridge.printFile).mock.lastCall![3]).toEqual(sheets);
   });
 
   it('Bilder im Rahmen-Inhalt gehen mit Export, Druck und Speichern mit', async () => {

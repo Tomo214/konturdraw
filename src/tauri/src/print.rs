@@ -1,18 +1,20 @@
 //! Drucken 1:1 (Weg B, architecture.md §7): Seite als PDF in die Druckansicht des Systems, dort mit 100 % drucken.
-use crate::files::{render, Wire};
+use crate::files::{decode, render, Wire};
 use kw_core::color::ColorSettings;
+use kw_core::pdf_export::{self, Sheets};
 use kw_core::scene::Scene;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Eigene Datei je Auftrag: eine noch offene Druckansicht bleibt unberührt.
+/// Eigene Datei je Auftrag: eine noch offene Druckansicht bleibt unberührt. Mit `tiles` ein Blatt je Seite.
 fn write_pdf(
     dir: &Path,
     scene: &Scene,
     images: Wire,
     color: &ColorSettings,
+    tiles: Option<&Sheets>,
 ) -> Result<PathBuf, String> {
     static N: AtomicU32 = AtomicU32::new(0);
     let stamp = SystemTime::now()
@@ -22,11 +24,11 @@ fn write_pdf(
         "KonturDraw-Druck-{stamp}-{}.pdf",
         N.fetch_add(1, Ordering::Relaxed)
     ));
-    std::fs::write(
-        &path,
-        render("pdf", scene, images, &Default::default(), color)?,
-    )
-    .map_err(|e| format!("{} nicht schreibbar: {e}", path.display()))?;
+    let data = match tiles {
+        Some(s) => pdf_export::tiled(scene, &decode(images)?, &crate::color::cms(color)?, s)?,
+        None => render("pdf", scene, images, &Default::default(), color)?,
+    };
+    std::fs::write(&path, data).map_err(|e| format!("{} nicht schreibbar: {e}", path.display()))?;
     Ok(path)
 }
 
@@ -70,8 +72,9 @@ pub async fn print_page(
     scene: Scene,
     images: Wire,
     color: ColorSettings,
+    tiles: Option<Sheets>,
 ) -> Result<String, String> {
-    let path = write_pdf(&std::env::temp_dir(), &scene, images, &color)?;
+    let path = write_pdf(&std::env::temp_dir(), &scene, images, &color, tiles.as_ref())?;
     show(&path)?;
     Ok(path.display().to_string())
 }
@@ -79,6 +82,7 @@ pub async fn print_page(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kw_core::pdf_export::{Sheet, Sheets};
 
     #[test]
     fn druck_pdf_je_auftrag_neu() {
@@ -90,8 +94,8 @@ mod tests {
             items: vec![],
         };
         let (a, b) = (
-            write_pdf(&dir, &scene, Wire::new(), &Default::default()).unwrap(),
-            write_pdf(&dir, &scene, Wire::new(), &Default::default()).unwrap(),
+            write_pdf(&dir, &scene, Wire::new(), &Default::default(), None).unwrap(),
+            write_pdf(&dir, &scene, Wire::new(), &Default::default(), None).unwrap(),
         );
         assert_ne!(a, b, "offene Druckansicht wird nicht überschrieben");
         assert!(
@@ -99,6 +103,34 @@ mod tests {
                 && std::fs::read(&a).unwrap().starts_with(b"%PDF-")
         );
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn kacheldruck_ein_blatt_je_seite() {
+        let dir = std::env::temp_dir().join(format!("kw-kacheln-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let scene = Scene {
+            width: 400.0,
+            height: 250.0,
+            items: vec![],
+        };
+        let sheet = |x| Sheet {
+            x,
+            y: 0.0,
+            label: String::new(),
+            marks: vec![],
+        };
+        let sheets = Sheets {
+            paper: [210.0, 297.0],
+            margin: 5.0,
+            area: [200.0, 287.0],
+            mark: 2.5,
+            tiles: vec![sheet(0.0), sheet(190.0), sheet(380.0)],
+        };
+        let path = write_pdf(&dir, &scene, Wire::new(), &Default::default(), Some(&sheets)).unwrap();
+        let pdf = String::from_utf8_lossy(&std::fs::read(&path).unwrap()).into_owned();
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(pdf.contains("/Count 3"));
     }
 
     /// Benutzername wie „Max&Moritz“ (ohne Leerzeichen) landet so im Temp-Pfad der Druckdatei.

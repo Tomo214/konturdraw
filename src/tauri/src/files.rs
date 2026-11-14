@@ -22,7 +22,7 @@ fn encode(images: Images) -> Wire {
         .collect()
 }
 
-fn decode(images: Wire) -> Result<Images, String> {
+pub(crate) fn decode(images: Wire) -> Result<Images, String> {
     images
         .into_iter()
         .map(|(h, s)| {

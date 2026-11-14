@@ -214,6 +214,7 @@ Allgemein: Export „nur Auswahl“ oder „ganze Seite“ (P0); nicht druckbare
 | Objekt-Manager: Ebenen/Gruppen/Objekte als Baum, Drag zum Umsortieren | P0 |
 | Drucken 1:1 (Originalgröße, mm-genau) über System-Druckdialog | P0 |
 | Drucken gespiegelt | P1 |
+| Drucken in Kacheln: Seite größer als das Papier auf mehrere Blätter (Papier A5–A3/Letter/Legal, Hoch/Quer, Überlappung, Rand); Kachelmarken = Passkreuze mitten in der Überlappung + Blattname mit Nummer; Vorschau der Blätter im Dialog; gespiegelt wird vor dem Kacheln. Offen: Skalieren auf % der Seitenbreite, leere Blätter auslassen | P1 ✓ 14.11. |
 | Druckvorschau | P1 |
 
 ## 13. Tastenkürzel (Belegung wie Vorbild, Timon 03.11.)
@@ -288,6 +289,7 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 - Transformieren: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Transform-objects.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Rotate-and-mirror-objects.html; Kürzel: https://community.coreldraw.com/collaborate/w/howto/8/complete-list-of-keyboard-shortcuts; Kopien schrittweise = eigene Festlegung
 - Knoten-Werkzeug: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Select-and-move-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Add-remove-join-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Manipulate-segments.html, https://learn.corel.com/tutorials/coreldraw-edit-shape-tools/, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Align-distribute-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Transform-nodes.html; Biegeformel und Griffbelegung beim Knoten-Transformieren = eigene Festlegung
 - Linienstück löschen: https://product.corel.com/help/CorelDRAW/540111148/CorelDRAW-en/CorelDRAW-Crop-and-erase-objects.html; Kreuzungssuche, T-Stoß-Toleranz und Hervorheben = eigene Festlegung
+- Druck in Kacheln: https://product.corel.com/help/CorelDRAW/540227992/Main/EN/Documentation/CorelDRAW-Laying-out-print-jobs.html; Lage und Form der Passkreuze, Blattnamen und Dialogaufbau = eigene Festlegung
 - Standards: SVG 1.1/2 (W3C), PDF 1.7 / ISO 32000, ICC.1 (color.org), HP-GL/2, DXF-Referenz (Autodesk)
 
 ## 18. Stencil-Lücken zum Vorbild (14.11.)
@@ -297,7 +299,7 @@ Timon 14.11.: gleiche Funktionen wie das Vorbild, so gut wie möglich auf Stenci
 | # | Lücke | Vorbild-Funktion | Stencil-Nutzen | Konflikt |
 |---|---|---|---|---|
 | 1 | Virtuelles Segment löschen | Werkzeug: Klick löscht das Stück zwischen zwei Schnittpunkten; Rahmen = mehrere; Alt-Linie = alle gekreuzten; Umschalt-Klick verbindet zwei Endpunkte | Überstände an Linienkreuzungen nach Nachzeichnen/Zeichnen weg – häufigster Putzschritt | ✓ 14.11. als „Linienstück löschen“ (Klick, Rahmen); Alt-Linie und Umschalt-Verbinden offen |
-| 2 | Druck in Kacheln | Druckdialog: Seiten gekachelt, Überlappung, Passmarken | Rücken/Arm größer als A4 auf A4-Thermodrucker | – |
+| 2 | Druck in Kacheln | Druckdialog: Seiten gekachelt, Überlappung, Passmarken | Rücken/Arm größer als A4 auf A4-Thermodrucker | ✓ 14.11. als „In Kacheln drucken“ (Überlappung, Rand, Passkreuze, Blattnamen); % der Seitenbreite und leere Blätter auslassen offen |
 | 3 | Kanten finden vor dem Nachzeichnen | Bitmap-Effekt „Kanten finden“ (weich/hart), Hilfe-Tipp: vor dem Nachzeichnen anwenden; dazu Helligkeit/Kontrast | Foto mit ungleichem Licht → saubere Linien statt Flecken (heute nur ein fester Schwellwert) | §14 Bitmap-Filter → nur als Vorstufe im Nachzeichnen-Fenster, OK nötig |
 | 4 | Glätten-Werkzeug | Pinsel über Kante: Radius, Stärke, Stiftdruck | Zackige Nachzeichen-Linien glätten, ohne Knoten einzeln zu ziehen | – |
 | 5 | Symmetrie-Modus | Symmetriegruppe, bis 12 Spiegelachsen, live mitgezeichnet, Mitte verschiebbar | Mandala/Ornamentik | – |

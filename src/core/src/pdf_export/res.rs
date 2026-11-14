@@ -1,6 +1,18 @@
 //! Ressourcen der PDF-Seite: Verlauf-Shadings, Bild-XObjects, Kachelmuster (ausgelagert aus pdf_export.rs).
 use super::*;
-use pdf_writer::writers::Resources;
+use pdf_writer::writers::{Page, Resources};
+
+/// Transparenz braucht eine Mischgruppe der Seite; Farbraum = Ausgabe (PDF/X-4 verlangt ihn).
+pub(super) fn blend_group(page: &mut Page, cmyk: bool) {
+    let mut g = page.group();
+    g.transparency();
+    let cs = g.color_space();
+    if cmyk {
+        cs.device_cmyk();
+    } else {
+        cs.device_rgb();
+    }
+}
 
 /// Ressourcen, die Seite und Musterkacheln gemeinsam nutzen; Namen dokumentweit eindeutig.
 #[derive(Default)]

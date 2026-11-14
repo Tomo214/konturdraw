@@ -2,8 +2,10 @@
   import type { ExportFormat, ExportOptions } from '../io/bridge';
   import { DEFAULT_EXPORT_OPTIONS, exportPage, importInto, openFile, printPage, saveFile } from '../io/files';
   import { createDocument } from '../model/document';
+  import { PAPERS, tileLayout, toSheets, type TileOptions } from '../model/tiles';
   import type { Doc, Node, Page } from '../model/types';
   import Icon from './Icon.svelte';
+  import TilePreview from './TilePreview.svelte';
   import type { Command } from './shortcuts';
   import { tm, tr } from '../i18n/i18n.svelte';
 
@@ -34,6 +36,22 @@
   let origin = $state(DEFAULT_EXPORT_OPTIONS.plot.origin);
   let onlySelection = $state(false);
   let mirror = $state(false);
+  // Druck in Kacheln: Seite größer als das Papier auf mehrere Blätter, 1:1.
+  let tiled = $state(false);
+  let paper = $state<keyof typeof PAPERS>('A4');
+  let landscape = $state(false);
+  let overlap = $state(10);
+  let margin = $state(5);
+  let tileMarks = $state(true);
+  // Leere Zahlenfelder liefern null → ungültig statt 0.
+  const num = (v: number | null) => (typeof v === 'number' ? v : NaN);
+  const tileOptions = $derived.by((): TileOptions => {
+    const p = PAPERS[paper];
+    return { paper: landscape ? { width: p.height, height: p.width } : p, margin: num(margin), overlap: num(overlap) };
+  });
+  // Seitengröße beim Öffnen des Dialogs (page() selbst meldet keine Änderungen).
+  let size = $state<[number, number]>([0, 0]);
+  const layout = $derived(tiled ? tileLayout(size[0], size[1], tileOptions) : null);
   let busy = $state(false);
   let exportDialog: HTMLDialogElement;
   let printDialog: HTMLDialogElement;
@@ -90,7 +108,10 @@
     d.querySelector<HTMLButtonElement>('.primary')?.focus();
   }
   export const showExport = () => show(exportDialog);
-  export const showPrint = () => show(printDialog);
+  export function showPrint() {
+    size = [page().width, page().height];
+    show(printDialog);
+  }
 
   /** Datei-Befehl ausführen; false = kein Datei-Befehl. */
   export function command(cmd: Command): boolean {
@@ -129,8 +150,9 @@
   // Druckansicht des Systems: dort mit 100 % drucken, nicht „an Seite anpassen“.
   const print = () =>
     run(async () => {
+      if (tiled && !layout) throw new Error(tr('Rand und Überlappung passen nicht aufs Papier.'));
       printDialog.close();
-      await printPage(page(), doc().color, mirror);
+      await printPage(page(), doc().color, mirror, layout ? toSheets(layout, tileOptions, tileMarks) : undefined);
       return tr('Druckansicht geöffnet – dort mit 100 % drucken');
     });
 </script>
@@ -185,10 +207,38 @@
   <div class="fields">
     <span></span>
     <label class="check" title={tr('Für Transferpapier: links und rechts vertauscht')}><input type="checkbox" bind:checked={mirror} /> {tr('gespiegelt (Transferpapier)')}</label>
+    <span></span>
+    <label class="check" title={tr('Seite größer als das Papier: auf mehrere Blätter verteilen')}><input type="checkbox" bind:checked={tiled} /> {tr('In Kacheln drucken')}</label>
+    {#if tiled}
+      <label for="kw-paper">{tr('Papier')}</label>
+      <span>
+        <select id="kw-paper" bind:value={paper}>
+          {#each Object.keys(PAPERS) as k (k)}<option value={k}>{k}</option>{/each}
+        </select>
+        <select aria-label={tr('Papierausrichtung')} bind:value={landscape}>
+          <option value={false}>{tr('Hochformat')}</option>
+          <option value={true}>{tr('Querformat')}</option>
+        </select>
+      </span>
+      <label for="kw-overlap" title={tr('Streifen, den zwei Nachbarblätter gemeinsam haben – zum Ausrichten und Kleben')}>{tr('Überlappung')}</label>
+      <span><input id="kw-overlap" type="number" min="0" max="50" step="1" bind:value={overlap} /> mm</span>
+      <label for="kw-margin" title={tr('Rand, den der Drucker nicht bedruckt')}>{tr('Rand')}</label>
+      <span><input id="kw-margin" type="number" min="0" max="30" step="0.5" bind:value={margin} /> mm</span>
+      <span></span>
+      <label class="check" title={tr('Passkreuze in der Überlappung und Blattnamen – werden mitgedruckt')}><input type="checkbox" bind:checked={tileMarks} /> {tr('Kachelmarken')}</label>
+      <div class="tiles">
+        {#if layout}
+          <TilePreview width={size[0]} height={size[1]} {layout} />
+          <small>{layout.tiles.length === 1 ? tr('Passt auf ein Blatt.') : tr('{cols} × {rows} = {n} Blätter', { cols: layout.cols, rows: layout.rows, n: layout.tiles.length })}</small>
+        {:else}
+          <small class="error">{tr('Rand und Überlappung passen nicht aufs Papier.')}</small>
+        {/if}
+      </div>
+    {/if}
   </div>
   <p>{tr('In der Druckansicht 100 % wählen, nicht „an Seite anpassen“ – sonst stimmen die Maße nicht.')}</p>
   <footer>
-    <button class="primary" disabled={busy} onclick={print}>{tr('Drucken …')}</button>
+    <button class="primary" disabled={busy || (tiled && !layout)} onclick={print}>{tr('Drucken …')}</button>
     <button onclick={() => printDialog.close()}>{tr('Abbrechen')}</button>
   </footer>
 </dialog>
@@ -202,5 +252,15 @@
   p {
     margin: 8px 14px 0;
     color: var(--text-dim);
+  }
+  .tiles {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    color: var(--text-dim);
+  }
+  .error {
+    color: var(--accent);
   }
 </style>

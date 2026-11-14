@@ -1,6 +1,7 @@
 // Datei-Abläufe der Oberfläche: Brücke (Dialoge, kw-core) + Bildablage + Dokumentprüfung. null = abgebrochen.
 import { DEFAULT_COLOR_SETTINGS } from '../model/color';
 import { multiply } from '../model/geometry';
+import type { Sheets } from '../model/tiles';
 import type { ColorSettings, Doc, Node, Page } from '../model/types';
 import * as bridge from './bridge';
 import { images } from './images';
@@ -64,9 +65,10 @@ const hashesOf = (items: readonly IrItem[]): string[] =>
   );
 const hashes = (s: IrScene) => hashesOf(s.items);
 
-/** Ganze Seite in die Druckansicht des Systems; gespiegelt = links ↔ rechts um die Seitenmitte (Transferpapier). */
-export async function printPage(page: Page, color: ColorSettings | undefined, mirror: boolean): Promise<string> {
+/** Ganze Seite in die Druckansicht des Systems; gespiegelt = links ↔ rechts um die Seitenmitte (Transferpapier);
+ *  mit `tiles` ein Blatt je Seite (Aufteilung nach dem Spiegeln). */
+export async function printPage(page: Page, color: ColorSettings | undefined, mirror: boolean, tiles?: Sheets): Promise<string> {
   const scene = toIr(page);
   const items: IrItem[] = mirror ? [{ kind: 'group', matrix: [-1, 0, 0, 1, scene.width, 0], children: scene.items }] : scene.items;
-  return bridge.printFile({ ...scene, items }, images.pick(hashes(scene)), color ?? DEFAULT_COLOR_SETTINGS);
+  return bridge.printFile({ ...scene, items }, images.pick(hashes(scene)), color ?? DEFAULT_COLOR_SETTINGS, tiles);
 }
