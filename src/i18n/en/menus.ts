@@ -53,6 +53,7 @@ export const MENUS: Record<string, string> = {
   'Entf': 'Del',
   'Leertaste': 'Space',
   'Messer': 'Knife',
+  'Linienstück löschen': 'Delete line piece',
   'Kontureffekt': 'Contour',
   'Radierer': 'Eraser',
   'Stift': 'Pen',

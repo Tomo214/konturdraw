@@ -69,6 +69,7 @@
     zoom: N_('Klick vergrößert, Alt+Klick verkleinert, Rahmen ziehen zeigt den Bereich'),
     hand: N_('Ziehen verschiebt die Ansicht'),
     knife: N_('Quer durch das Objekt ziehen – ohne Auswahl wird alles Gekreuzte geteilt'),
+    piece: N_('Klick löscht das Linienstück bis zu den nächsten Kreuzungen · Rahmen ziehen löscht alle berührten Stücke'),
     eraser: N_('Über das Objekt ziehen oder klicken – ohne Auswahl wirkt er auf alles Getroffene'),
     contour: N_('Objekt anklicken und nach außen oder zur Mitte ziehen · Anwenden nimmt die Werte der Leiste'),
     eyedropper: N_('Klick nimmt auf, weitere Klicks übertragen · Shift neu aufnehmen · Esc zurücksetzen'),

@@ -177,6 +177,8 @@ export const UI: Record<string, string> = {
   'Klick vergrößert, Alt+Klick verkleinert, Rahmen ziehen zeigt den Bereich': 'Click zooms in, Alt+click zooms out, drag a box to zoom to an area',
   'Ziehen verschiebt die Ansicht': 'Drag to pan the view',
   'Quer durch das Objekt ziehen – ohne Auswahl wird alles Gekreuzte geteilt': 'Drag across the object – with nothing selected, everything crossed is split',
+  'Klick löscht das Linienstück bis zu den nächsten Kreuzungen · Rahmen ziehen löscht alle berührten Stücke': 'Click deletes the line piece up to the nearest crossings · Drag a frame to delete every piece it touches',
+  'Keine Linie getroffen.': 'No line hit.',
   'Über das Objekt ziehen oder klicken – ohne Auswahl wirkt er auf alles Getroffene': 'Drag over the object or click – with nothing selected, it affects everything it touches',
   'Klick nimmt auf, weitere Klicks übertragen · Shift neu aufnehmen · Esc zurücksetzen': 'Click picks up, further clicks apply · Shift picks up again · Esc resets',
   'Glättung': 'Smoothing',

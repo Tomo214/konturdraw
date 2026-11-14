@@ -19,6 +19,7 @@ export const TOOLBOX: readonly (readonly ToolInfo[])[] = [
   [{ tool: 'node', label: N_('Knoten'), key: 'F10' }],
   [
     { tool: 'knife', label: N_('Messer') },
+    { tool: 'piece', label: N_('Linienstück löschen') },
     { tool: 'eraser', label: N_('Radierer'), key: 'X' },
   ],
   [

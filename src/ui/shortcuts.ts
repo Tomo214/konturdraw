@@ -52,7 +52,7 @@ export type PageOp =
 
 export type Tool =
   | 'select' | 'lasso' | 'node' | 'pen' | 'freehand' | 'rect' | 'ellipse' | 'polygon' | 'gradient' | 'text' | 'hand' | 'zoom'
-  | 'knife' | 'eraser' | 'eyedropper' | 'contour';
+  | 'knife' | 'piece' | 'eraser' | 'eyedropper' | 'contour';
 
 // Stift, Messer und Pipette haben im Vorbild keine Taste, Auswahl kommt über die Leertaste.
 const TOOLS: Record<string, Tool> = {
