@@ -232,6 +232,13 @@
     stamped = false;
     if (skip) return;
     guard(() => {
+      // eigenes Menü des Werkzeugs an dieser Stelle (Knoten-Werkzeug auf Knoten/Segment) vor dem Objektmenü
+      const own = tool().menu?.(pointer(e, false));
+      if (own) {
+        menuItems = own.map((it) => it && { label: it.label, disabled: it.disabled, run: () => guard(it.run) });
+        menuAt = { x: e.clientX, y: e.clientY };
+        return;
+      }
       const hit = renderer.hitTest(vp, e.offsetX, e.offsetY);
       const next = selectForMenu(sel.selected, hit);
       if (next !== sel.selected) (sel.selected = next), redraw();

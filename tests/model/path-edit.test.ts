@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest';
 import { pointAt, segmentAt } from '../../src/model/bezier';
+import { IDENTITY, rotate } from '../../src/model/geometry';
 import {
+  alignNodes,
   bendSegment,
   breakAt,
   deleteNodes,
@@ -182,4 +184,28 @@ test('bendSegment nahe am Knoten: Anfasser bleiben endlich und maßvoll', () => 
   const r = bendSegment(line3, 0, 0, 0.01, { x: 0, y: 1 });
   const h = [r[0].nodes[0].handleOut!, r[0].nodes[1].handleIn!];
   expect(h.every((q) => Number.isFinite(q.x) && Number.isFinite(q.y) && Math.abs(q.y) < 10)).toBe(true);
+});
+
+const r9 = (v: number) => +v.toFixed(9) + 0;
+
+test('alignNodes: an Kante oder Mittelachse des Knotenrahmens, nur gewählte Knoten, Anfasser wandern mit', () => {
+  const sps = [sub(false, pt(0, 0), pt(10, 4, { handleIn: { x: 8, y: 4 } }), pt(20, -6), pt(30, 0))];
+  const refs = [{ sub: 0, index: 1 }, { sub: 0, index: 2 }];
+  const top = alignNodes(sps, refs, IDENTITY, 'top');
+  expect(top[0].nodes.map((n) => n.y)).toEqual([0, -6, -6, 0]);
+  expect(top[0].nodes[1].handleIn).toEqual({ x: 8, y: -6 });
+  expect(alignNodes(sps, refs, IDENTITY, 'centerY')[0].nodes.map((n) => n.y)).toEqual([0, -1, -1, 0]);
+  expect(alignNodes(sps, refs, IDENTITY, 'right')[0].nodes.map((n) => n.x)).toEqual([0, 20, 20, 30]);
+  expect(alignNodes(top, refs, IDENTITY, 'top')).toBe(top); // nichts zu tun
+});
+
+test('alignNodes rechnet auf der Seite (gedrehter Pfad); fremder Rahmen = Seite, page = beide Mitten', () => {
+  const sps = [sub(false, pt(0, 0), pt(10, 4))];
+  const refs = [{ sub: 0, index: 0 }, { sub: 0, index: 1 }];
+  // 90° gedreht: auf der Seite liegen die Knoten bei (0|0) und (-4|10); links = beide auf x -4
+  const r = alignNodes(sps, refs, rotate(Math.PI / 2), 'left');
+  expect(r[0].nodes.map((n) => [r9(n.x), r9(n.y)])).toEqual([[0, 4], [10, 4]]);
+  const page = { minX: 0, minY: 0, maxX: 100, maxY: 50 };
+  expect(alignNodes(sps, refs, IDENTITY, 'bottom', page)[0].nodes.map((n) => n.y)).toEqual([50, 50]);
+  expect(alignNodes(sps, refs, IDENTITY, 'page', page)[0].nodes.map((n) => [n.x, n.y])).toEqual([[50, 25], [50, 25]]);
 });

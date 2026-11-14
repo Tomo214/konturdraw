@@ -144,3 +144,63 @@ test('Richtung umkehren und Teilpfad herauslösen am angeklickten Teilpfad', () 
   expect([...ed.selected]).toEqual([kids[1].id]);
   expect(kids[1].subpaths[0].nodes[0].y).toBe(50);
 });
+
+function zigzag() {
+  const corner = (x: number, y: number) => ({ x, y, type: 'corner' as const });
+  const path: PathNode = {
+    type: 'path',
+    id: 'p',
+    transform: IDENTITY,
+    style: { fill: null, stroke: null },
+    subpaths: [{ closed: false, nodes: [corner(0, 0), corner(10, 5), corner(20, -5), corner(30, 0)] }, { closed: false, nodes: [corner(0, 50), corner(10, 50)] }],
+  };
+  const doc = createDocument(200, 100);
+  const ed = { history: new History<Doc>(addNodes(doc, doc.pages[0].layers[0].id, [path])), selected: new Set(['p']), notice: '', vp: { x: 0, y: 0, zoom: 4 }, renderer: { hitTest: () => null }, page: () => doc.pages[0] };
+  return { ed, tool: nodeTool(ed as unknown as Editor) };
+}
+const ys = (d: Doc) => (findNode(d, 'p') as PathNode).subpaths[0].nodes.map((n) => n.y);
+
+test('Ausrichten-Befehle wirken auf die gewählten Knoten (Rahmen der Knoten oder Seite); ohne Knoten wie bisher aufs Objekt', () => {
+  const { ed, tool } = zigzag();
+  expect(tool.key!({ name: 'align', edge: 'top' })).toBe(false);
+  drag(tool, [5, -10], [25, 10]); // Knoten 1 und 2
+  expect(tool.key!({ name: 'align', edge: 'top' })).toBe(true);
+  expect(ys(ed.history.current)).toEqual([0, -5, -5, 0]);
+  expect(tool.key!({ name: 'align', edge: 'bottom', to: 'page' })).toBe(true);
+  expect(ys(ed.history.current)).toEqual([0, 100, 100, 0]);
+  ed.history.undo();
+  ed.history.undo();
+  drag(tool, [5, 0], [15, 10]); // nur Knoten 1
+  const before = ed.history.current;
+  expect(tool.key!({ name: 'align', edge: 'left' })).toBe(true);
+  expect(ed.notice).toBe('Mindestens zwei Knoten wählen');
+  expect(ed.history.current).toBe(before);
+});
+
+test('Rechtsklick auf Knoten oder Segment: Knotenbefehle, unpassende grau; daneben kein eigenes Menü', () => {
+  const { ed, tool } = zigzag();
+  expect(tool.menu!(at(15, 30))).toBeNull();
+  const m = tool.menu!(at(10, 5))!;
+  const item = (menu: typeof m, label: string) => menu.find((i) => i?.label === label)!;
+  expect(m).toContain(null);
+  expect(item(m, 'Löschen').disabled).toBe(false);
+  expect(item(m, 'Verbinden').disabled).toBe(true);
+  expect(item(m, 'Gerade').disabled).toBe(true);
+  expect(item(m, 'Waagerecht ausrichten').disabled).toBe(true);
+  expect(item(m, 'Teilpfad herauslösen').disabled).toBe(false);
+  item(m, 'Löschen').run();
+  expect(xs(ed.history.current)).toEqual([0, 20, 30]);
+  const s = tool.menu!(at(10, -2.5))!; // Segment (0|0)–(20|-5)
+  expect(item(s, 'Gerade').disabled).toBe(false);
+  expect(item(s, 'Löschen').disabled).toBe(true);
+  item(s, 'Knoten +').run();
+  expect(xs(ed.history.current)).toHaveLength(4);
+});
+
+test('Rechtsklick auf einen gewählten Knoten lässt die Mehrfachauswahl stehen; „Waagerecht ausrichten“ legt sie auf eine Linie', () => {
+  const { ed, tool } = zigzag();
+  drag(tool, [5, -10], [25, 10]);
+  const m = tool.menu!(at(20, -5))!;
+  m.find((i) => i?.label === 'Waagerecht ausrichten')!.run();
+  expect(ys(ed.history.current)).toEqual([0, 0, 0, 0]);
+});

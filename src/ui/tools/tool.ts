@@ -80,6 +80,8 @@ export interface Tool {
   cursor?(p: Pointer): string;
   overlay(ctx: CanvasRenderingContext2D, dpr: number): void;
   readonly actions?: readonly { label: string; run(): void }[];
+  /** Rechtsklick (wie Vorbild): eigene Befehle an dieser Stelle, null = übliches Menü. disabled = passt gerade nicht (grau). */
+  menu?(p: Pointer): readonly ({ label: string; run(): void; disabled?: boolean } | null)[] | null;
   /** Regler 0–100 in der Eigenschaftsleiste; done = losgelassen → ein Rückgängig-Schritt. */
   readonly slider?: { label: string; value(): number; set(v: number, done: boolean): void };
 }

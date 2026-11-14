@@ -1,6 +1,8 @@
 import { deleteNodes as deleteObjects, findNode, updateNodes, worldOf } from '../../model/document';
 import { apply, invert, type Mat } from '../../model/geometry';
+import type { AlignEdge, AlignTo } from '../../model/arrange';
 import {
+  alignNodes,
   bendSegment,
   breakAt,
   deleteNodes,
@@ -140,42 +142,70 @@ export function nodeTool(ed: Editor): Tool {
     ed.selected = new Set([r.id]);
   }
 
-  const actions = [
-    { label: tr('Ecke'), run: () => setType('corner') },
-    { label: tr('Glatt'), run: () => setType('smooth') },
-    { label: tr('Symmetrisch'), run: () => setType('symmetric') },
-    { label: tr('Gerade'), run: () => needSeg((t, s) => toLine(t.subpaths, s.sub, s.seg)) },
-    { label: tr('Kurve'), run: () => needSeg((t, s) => toCurve(t.subpaths, s.sub, s.seg)) },
-    { label: tr('Knoten +'), run: () => needSeg((t, s) => insertNode(t.subpaths, s.sub, s.seg, s.t)) },
-    { label: tr('Löschen'), run: () => edit((t) => (sel.size ? deleteNodes(t.subpaths, refs()) : null)) },
-    { label: tr('Knoten reduzieren'), run: () => reduce(level, true) },
-    { label: tr('Trennen'), run: () => edit((t) => (sel.size === 1 ? breakAt(t.subpaths, refs()[0]) : ((ed.notice = tr('Einen Knoten wählen')), null))) },
-    {
+  // Ausrichten (Taste, Menü, Andockfenster) mit gewählten Knoten wie Vorbild: Rahmen der Knoten, Seite oder Seitenmitte.
+  function align(edge: AlignEdge, to?: AlignTo) {
+    const t = sync();
+    if (!t) return;
+    const { width: w, height: h } = ed.page();
+    const ref =
+      edge === 'page' || to === 'page' ? { minX: 0, minY: 0, maxX: w, maxY: h } : to === 'pageCenter' ? { minX: w / 2, minY: h / 2, maxX: w / 2, maxY: h / 2 } : undefined;
+    if (!ref && sel.size < 2) return void (ed.notice = tr('Mindestens zwei Knoten wählen'));
+    const subs = alignNodes(t.subpaths, refs(), world(t), edge, ref);
+    if (subs !== t.subpaths) commit(t, subs);
+  }
+
+  const sub = () => seg?.sub ?? refs()[0]?.sub;
+  const nodes = (n: number) => () => sel.size >= n;
+  const onSeg = () => !!seg;
+  // on = passt zur Auswahl; das Rechtsklick-Menü zeigt den Rest grau, die Leiste meldet beim Klick, was fehlt.
+  const A = {
+    corner: { label: tr('Ecke'), run: () => setType('corner'), on: nodes(1) },
+    smooth: { label: tr('Glatt'), run: () => setType('smooth'), on: nodes(1) },
+    symmetric: { label: tr('Symmetrisch'), run: () => setType('symmetric'), on: nodes(1) },
+    line: { label: tr('Gerade'), run: () => needSeg((t, s) => toLine(t.subpaths, s.sub, s.seg)), on: onSeg },
+    curve: { label: tr('Kurve'), run: () => needSeg((t, s) => toCurve(t.subpaths, s.sub, s.seg)), on: onSeg },
+    add: { label: tr('Knoten +'), run: () => needSeg((t, s) => insertNode(t.subpaths, s.sub, s.seg, s.t)), on: onSeg },
+    del: { label: tr('Löschen'), run: () => edit((t) => (sel.size ? deleteNodes(t.subpaths, refs()) : null)), on: nodes(1) },
+    reduce: { label: tr('Knoten reduzieren'), run: () => reduce(level, true), on: () => true },
+    split: {
+      label: tr('Trennen'),
+      run: () => edit((t) => (sel.size === 1 ? breakAt(t.subpaths, refs()[0]) : ((ed.notice = tr('Einen Knoten wählen')), null))),
+      on: () => sel.size === 1,
+    },
+    join: {
       label: tr('Verbinden'),
       run: () =>
         edit((t) => {
           const r = refs();
           return r.length === 2 ? joinEnds(t.subpaths, r[0], r[1]) : ((ed.notice = tr('Zwei Endknoten wählen')), null);
         }),
+      on: () => sel.size === 2,
     },
-    {
+    close: {
       label: tr('Schließen/Öffnen'),
       run: () =>
         edit((t) => {
-          const s = seg?.sub ?? refs()[0]?.sub;
+          const s = sub();
           return s === undefined ? null : setClosed(t.subpaths, s, !t.subpaths[s].closed);
         }),
+      on: () => sub() !== undefined,
     },
-    {
+    reverse: {
       label: tr('Richtung umkehren'),
       run: () =>
         edit((t) => {
-          const s = seg?.sub ?? refs()[0]?.sub;
+          const s = sub();
           return s === undefined ? ((ed.notice = tr('Segment oder Knoten anklicken')), null) : reverseSubpath(t.subpaths, s);
         }),
+      on: () => sub() !== undefined,
     },
-    { label: tr('Teilpfad herauslösen'), run: extract },
-  ];
+    extract: { label: tr('Teilpfad herauslösen'), run: extract, on: () => sub() !== undefined && (target()?.subpaths.length ?? 0) > 1 },
+    // Knoten auf eine waagerechte bzw. senkrechte Linie (Mittelachse ihres Rahmens)
+    alignH: { label: tr('Waagerecht ausrichten'), run: () => align('centerY'), on: nodes(2) },
+    alignV: { label: tr('Senkrecht ausrichten'), run: () => align('centerX'), on: nodes(2) },
+  };
+  const actions = [A.corner, A.smooth, A.symmetric, A.line, A.curve, A.add, A.del, A.reduce, A.split, A.join, A.close, A.reverse, A.extract];
+  const MENU = [A.add, A.del, A.join, A.split, null, A.line, A.curve, null, A.corner, A.smooth, A.symmetric, null, A.reverse, A.close, A.extract, null, A.alignH, A.alignV];
 
   return {
     actions,
@@ -260,6 +290,7 @@ export function nodeTool(ed: Editor): Tool {
       if (t && cmd.name === 'selectAll') return ([sel, seg] = [new Set(nodesWhere(t.subpaths, world(t), () => true)), null]), true;
       if (!t || !sel.size) return false;
       if (cmd.name === 'delete') edit(() => deleteNodes(t.subpaths, refs()));
+      else if (cmd.name === 'align') align(cmd.edge, cmd.to);
       else if (cmd.name === 'deselect') sel = new Set();
       else if (cmd.name === 'nudge') {
         const step = ed.history.current.nudge ?? DEFAULT_NUDGE;
@@ -267,6 +298,18 @@ export function nodeTool(ed: Editor): Tool {
         commit(t, moveNodes(t.subpaths, refs(), b.x - a.x, b.y - a.y));
       } else return false;
       return true;
+    },
+    // Rechtsklick auf Knoten oder Segment wählt dort (gewählte Knoten bleiben) und zeigt die Knotenbefehle.
+    menu(p) {
+      const t = sync();
+      const hit = t && hitPath(t.subpaths, world(t), ed.vp, p.sx, p.sy, sel);
+      if (!t || !hit) return null;
+      if (hit.kind === 'seg') [sel, seg] = [new Set(), hit];
+      else {
+        if (!sel.has(nodeKey(hit.ref))) sel = new Set([nodeKey(hit.ref)]);
+        seg = null;
+      }
+      return MENU.map((a) => a && { label: a.label, run: a.run, disabled: !a.on() });
     },
     overlay(ctx, dpr) {
       const t = sync();

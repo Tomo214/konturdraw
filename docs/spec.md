@@ -72,7 +72,7 @@ Deine Muss-Antworten → alle P0 oder P1: Bild → Vektor (P0), CMYK + ICC (P1),
 | Werkzeug | Funktion | Prio |
 |---|---|---|
 | Auswahl | Klicken, Rahmen ziehen, Shift = hinzufügen; Griffe: verschieben, skalieren, drehen, scheren; Rechtsklick (Mac auch Ctrl-Klick) = Kontextmenü, wählt vorher das Objekt darunter (nicht beim Ziehen: dort legt er eine Kopie ab) | P0 |
-| Knoten | Knoten wählen/verschieben/hinzufügen/löschen; Typ Ecke/glatt/symmetrisch; Segment Gerade ↔ Kurve; Pfad öffnen/schließen; zwei Endknoten verbinden; Pfad an Knoten trennen ; Rahmen-/Freihand-Auswahl (Alt), Umschalt fügt hinzu, Mod+A alle Knoten; Segment ziehen biegt es (Gerade wird Kurve, eigene Formel); Doppelklick auf Knoten löscht; Richtung umkehren; Teilpfad herauslösen (eigenes Objekt darüber) | P0, Erweiterung P1 ✓ 14.11. |
+| Knoten | Knoten wählen/verschieben/hinzufügen/löschen; Typ Ecke/glatt/symmetrisch; Segment Gerade ↔ Kurve; Pfad öffnen/schließen; zwei Endknoten verbinden; Pfad an Knoten trennen ; Rahmen-/Freihand-Auswahl (Alt), Umschalt fügt hinzu, Mod+A alle Knoten; Segment ziehen biegt es (Gerade wird Kurve, eigene Formel); Doppelklick auf Knoten löscht; Richtung umkehren; Teilpfad herauslösen (eigenes Objekt darüber); Rechtsklick auf Knoten/Segment = Knotenbefehle (Unpassendes grau, gewählte Knoten bleiben); Ausrichten (Tasten, Menü, Andockfenster) wirkt mit gewählten Knoten auf die Knoten – Rahmen der Knoten, Seite oder Seitenmitte, auf der Seite gerechnet; „Waagerecht/Senkrecht ausrichten“ im Rechtsklick-Menü | P0, Erweiterung P1 ✓ 14.11. |
 | Stift (Bézier) | Klick = Eckpunkt, Ziehen = Kurvenpunkt, Klick auf Start = schließen, Enter/Esc = beenden | P0 |
 | Freihand | Zeichnen mit einstellbarer Glättung (wichtig für Tattoo-Linien) | P0 |
 | Rechteck | Mit Eckenradius, Strg (Mac ⌘) = Quadrat, Shift = aus Mitte | P0 |
@@ -233,7 +233,7 @@ Allgemein: Export „nur Auswahl“ oder „ganze Seite“ (P0); nicht druckbare
 | Kontur in Objekt umwandeln | Mod+Shift+Q |
 | Nach vorn / zurück (eine Stufe) | Mod+Bild↑ / Mod+Bild↓ (Mod+] / Mod+[ bleiben für Tastaturen ohne Bild-Tasten) |
 | Ganz nach vorn / hinten (Ebene) | Shift+Bild↑ / Shift+Bild↓ (Mod+Shift+] / [ bleiben) |
-| Ausrichten links/rechts/oben/unten/Mitte waagrecht/Mitte senkrecht/Seitenmitte | L / R / T / B / C / E / P (bei Auswahl) |
+| Ausrichten links/rechts/oben/unten/Mitte waagrecht/Mitte senkrecht/Seitenmitte | L / R / T / B / C / E / P (bei Auswahl; Knoten-Werkzeug mit ≥ 2 gewählten Knoten: die Knoten) |
 | Ausrichten und Verteilen / Objekteigenschaften / Text-Eigenschaften / Optionen | Mod+Shift+A / Alt+Enter / Mod+T / Mod+J |
 | Fangen Raster / Objekte / Fangen aus | Alt+Y / Alt+Z / Alt+Q |
 | Transformationen: Position / Drehen / Skalieren und Spiegeln / Größe | Alt+F7 / Alt+F8 / Alt+F9 / Alt+F10 (Quelle: CorelDRAW-Community-Kürzelliste) |
@@ -285,7 +285,7 @@ Kommt eines davon später als Wunsch → neue Abnahme, nicht still nachrüsten.
 - Farbgenau drucken: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Print-colors-accurately.html
 - Kontureffekt: https://product.corel.com/help/CorelDRAW/540111176/Documentation-Windows/CorelDRAW-en/CorelDRAW-Contour-objects.html
 - Transformieren: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Transform-objects.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Rotate-and-mirror-objects.html; Kürzel: https://community.coreldraw.com/collaborate/w/howto/8/complete-list-of-keyboard-shortcuts; Kopien schrittweise = eigene Festlegung
-- Knoten-Werkzeug: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Select-and-move-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Add-remove-join-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Manipulate-segments.html, https://learn.corel.com/tutorials/coreldraw-edit-shape-tools/; Biegeformel = eigene Herleitung
+- Knoten-Werkzeug: https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Select-and-move-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Add-remove-join-nodes.html, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Manipulate-segments.html, https://learn.corel.com/tutorials/coreldraw-edit-shape-tools/, https://product.corel.com/help/CorelDRAW/540111147/CorelDRAW-en/CorelDRAW-Align-distribute-nodes.html; Biegeformel = eigene Herleitung
 - Standards: SVG 1.1/2 (W3C), PDF 1.7 / ISO 32000, ICC.1 (color.org), HP-GL/2, DXF-Referenz (Autodesk)
 
 ## 17. Abnahme Phase 1

@@ -1,4 +1,6 @@
+import type { AlignEdge } from './arrange';
 import { segmentAt, splitCubic } from './bezier';
+import { apply, invert, type Box, type Mat } from './geometry';
 import type { NodeType, PathPoint, Point, Subpath } from './types';
 import { tr } from '../i18n/i18n.svelte';
 
@@ -214,4 +216,26 @@ export function bendSegment(sps: Subs, s: number, seg: number, t: number, d: Poi
   const [w1, w2] = [(1 - u) * k, u * k];
   const out = moveHandle(curved, { sub: s, index: a }, 'out', { x: c[1].x + d.x * w1, y: c[1].y + d.y * w1 });
   return moveHandle(out, { sub: s, index: b }, 'in', { x: c[2].x + d.x * w2, y: c[2].y + d.y * w2 });
+}
+
+/**
+ * Knoten ausrichten wie Vorbild, gerechnet auf der Seite (m = Lage des Pfads): an Kante oder Mittelachse von ref,
+ * ohne ref am Rahmen der Knoten selbst; page = beide Mitten. Nichts zu tun → dieselben Teilpfade.
+ */
+export function alignNodes(sps: Subs, refs: readonly NodeRef[], m: Mat, edge: AlignEdge, ref?: Box): Subs {
+  const at = refs.map((r) => apply(m, sps[r.sub].nodes[r.index].x, sps[r.sub].nodes[r.index].y));
+  const [xs, ys] = [at.map((p) => p[0]), at.map((p) => p[1])];
+  const b = ref ?? { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
+  const [cx, cy] = [(b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2];
+  const tx = ({ left: b.minX, right: b.maxX, centerX: cx, page: cx } as Partial<Record<AlignEdge, number>>)[edge];
+  const ty = ({ top: b.minY, bottom: b.maxY, centerY: cy, page: cy } as Partial<Record<AlignEdge, number>>)[edge];
+  const inv = invert(m);
+  const [ox, oy] = apply(inv, 0, 0);
+  let out = sps;
+  refs.forEach((r, i) => {
+    // Versatz auf der Seite → Versatz im Pfad (nur der lineare Teil der Matrix)
+    const [lx, ly] = apply(inv, tx === undefined ? 0 : tx - at[i][0], ty === undefined ? 0 : ty - at[i][1]);
+    if (Math.abs(lx - ox) > 1e-9 || Math.abs(ly - oy) > 1e-9) out = moveNodes(out, [r], lx - ox, ly - oy);
+  });
+  return out;
 }
