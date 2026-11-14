@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { pointAt, segmentAt } from '../../src/model/bezier';
-import { IDENTITY, rotate } from '../../src/model/geometry';
+import { IDENTITY, rotate, scale } from '../../src/model/geometry';
 import {
   alignNodes,
   bendSegment,
@@ -15,6 +15,7 @@ import {
   setNodeType,
   toCurve,
   toLine,
+  transformPathNodes,
 } from '../../src/model/path-edit';
 import { pt, sub } from './fixtures';
 
@@ -208,4 +209,13 @@ test('alignNodes rechnet auf der Seite (gedrehter Pfad); fremder Rahmen = Seite,
   const page = { minX: 0, minY: 0, maxX: 100, maxY: 50 };
   expect(alignNodes(sps, refs, IDENTITY, 'bottom', page)[0].nodes.map((n) => n.y)).toEqual([50, 50]);
   expect(alignNodes(sps, refs, IDENTITY, 'page', page)[0].nodes.map((n) => [n.x, n.y])).toEqual([[50, 25], [50, 25]]);
+});
+
+test('transformPathNodes: Matrix wirkt auf gewählte Knoten samt Anfassern; Rest bleibt, auch dieselbe Referenz', () => {
+  const sps = [sub(false, pt(0, 0), { x: 10, y: 0, type: 'smooth', handleIn: { x: 8, y: 2 }, handleOut: { x: 12, y: -2 } }, pt(20, 0)), sub(false, pt(0, 9))];
+  const out = transformPathNodes(sps, [{ sub: 0, index: 1 }, { sub: 0, index: 2 }], scale(2, 3));
+  expect(out[0].nodes[0]).toBe(sps[0].nodes[0]);
+  expect(out[0].nodes[1]).toEqual({ x: 20, y: 0, type: 'smooth', handleIn: { x: 16, y: 6 }, handleOut: { x: 24, y: -6 } });
+  expect(out[0].nodes[2]).toMatchObject({ x: 40, y: 0 });
+  expect(out[1]).toBe(sps[1]);
 });

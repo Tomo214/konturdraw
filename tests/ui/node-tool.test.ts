@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { addNodes, createDocument, findNode } from '../../src/model/document';
 import { IDENTITY, multiply, scale, translate } from '../../src/model/geometry';
+import { handleOnScreen, type Handle } from '../../src/ui/handles';
 import { pointAt, segmentAt } from '../../src/model/bezier';
 import { History } from '../../src/model/history';
 import type { Doc, PathNode } from '../../src/model/types';
@@ -145,12 +146,12 @@ test('Richtung umkehren und Teilpfad herauslösen am angeklickten Teilpfad', () 
   expect(kids[1].subpaths[0].nodes[0].y).toBe(50);
 });
 
-function zigzag() {
+function zigzag(transform = IDENTITY) {
   const corner = (x: number, y: number) => ({ x, y, type: 'corner' as const });
   const path: PathNode = {
     type: 'path',
     id: 'p',
-    transform: IDENTITY,
+    transform,
     style: { fill: null, stroke: null },
     subpaths: [{ closed: false, nodes: [corner(0, 0), corner(10, 5), corner(20, -5), corner(30, 0)] }, { closed: false, nodes: [corner(0, 50), corner(10, 50)] }],
   };
@@ -203,4 +204,54 @@ test('Rechtsklick auf einen gewählten Knoten lässt die Mehrfachauswahl stehen;
   const m = tool.menu!(at(20, -5))!;
   m.find((i) => i?.label === 'Waagerecht ausrichten')!.run();
   expect(ys(ed.history.current)).toEqual([0, 0, 0, 0]);
+});
+
+// Griff auf dem Schirm (Zoom 4) als Zeiger in Seitenkoordinaten
+const grip = (b: { minX: number; minY: number; maxX: number; maxY: number }, h: Handle, dx = 0, dy = 0) => {
+  const [sx, sy] = handleOnScreen({ x: 0, y: 0, zoom: 4 }, b, h);
+  return at(sx / 4 + dx, sy / 4 + dy);
+};
+const mode = (tool: ReturnType<typeof nodeTool>, p: ReturnType<typeof at>, label: string) => tool.menu!(p)!.find((i) => i?.label === label)!;
+
+test('Knoten strecken: Rechtsklick schaltet den Modus (Haken), Seitengriff streckt nur die gewählten Knoten – auch in verschobenen Pfaden', () => {
+  const { ed, tool } = zigzag(translate(40, 0)); // Knoten auf der Seite: (40|0) (50|5) (60|-5) (70|0)
+  drag(tool, [45, -10], [65, 10]);
+  const before = ed.history.current;
+  expect(mode(tool, at(50, 5), 'Knoten strecken/skalieren').checked).toBe(false);
+  mode(tool, at(50, 5), 'Knoten strecken/skalieren').run();
+  expect(mode(tool, at(50, 5), 'Knoten strecken/skalieren').checked).toBe(true);
+  const box = { minX: 50, minY: -5, maxX: 60, maxY: 5 };
+  expect(tool.cursor!(grip(box, 'e'))).toBe('ew-resize');
+  tool.down(grip(box, 'e'));
+  tool.move(grip(box, 'e', 5));
+  tool.move(grip(box, 'e', 10));
+  tool.up(grip(box, 'e', 10));
+  expect(xs(ed.history.current)).toEqual([0, 10, 30, 30]);
+  expect(ys(ed.history.current)).toEqual([0, 5, -5, 0]);
+  expect(ed.history.undo()).toBe(true);
+  expect(ed.history.current).toBe(before);
+});
+
+test('Knoten drehen: Eckgriff dreht die gewählten Knoten um die Rahmenmitte; Modus erneut wählen schaltet ab', () => {
+  const { ed, tool } = zigzag();
+  drag(tool, [5, -10], [25, 10]); // (10|5) und (20|-5), Mitte (15|0)
+  mode(tool, at(10, 5), 'Knoten drehen/neigen').run();
+  const box = { minX: 10, minY: -5, maxX: 20, maxY: 5 };
+  tool.down(grip(box, 'ne'));
+  tool.move(grip(box, 'ne', -10, 10)); // Griff (20|-5) → (10|5): halbe Drehung
+  tool.up(grip(box, 'ne', -10, 10));
+  const r = (v: number) => Math.round(v * 1e6) / 1e6 + 0;
+  expect(xs(ed.history.current).map(r)).toEqual([0, 20, 10, 30]);
+  expect(ys(ed.history.current).map(r)).toEqual([0, -5, 5, 0]);
+  mode(tool, at(20, -5), 'Knoten drehen/neigen').run();
+  expect(mode(tool, at(20, -5), 'Knoten drehen/neigen').checked).toBe(false);
+  expect(tool.cursor!(grip(box, 'ne'))).not.toMatch(/resize|url/);
+});
+
+test('Knoten am Rahmenrand bleibt greifbar: Klick genau auf den Knoten verschiebt ihn, statt zu strecken', () => {
+  const { ed, tool } = zigzag();
+  drag(tool, [5, -10], [25, 10]);
+  mode(tool, at(10, 5), 'Knoten strecken/skalieren').run();
+  drag(tool, [20, -5], [22, -5]); // (20|-5) = Ecke oben rechts, Griff liegt 8,5 px daneben
+  expect(xs(ed.history.current)).toEqual([0, 12, 22, 30]);
 });

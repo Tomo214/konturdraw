@@ -1,5 +1,5 @@
 import { deleteNodes as deleteObjects, findNode, updateNodes, worldOf } from '../../model/document';
-import { apply, invert, type Mat } from '../../model/geometry';
+import { apply, invert, multiply, type Box, type Mat } from '../../model/geometry';
 import type { AlignEdge, AlignTo } from '../../model/arrange';
 import {
   alignNodes,
@@ -15,6 +15,7 @@ import {
   setNodeType,
   toCurve,
   toLine,
+  transformPathNodes,
   type NodeRef,
 } from '../../model/path-edit';
 import type { Doc, NodeType, PathNode, Point, Subpath } from '../../model/types';
@@ -25,11 +26,13 @@ import { DEFAULT_NUDGE } from '../../model/units';
 import { worldScale } from '../../render/scene';
 import { screenToPage } from '../../render/viewport';
 import { hitPath, nodeKey, nodesWhere } from '../node-hit';
-import { drawLasso, drawMarquee, drawNodes } from '../overlay';
+import { handleAt, handleCursor, handleNear, rotateFromDrag, scaleFromHandle, skewFromHandle, type Handle } from '../handles';
+import { drawLasso, drawMarquee, drawNodes, drawSelectionBox } from '../overlay';
 import type { Editor, Pointer, Tool } from './tool';
 import { tr } from '../../i18n/i18n.svelte';
 
 type Subs = readonly Subpath[];
+type Act = { label: string; run(): void; on(): boolean; checked?(): boolean };
 
 /** Knoten-Werkzeug: bearbeitet genau einen gewählten Pfad (oberste Ebene). */
 export function nodeTool(ed: Editor): Tool {
@@ -40,6 +43,9 @@ export function nodeTool(ed: Editor): Tool {
   let drag: { kind: 'nodes' | 'in' | 'out' | 'seg'; ref: NodeRef; t?: number; start: Pointer; doc: Doc; subs: Subs; moved: boolean } | null = null;
   // Rahmen auf leerer Fläche wählt Knoten (wie Vorbild); Alt = Freihand-Spur, Umschalt fügt hinzu. hit = Objekt unter dem Klick.
   let band: { start: Pointer; cur: Pointer; pts: Pointer[] | null; add: boolean; hit: string | null; moved: boolean } | null = null;
+  // Knoten transformieren (wie Vorbild): Griffrahmen um ≥ 2 gewählte Knoten; Griffe wie beim Auswahlwerkzeug.
+  let xf: 'scale' | 'rotate' | null = null;
+  let grab: { handle: Handle; box: Box; start: Pointer; doc: Doc; subs: Subs; moved: boolean } | null = null;
   const raw = (p: Pointer): Pointer => {
     const [x, y] = screenToPage(ed.vp, p.sx, p.sy);
     return { ...p, x, y };
@@ -154,6 +160,31 @@ export function nodeTool(ed: Editor): Tool {
     if (subs !== t.subpaths) commit(t, subs);
   }
 
+  // Rahmen der gewählten Knoten auf der Seite; null = Modus aus oder zu wenig Knoten.
+  function frame(t: PathNode): Box | null {
+    if (!xf || sel.size < 2) return null;
+    const at = refs().map((r) => apply(world(t), t.subpaths[r.sub].nodes[r.index].x, t.subpaths[r.sub].nodes[r.index].y));
+    const [xs, ys] = [at.map((q) => q[0]), at.map((q) => q[1])];
+    return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
+  }
+
+  // Wie Auswahlwerkzeug: gezogen wird der Griff (Versatz ausgeglichen); Strecken: Ecke proportional, Alt frei, Umschalt aus der Mitte.
+  // Drehen/Neigen: Ecke dreht um die Mitte, Seite neigt. Ergebnis als Matrix in Pfad-Koordinaten.
+  function xfMatrix(t: PathNode, g: NonNullable<typeof grab>, p: Pointer): Mat {
+    const hp = handleAt(g.box, g.handle);
+    const q = { x: hp.x + p.x - g.start.x, y: hp.y + p.y - g.start.y };
+    const c = { x: (g.box.minX + g.box.maxX) / 2, y: (g.box.minY + g.box.maxY) / 2 };
+    const m =
+      xf === 'scale'
+        ? scaleFromHandle(g.box, g.handle, q, { free: p.alt, center: p.shift, step: !!p.mod })
+        : g.handle.length === 1
+          ? skewFromHandle(g.box, g.handle, hp, q)
+          : rotateFromDrag(c, hp, q, !!p.mod);
+    const w = world(t);
+    return multiply(invert(w), multiply(m, w));
+  }
+  const toggle = (m: 'scale' | 'rotate') => () => void (xf = xf === m ? null : m);
+
   const sub = () => seg?.sub ?? refs()[0]?.sub;
   const nodes = (n: number) => () => sel.size >= n;
   const onSeg = () => !!seg;
@@ -203,9 +234,11 @@ export function nodeTool(ed: Editor): Tool {
     // Knoten auf eine waagerechte bzw. senkrechte Linie (Mittelachse ihres Rahmens)
     alignH: { label: tr('Waagerecht ausrichten'), run: () => align('centerY'), on: nodes(2) },
     alignV: { label: tr('Senkrecht ausrichten'), run: () => align('centerX'), on: nodes(2) },
+    stretch: { label: tr('Knoten strecken/skalieren'), run: toggle('scale'), on: nodes(2), checked: () => xf === 'scale' },
+    turn: { label: tr('Knoten drehen/neigen'), run: toggle('rotate'), on: nodes(2), checked: () => xf === 'rotate' },
   };
   const actions = [A.corner, A.smooth, A.symmetric, A.line, A.curve, A.add, A.del, A.reduce, A.split, A.join, A.close, A.reverse, A.extract];
-  const MENU = [A.add, A.del, A.join, A.split, null, A.line, A.curve, null, A.corner, A.smooth, A.symmetric, null, A.reverse, A.close, A.extract, null, A.alignH, A.alignV];
+  const MENU: (Act | null)[] = [A.add, A.del, A.join, A.split, null, A.line, A.curve, null, A.corner, A.smooth, A.symmetric, null, A.reverse, A.close, A.extract, null, A.alignH, A.alignV, null, A.stretch, A.turn];
 
   return {
     actions,
@@ -213,6 +246,10 @@ export function nodeTool(ed: Editor): Tool {
     down(p) {
       const t = sync();
       const hit = t && hitPath(t.subpaths, world(t), ed.vp, p.sx, p.sy, sel);
+      // Vorrang: Knoten und Anfasser, dann Transformationsgriff, dann Segment
+      const box = t && (!hit || hit.kind === 'seg') && frame(t);
+      const handle = box && handleNear(ed.vp, box, p.sx, p.sy);
+      if (t && box && handle) return void (grab = { handle, box, start: p, doc: ed.history.current, subs: t.subpaths, moved: false });
       if (t && hit) {
         const doc = ed.history.current;
         if (hit.kind === 'seg') {
@@ -251,6 +288,11 @@ export function nodeTool(ed: Editor): Tool {
         return band.moved;
       }
       const t = target();
+      if (grab && t) {
+        grab.moved ||= Math.hypot(p.sx - grab.start.sx, p.sy - grab.start.sy) > 2;
+        if (grab.moved) commit(t, transformPathNodes(grab.subs, refs(), xfMatrix(t, grab, p)), true, grab.doc);
+        return grab.moved;
+      }
       if (!drag || !t) return false;
       drag.moved ||= Math.hypot(p.sx - drag.start.sx, p.sy - drag.start.sy) > 2;
       if (!drag.moved) return false;
@@ -276,8 +318,8 @@ export function nodeTool(ed: Editor): Tool {
         if (t) sel = new Set([...sel, ...nodesWhere(t.subpaths, world(t), inside)]);
         return;
       }
-      if (drag?.moved) ed.history.commit();
-      drag = null;
+      if (drag?.moved || grab?.moved) ed.history.commit();
+      [drag, grab] = [null, null];
     },
     dblclick(p) {
       const t = sync();
@@ -309,11 +351,21 @@ export function nodeTool(ed: Editor): Tool {
         if (!sel.has(nodeKey(hit.ref))) sel = new Set([nodeKey(hit.ref)]);
         seg = null;
       }
-      return MENU.map((a) => a && { label: a.label, run: a.run, disabled: !a.on() });
+      return MENU.map((a) => a && { label: a.label, run: a.run, disabled: !a.on(), checked: a.checked?.() });
+    },
+    cursor(p) {
+      if (grab) return handleCursor(grab.handle, xf ?? 'scale');
+      const t = target();
+      const hit = t && hitPath(t.subpaths, world(t), ed.vp, p.sx, p.sy, sel);
+      const box = t && (!hit || hit.kind === 'seg') && frame(t);
+      const h = box && handleNear(ed.vp, box, p.sx, p.sy);
+      return h ? handleCursor(h, xf!) : '';
     },
     overlay(ctx, dpr) {
       const t = sync();
       if (t) drawNodes(ctx, ed.vp, dpr, world(t), t.subpaths, sel, seg);
+      const box = t && frame(t);
+      if (box) drawSelectionBox(ctx, ed.vp, dpr, box, xf!);
       if (band?.moved && band.pts) drawLasso(ctx, ed.vp, dpr, band.pts);
       else if (band?.moved) drawMarquee(ctx, dpr, band.start.sx, band.start.sy, band.cur.sx, band.cur.sy);
     },

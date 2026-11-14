@@ -341,6 +341,8 @@ export const UI: Record<string, string> = {
   'Waagerecht ausrichten': 'Align horizontally',
   'Senkrecht ausrichten': 'Align vertically',
   'Mindestens zwei Knoten wählen': 'Select at least two nodes',
+  'Knoten strecken/skalieren': 'Stretch/scale nodes',
+  'Knoten drehen/neigen': 'Rotate/skew nodes',
   'Glätte': 'Smoothness',
   'Hilfslinie ist gesperrt.': 'The guide is locked.',
   'Objekt anklicken und nach außen oder zur Mitte ziehen · Anwenden nimmt die Werte der Leiste': 'Click an object and drag outward or toward the center · Apply uses the bar values',

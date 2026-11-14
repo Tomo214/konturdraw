@@ -60,6 +60,29 @@ export function moveNodes(sps: Subs, refs: readonly NodeRef[], dx: number, dy: n
   );
 }
 
+/** Knoten strecken/drehen/neigen (wie Vorbild): Matrix m in Pfad-Koordinaten auf die gewählten Knoten samt Anfassern. */
+export function transformPathNodes(sps: Subs, refs: readonly NodeRef[], m: Mat): Subs {
+  const hit = new Set(refs.map((r) => key(r.sub, r.index)));
+  const tf = (p: Point): Point => {
+    const [x, y] = apply(m, p.x, p.y);
+    return { x, y };
+  };
+  return sps.map((sp, s) =>
+    refs.some((r) => r.sub === s)
+      ? {
+          ...sp,
+          nodes: sp.nodes.map((n, i) => {
+            if (!hit.has(key(s, i))) return n;
+            const out: PathPoint = { ...n, ...tf(n) };
+            if (n.handleIn) out.handleIn = tf(n.handleIn);
+            if (n.handleOut) out.handleOut = tf(n.handleOut);
+            return out;
+          }),
+        }
+      : sp,
+  );
+}
+
 /** Ecke: Gegenseite bleibt · glatt: Gegenseite kollinear mit eigener Länge · symmetrisch: gespiegelt. */
 export function moveHandle(sps: Subs, ref: NodeRef, which: 'in' | 'out', p: Point): Subs {
   const own = which === 'in' ? 'handleIn' : 'handleOut';

@@ -235,7 +235,7 @@
       // eigenes Menü des Werkzeugs an dieser Stelle (Knoten-Werkzeug auf Knoten/Segment) vor dem Objektmenü
       const own = tool().menu?.(pointer(e, false));
       if (own) {
-        menuItems = own.map((it) => it && { label: it.label, disabled: it.disabled, run: () => guard(it.run) });
+        menuItems = own.map((it) => it && { label: it.label, disabled: it.disabled, checked: it.checked, run: () => guard(it.run) });
         menuAt = { x: e.clientX, y: e.clientY };
         return;
       }
